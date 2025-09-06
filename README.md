@@ -20,7 +20,7 @@ seedling-hq/
 
 ### Prerequisites
 
-- **Node.js 18+**
+- **Node.js 22.12+** (required for Vite 7.x compatibility)
 - **Corepack** (included with Node.js 16.9+ and 14.19+, just needs to be enabled)
 - **No global Yarn installation required** - Corepack manages the correct version automatically
 
