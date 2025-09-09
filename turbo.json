@@ -4,11 +4,23 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "build/**", ".next/**", "!.next/cache/**"]
+      "outputs": ["dist/**", "build/**", ".next/**", "!.next/cache/**", ".serverless/**"]
     },
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "deploy": {
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "deploy:dev": {
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "deploy:prod": {
+      "dependsOn": ["build"],
+      "cache": false
     },
     "lint": {
       "dependsOn": ["^build"]

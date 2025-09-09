@@ -1,0 +1,163 @@
+service: seedling-hq-api
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs22.x
+  region: ${opt:region, 'us-east-1'}
+  stage: ${opt:stage, 'dev'}
+  memorySize: 256
+  timeout: 30
+  
+  # Environment variables
+  environment:
+    NODE_ENV: ${self:provider.stage}
+    DATABASE_URL: ${env:DATABASE_URL}
+    LOG_LEVEL: ${env:LOG_LEVEL, 'INFO'}
+    
+  # IAM role statements for Lambda functions
+  iam:
+    role:
+      statements:
+        # CloudWatch Logs permissions (for Lambda Powertools)
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: 
+            - arn:aws:logs:${aws:region}:${aws:accountId}:log-group:/aws/lambda/${self:service}-${self:provider.stage}-*:*
+        
+        # X-Ray tracing permissions (for Lambda Powertools)
+        - Effect: Allow
+          Action:
+            - xray:PutTraceSegments
+            - xray:PutTelemetryRecords
+          Resource: "*"
+
+  # Enable X-Ray tracing
+  tracing:
+    lambda: true
+    apiGateway: true
+
+  # API Gateway configuration
+  apiGateway:
+    restApiId: ${env:API_GATEWAY_ID, ''}
+    restApiRootResourceId: ${env:API_GATEWAY_ROOT_RESOURCE_ID, ''}
+
+# Plugins
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-esbuild
+  - serverless-offline
+
+# Custom configuration
+custom:
+  # ESBuild configuration for TypeScript
+  esbuild:
+    bundle: true
+    minify: true
+    target: node22
+    format: esm
+    platform: node
+    sourcemap: true
+    exclude:
+      - '@aws-sdk/*'  # AWS SDK is provided by Lambda runtime
+    external:
+      - '@aws-lambda-powertools/logger'
+      - '@aws-lambda-powertools/tracer'
+      - '@aws-lambda-powertools/metrics'
+
+  # Serverless Offline configuration
+  serverless-offline:
+    httpPort: 3001
+    lambdaPort: 3002
+    printOutput: true
+    reloadHandler: true
+
+# Lambda functions
+functions:
+  # Customer operations
+  createCustomer:
+    handler: src/handlers/customers.createCustomer
+    description: Create a new customer
+    events:
+      - http:
+          path: /customers
+          method: post
+          cors: true
+    environment:
+      POWERTOOLS_SERVICE_NAME: createCustomer
+      POWERTOOLS_METRICS_NAMESPACE: SeedlingHQ
+
+  getCustomer:
+    handler: src/handlers/customers.getCustomer
+    description: Get a customer by ID
+    events:
+      - http:
+          path: /customers/{id}
+          method: get
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: true
+    environment:
+      POWERTOOLS_SERVICE_NAME: getCustomer
+      POWERTOOLS_METRICS_NAMESPACE: SeedlingHQ
+
+  listCustomers:
+    handler: src/handlers/customers.listCustomers
+    description: List customers with pagination
+    events:
+      - http:
+          path: /customers
+          method: get
+          cors: true
+          request:
+            parameters:
+              querystrings:
+                limit: false
+                offset: false
+                isActive: false
+    environment:
+      POWERTOOLS_SERVICE_NAME: listCustomers
+      POWERTOOLS_METRICS_NAMESPACE: SeedlingHQ
+
+# CloudFormation resources
+resources:
+  Resources:
+    # CloudWatch Log Groups with retention
+    CreateCustomerLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-createCustomer
+        RetentionInDays: 14
+
+    GetCustomerLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-getCustomer
+        RetentionInDays: 14
+
+    ListCustomersLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-listCustomers
+        RetentionInDays: 14
+
+# Stack outputs
+  Outputs:
+    ApiGatewayRestApiId:
+      Value:
+        Ref: ApiGatewayRestApi
+      Export:
+        Name: ${self:service}-${self:provider.stage}-ApiGatewayRestApiId
+
+    ApiGatewayRestApiRootResourceId:
+      Value:
+        Fn::GetAtt:
+          - ApiGatewayRestApi
+          - RootResourceId
+      Export:
+        Name: ${self:service}-${self:provider.stage}-ApiGatewayRestApiRootResourceId
