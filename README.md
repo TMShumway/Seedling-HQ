@@ -20,15 +20,47 @@ seedling-hq/
 
 ### Prerequisites
 
-- **Node.js 22.12+** (required for Vite 7.x compatibility)
-- **Corepack** (included with Node.js 16.9+ and 14.19+, just needs to be enabled)
+- **Node.js 22.0+** (LTS version for modern tooling compatibility)
+- **Corepack** (included with Node.js, just needs to be enabled)
 - **No global Yarn installation required** - Corepack manages the correct version automatically
 
-> **Note**: Corepack comes built-in with modern Node.js versions but may be disabled by default. If `corepack --version` fails, you may need to enable it first.
+> **Note**: This project targets Node.js 22 LTS for the best compatibility with modern tooling like Vite 7.x, Drizzle ORM, and other dependencies.
+
+#### Installing Node.js 22 LTS
+
+**Option 1: Using Node Version Manager (nvm) - Recommended**
+```bash
+# Install nvm if you haven't already
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+
+# Install and use Node.js 22 LTS
+nvm install --lts
+nvm use --lts
+
+# Set as default (optional)
+nvm alias default node
+```
+
+**Option 2: Using Homebrew (macOS)**
+```bash
+brew install node
+```
+
+**Option 3: Download from Official Website**
+Visit [nodejs.org](https://nodejs.org/) and download the LTS version.
+
+#### Verify Your Installation
+```bash
+node --version  # Should show v22.x.x or higher
+yarn check-node  # Our custom version checker
+```
 
 ### Installation
 
 ```bash
+# Check Node.js version first (should be 22.0+)
+node --version
+
 # Enable Corepack (one-time setup)
 corepack enable
 
@@ -36,7 +68,7 @@ corepack enable
 git clone <repository-url>
 cd seedling-hq
 
-# Install dependencies (Corepack will automatically use Yarn 4.9.4)
+# Install dependencies (will also check Node.js version)
 yarn install
 
 # Build all packages
@@ -65,6 +97,7 @@ corepack yarn dev
 - `yarn lint` - Lint all packages with ESLint
 - `yarn type-check` - Type check all packages with TypeScript
 - `yarn clean` - Clean all build artifacts
+- `yarn check-node` - Verify Node.js version meets requirements
 
 ### Individual Package Commands
 ```bash

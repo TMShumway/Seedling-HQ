@@ -11,13 +11,15 @@
     "lint": "turbo lint",
     "test": "turbo test",
     "type-check": "turbo type-check",
-    "clean": "turbo clean"
+    "clean": "turbo clean",
+    "check-node": "node scripts/check-node-version.mjs",
+    "postinstall": "node scripts/check-node-version.mjs"
   },
   "devDependencies": {
     "turbo": "^2.0.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "packageManager": "yarn@4.9.4"
 }
