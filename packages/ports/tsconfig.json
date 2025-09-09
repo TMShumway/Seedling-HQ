@@ -8,7 +8,7 @@
     "sourceMap": true,
     "composite": true,
     "module": "ESNext",
-    "target": "ES2024",
+    "target": "ES2022",
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,

@@ -1,0 +1,81 @@
+service: seedling-hq-api
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ${opt:region, 'us-east-1'}
+  stage: ${opt:stage, 'dev'}
+  memorySize: 256
+  timeout: 30
+  
+  # Environment variables
+  environment:
+    NODE_ENV: ${self:provider.stage}
+    DATABASE_URL: ${env:DATABASE_URL}
+    LOG_LEVEL: ${env:LOG_LEVEL, 'INFO'}
+
+# Plugins
+plugins:
+  - serverless-esbuild
+  - serverless-offline
+
+# Custom configuration
+custom:
+  # ESBuild configuration for TypeScript
+  esbuild:
+    bundle: true
+    minify: false  # Disable minification for easier debugging
+    target: node20
+    format: esm
+    platform: node
+    sourcemap: true
+
+  # Serverless Offline configuration
+  serverless-offline:
+    httpPort: 3001
+    lambdaPort: 3002
+    printOutput: true
+    reloadHandler: true
+    useWorkerThreads: false
+    useSeparateProcesses: false
+
+# Lambda functions
+functions:
+  # Customer operations
+  createCustomer:
+    handler: src/handlers/customers.createCustomer
+    description: Create a new customer
+    events:
+      - http:
+          path: /customers
+          method: post
+          cors: true
+
+  getCustomer:
+    handler: src/handlers/customers.getCustomer
+    description: Get a customer by ID
+    events:
+      - http:
+          path: /customers/{id}
+          method: get
+          cors: true
+          request:
+            parameters:
+              paths:
+                id: true
+
+  listCustomers:
+    handler: src/handlers/customers.listCustomers
+    description: List customers with pagination
+    events:
+      - http:
+          path: /customers
+          method: get
+          cors: true
+          request:
+            parameters:
+              querystrings:
+                limit: false
+                offset: false
+                isActive: false

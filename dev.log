@@ -1,0 +1,92 @@
+turbo 2.5.6
+
+• Packages in scope: @seedling-hq/api, @seedling-hq/api-app, @seedling-hq/core, @seedling-hq/database-drizzle, @seedling-hq/ports, @seedling-hq/types, @seedling-hq/use-cases, @seedling-hq/web
+• Running dev in 8 packages
+• Remote caching disabled
+@seedling-hq/types:dev: cache bypass, force executing cc7e0b0fa031ec76
+@seedling-hq/core:dev: cache bypass, force executing 402b6b0daef0fff5
+@seedling-hq/api-app:dev: cache bypass, force executing 36235870e5e59250
+@seedling-hq/api:dev: cache bypass, force executing b71d21ed3bb0ad8b
+@seedling-hq/web:dev: cache bypass, force executing 5c9ae9c951e6ac76
+@seedling-hq/use-cases:dev: cache bypass, force executing 011c1ed80c2df246
+@seedling-hq/ports:dev: cache bypass, force executing b44a4a97d8eddcd8
+@seedling-hq/database-drizzle:dev: cache bypass, force executing a56e1a7a2577ef00
+@seedling-hq/database-drizzle:dev: [2J[3J[H11:47:45 PM - Starting compilation in watch mode...
+@seedling-hq/database-drizzle:dev: 
+@seedling-hq/core:dev: [2J[3J[H11:47:45 PM - Starting compilation in watch mode...
+@seedling-hq/core:dev: 
+@seedling-hq/use-cases:dev: [2J[3J[H11:47:45 PM - Starting compilation in watch mode...
+@seedling-hq/use-cases:dev: 
+@seedling-hq/types:dev: [2J[3J[H11:47:45 PM - Starting compilation in watch mode...
+@seedling-hq/types:dev: 
+@seedling-hq/api:dev: [2J[3J[H11:47:45 PM - Starting compilation in watch mode...
+@seedling-hq/api:dev: 
+@seedling-hq/core:dev: 
+@seedling-hq/core:dev: 11:47:45 PM - Found 0 errors. Watching for file changes.
+@seedling-hq/ports:dev: [2J[3J[H11:47:45 PM - Starting compilation in watch mode...
+@seedling-hq/ports:dev: 
+@seedling-hq/types:dev: 
+@seedling-hq/types:dev: 11:47:45 PM - Found 0 errors. Watching for file changes.
+@seedling-hq/use-cases:dev: 
+@seedling-hq/use-cases:dev: 11:47:45 PM - Found 0 errors. Watching for file changes.
+@seedling-hq/database-drizzle:dev: 
+@seedling-hq/database-drizzle:dev: 11:47:45 PM - Found 0 errors. Watching for file changes.
+@seedling-hq/ports:dev: 
+@seedling-hq/ports:dev: 11:47:46 PM - Found 0 errors. Watching for file changes.
+@seedling-hq/api:dev: 
+@seedling-hq/api:dev: 11:47:46 PM - Found 0 errors. Watching for file changes.
+@seedling-hq/web:dev: 11:47:46 PM [vite] (client) Re-optimizing dependencies because lockfile has changed
+@seedling-hq/web:dev: Port 5173 is in use, trying another one...
+@seedling-hq/web:dev: Port 5174 is in use, trying another one...
+@seedling-hq/web:dev: Port 5175 is in use, trying another one...
+@seedling-hq/web:dev: 
+@seedling-hq/web:dev:   VITE v7.1.4  ready in 1227 ms
+@seedling-hq/web:dev: 
+@seedling-hq/web:dev:   ➜  Local:   http://localhost:5176/
+@seedling-hq/web:dev:   ➜  Network: use --host to expose
+@seedling-hq/api-app:dev: Starting Offline at stage dev (us-east-1)
+@seedling-hq/api-app:dev: 
+@seedling-hq/api-app:dev: Offline [http for lambda] listening on http://localhost:3002
+@seedling-hq/api-app:dev: Function names exposed for local invocation by aws-sdk:
+@seedling-hq/api-app:dev:    * createCustomer: seedling-hq-api-dev-createCustomer
+@seedling-hq/api-app:dev:    * getCustomer: seedling-hq-api-dev-getCustomer
+@seedling-hq/api-app:dev:    * listCustomers: seedling-hq-api-dev-listCustomers
+@seedling-hq/api-app:dev: 
+@seedling-hq/api-app:dev: ┌──────────────────────────────────────────────────────────────────────────────┐
+@seedling-hq/api-app:dev: │                                                                              │
+@seedling-hq/api-app:dev: │   POST | http://localhost:3001/dev/customers                                 │
+@seedling-hq/api-app:dev: │   POST |                                                                     │
+@seedling-hq/api-app:dev: │   http://localhost:3001/2015-03-31/functions/createCustomer/invocations      │
+@seedling-hq/api-app:dev: │   GET  | http://localhost:3001/dev/customers/{id}                            │
+@seedling-hq/api-app:dev: │   POST |                                                                     │
+@seedling-hq/api-app:dev: │   http://localhost:3001/2015-03-31/functions/getCustomer/invocations         │
+@seedling-hq/api-app:dev: │   GET  | http://localhost:3001/dev/customers                                 │
+@seedling-hq/api-app:dev: │   POST |                                                                     │
+@seedling-hq/api-app:dev: │   http://localhost:3001/2015-03-31/functions/listCustomers/invocations       │
+@seedling-hq/api-app:dev: │                                                                              │
+@seedling-hq/api-app:dev: └──────────────────────────────────────────────────────────────────────────────┘
+@seedling-hq/api-app:dev: 
+@seedling-hq/api-app:dev: Server ready: http://localhost:3001 🚀
+@seedling-hq/api-app:dev: 
+@seedling-hq/api-app:dev: 
+@seedling-hq/api-app:dev: GET /dev/customers (λ: listCustomers)
+@seedling-hq/api-app:dev: × Uncaught exception
+@seedling-hq/api-app:dev: Environment: darwin, node 22.19.0, framework 3.40.0 (local), plugin 7.2.3, SDK 4.5.1
+@seedling-hq/api-app:dev: Docs:        docs.serverless.com
+@seedling-hq/api-app:dev: Support:     forum.serverless.com
+@seedling-hq/api-app:dev: Bugs:        github.com/serverless/serverless/issues
+@seedling-hq/api-app:dev: 
+@seedling-hq/api-app:dev: Error:
+@seedling-hq/api-app:dev: Error: Cannot find module '/Users/kelly/Repos/Seedling-HQ/.yarn/__virtual__/serverless-offline-virtual-67ea3bc96e/3/.yarn/berry/cache/serverless-offline-npm-13.9.0-3205ce56fa-10c0.zip/node_modules/serverless-offline/src/lambda/handler-runner/worker-thread-runner/workerThreadHelper.js'
+@seedling-hq/api-app:dev:     at Function._resolveFilename (node:internal/modules/cjs/loader:1383:15)
+@seedling-hq/api-app:dev:     at defaultResolveImpl (node:internal/modules/cjs/loader:1025:19)
+@seedling-hq/api-app:dev:     at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1030:22)
+@seedling-hq/api-app:dev:     at Function._load (node:internal/modules/cjs/loader:1192:37)
+@seedling-hq/api-app:dev:     at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+@seedling-hq/api-app:dev:     at wrapModuleLoad (node:internal/modules/cjs/loader:237:24)
+@seedling-hq/api-app:dev:     at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)
+@seedling-hq/api-app:dev:     at MessagePort.<anonymous> (node:internal/main/worker_thread:226:26)
+@seedling-hq/api-app:dev:     at [nodejs.internal.kHybridDispatch] (node:internal/event_target:827:20)
+@seedling-hq/api-app:dev:     at MessagePort.<anonymous> (node:internal/per_context/messageport:23:28)
+@seedling-hq/api-app:dev: ERROR: command finished with error: command (/Users/kelly/Repos/Seedling-HQ/apps/api) /private/var/folders/pr/y6gt8vd564vcvs5mg6p_tlww0000gn/T/xfs-efa4be0d/yarn run dev exited (1)
+ ERROR  run failed: command  exited (1)

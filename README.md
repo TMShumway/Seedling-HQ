@@ -20,22 +20,26 @@ seedling-hq/
 
 ### Prerequisites
 
-- **Node.js 22.0+** (LTS version for modern tooling compatibility)
+- **Node.js 20.19+** (minimum version for Vite 7.x compatibility)
 - **Corepack** (included with Node.js, just needs to be enabled)
 - **No global Yarn installation required** - Corepack manages the correct version automatically
 
-> **Note**: This project targets Node.js 22 LTS for the best compatibility with modern tooling like Vite 7.x, Drizzle ORM, and other dependencies.
+> **Note**: This project requires Node.js 20.19+ for compatibility with Vite 7.x and modern tooling. Node.js 22 LTS is recommended for the best experience.
 
-#### Installing Node.js 22 LTS
+#### Installing Node.js 20.19+ or 22 LTS
 
 **Option 1: Using Node Version Manager (nvm) - Recommended**
 ```bash
 # Install nvm if you haven't already
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
 
-# Install and use Node.js 22 LTS
+# Install and use Node.js 22 LTS (recommended)
 nvm install --lts
 nvm use --lts
+
+# Or install Node.js 20.19+ specifically
+# nvm install 20.19.0
+# nvm use 20.19.0
 
 # Set as default (optional)
 nvm alias default node
@@ -51,14 +55,14 @@ Visit [nodejs.org](https://nodejs.org/) and download the LTS version.
 
 #### Verify Your Installation
 ```bash
-node --version  # Should show v22.x.x or higher
+node --version  # Should show v20.19.0 or higher
 yarn check-node  # Our custom version checker
 ```
 
 ### Installation
 
 ```bash
-# Check Node.js version first (should be 22.0+)
+# Check Node.js version first (should be 20.19.0+)
 node --version
 
 # Enable Corepack (one-time setup)

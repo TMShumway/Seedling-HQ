@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=20.19.0"
   },
   "scripts": {
     "dev": "vite",
@@ -15,11 +15,15 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@seedling-hq/api": "workspace:*",
+    "@seedling-hq/types": "workspace:*",
+    "@tanstack/react-query": "^5.0.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
+    "@tanstack/react-query-devtools": "^5.0.0",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "@vitejs/plugin-react": "^5.0.0",

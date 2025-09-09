@@ -20,11 +20,12 @@
     "@seedling-hq/core": "workspace:*",
     "@seedling-hq/ports": "workspace:*",
     "@seedling-hq/types": "workspace:*",
-    "drizzle-orm": "^0.30.0",
+    "drizzle-kit": "^0.31.4",
+    "drizzle-orm": "^0.44.5",
     "postgres": "^3.4.0"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=20.19.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
@@ -32,7 +33,6 @@
     "@types/pg": "^8.10.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
-    "drizzle-kit": "^0.20.0",
     "eslint": "^8.0.0",
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.0.0"

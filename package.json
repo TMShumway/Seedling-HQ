@@ -19,7 +19,7 @@
     "turbo": "^2.0.0"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=20.19.0"
   },
   "packageManager": "yarn@4.9.4"
 }

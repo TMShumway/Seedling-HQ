@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=20.19.0"
   },
   "scripts": {
     "build": "tsc",
@@ -16,7 +16,11 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@seedling-hq/types": "workspace:*"
+    "@seedling-hq/types": "workspace:*",
+    "@tanstack/react-query": "^5.0.0"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",

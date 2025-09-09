@@ -16,7 +16,7 @@
     "@seedling-hq/types": "workspace:*"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=20.19.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
