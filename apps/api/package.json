@@ -8,7 +8,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "dev": "DATABASE_URL=postgresql://postgres:password@localhost:5434/seedling_hq LOG_LEVEL=INFO serverless offline --config serverless.dev.yml",
+    "dev": "DATABASE_URL=postgresql://postgres:password@localhost:5434/seedling_hq LOG_LEVEL=INFO yarn node dev-server.mjs",
+    "dev:serverless": "DATABASE_URL=postgresql://postgres:password@localhost:5434/seedling_hq LOG_LEVEL=INFO serverless offline --config serverless.dev.yml",
     "deploy": "serverless deploy",
     "deploy:dev": "serverless deploy --stage dev",
     "deploy:prod": "serverless deploy --stage prod",
@@ -26,11 +27,15 @@
     "@seedling-hq/database-drizzle": "workspace:*",
     "@seedling-hq/ports": "workspace:*",
     "@seedling-hq/use-cases": "workspace:*",
+    "cors": "^2.8.5",
+    "express": "^4.21.1",
     "nanoid": "^5.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
     "@types/aws-lambda": "^8.10.0",
+    "@types/cors": "^2.8.0",
+    "@types/express": "^5.0.0",
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",

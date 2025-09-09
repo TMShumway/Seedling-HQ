@@ -15,13 +15,18 @@ function CustomerRow({ customer }: CustomerRowProps) {
       </td>
       <td>{customer.phoneNumber || '-'}</td>
       <td>{new Date(customer.createdAt).toLocaleDateString()}</td>
-      <td>{new Date(customer.updatedAt).toLocaleDateString()}</td>
+      <td>
+        <span className={customer.isActive ? 'active' : 'inactive'}>
+          {customer.isActive ? 'Active' : 'Inactive'}
+        </span>
+      </td>
     </tr>
   );
 }
 
 export function CustomerTable() {
-  const { data: customers, isLoading, error, refetch } = useCustomers();
+  const { data: response, isLoading, error, refetch } = useCustomers();
+  const customers = response?.data?.customers || [];
 
   if (isLoading) {
     return (
@@ -48,11 +53,11 @@ export function CustomerTable() {
     );
   }
 
-  const hasCustomers = customers && customers.length > 0;
+  const hasCustomers = customers.length > 0;
 
   return (
     <div className="customer-table">
-      <h2>Customers ({customers?.length || 0})</h2>
+      <h2>Customers ({customers.length})</h2>
       
       {!hasCustomers ? (
         <div className="empty-state">
@@ -68,11 +73,11 @@ export function CustomerTable() {
                 <th>Email</th>
                 <th>Phone</th>
                 <th>Created</th>
-                <th>Updated</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              {customers!.map((customer) => (
+              {customers.map((customer) => (
                 <CustomerRow key={customer.id} customer={customer} />
               ))}
             </tbody>
