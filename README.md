@@ -1,6 +1,31 @@
 # Seedling HQ Monorepo
 
-A modern monorepo built with Turborepo, featuring intelligent caching and a React web application with shared packages.
+A modern monorepo built with Turborepo, featuring intelligent caching, React 19 frontend, and Fastify serverless API backend.
+
+## 📚 Documentation
+
+**New to the project? Start here:**
+
+### 📖 [Development Guide](./DEVELOPMENT_GUIDE.md)
+Comprehensive guide covering the complete tech stack from frontend to backend:
+- 🎯 Frontend Development (React + Vite + TypeScript)
+- ⚡ Backend Development (Fastify + AWS Lambda)
+- 🔗 Shared Types Architecture
+- 🚀 Full-Stack Feature Development Workflow
+- 🧪 Testing Strategies
+- 📋 Best Practices & Conventions
+- 🏗️ System Architecture Diagrams
+
+### ⚡ [Quick Reference](./QUICK_REFERENCE.md)
+Fast access to common development tasks and commands:
+- 🚀 Quick start commands
+- 🔄 Adding new features workflow
+- 📝 Code templates (routes, services, components, hooks)
+- 🐛 Debugging and troubleshooting
+- 📦 Package management
+- 🚢 Deployment shortcuts
+
+---
 
 ## Project Structure
 
@@ -9,7 +34,7 @@ seedling-hq/
 ├── apps/
 │   └── web/          # React + Vite web application (@seedling-hq/web)
 ├── packages/
-│   ├── api/          # API client library (@seedling-hq/api)
+│   ├── api/          # Fastify serverless API (@seedling-hq/api)
 │   └── types/        # Shared TypeScript types (@seedling-hq/types)
 ├── package.json      # Root workspace configuration
 ├── turbo.json        # Turborepo configuration
@@ -87,10 +112,13 @@ React application built with:
 ## Packages
 
 ### API (@seedling-hq/api)
-Shared API client library featuring:
-- TypeScript with strict configuration
-- ESLint with modern flat config
-- Build target: ES2022
+Fastify serverless API featuring:
+- **Fastify Framework** - High-performance Node.js web framework
+- **AWS Lambda** - Serverless compute with auto-scaling
+- **TypeScript** - Full type safety with strict configuration
+- **Security** - CORS, Helmet, Rate limiting, Input validation
+- **Development** - Local dev server with hot reload
+- **Deployment** - Serverless Framework for Infrastructure as Code
 
 ### Types (@seedling-hq/types)
 Shared TypeScript type definitions including:
@@ -102,10 +130,20 @@ Shared TypeScript type definitions including:
 ## Development
 
 ### Technologies
+
+**Frontend Stack:**
+- **React 19** - Latest React with concurrent features  
+- **Vite 7.x** - Ultra-fast build tool and development server
+- **TypeScript 5.x** - Type safety and enhanced developer experience
+
+**Backend Stack:**
+- **Fastify** - High-performance Node.js web framework
+- **AWS Lambda** - Serverless compute platform
+- **Serverless Framework** - Infrastructure as Code
+
+**Development Infrastructure:**
 - **Turborepo 2.5.6** - Build orchestration with intelligent caching
 - **Yarn 4.9.4** - Modern package manager with Plug'n'Play (PnP)
-- **TypeScript 5.x** - Type safety across all packages
-- **Vite 7.x** - Fast development and production builds
 - **ESLint 9.x** - Code linting with flat configuration
 
 ### Performance Features
