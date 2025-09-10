@@ -29,16 +29,27 @@ Fast access to common development tasks and commands:
 
 ## Project Structure
 
+This monorepo follows a clear separation between **applications** and **packages**:
+
+- **`apps/`** - End-user applications that are deployed (API server, Web app)
+- **`packages/`** - Reusable library packages consumed by apps or other packages
+
 ```
 seedling-hq/
-├── apps/
-│   └── web/          # React + Vite web application (@seedling-hq/web)
-├── packages/
-│   ├── api/          # Fastify serverless API (@seedling-hq/api)
-│   └── types/        # Shared TypeScript types (@seedling-hq/types)
-├── package.json      # Root workspace configuration
-├── turbo.json        # Turborepo configuration
-└── .pnp.cjs          # Yarn PnP manifest
+├── apps/                    # Application packages (end-user applications)
+│   ├── api/                 # Fastify serverless API (@seedling-hq/api)
+│   └── web/                 # React + Vite web application (@seedling-hq/web)
+├── packages/                # Library packages (shared code)
+│   ├── api-client/          # API client library (@seedling-hq/api-client)
+│   └── types/               # Shared TypeScript types (@seedling-hq/types)
+├── .vscode/                 # VS Code workspace configuration
+│   ├── settings.json        # Yarn PnP and TypeScript integration
+│   └── extensions.json      # Recommended extensions
+├── .yarn/
+│   └── sdks/                # Yarn SDKs for IDE integration
+├── package.json             # Root workspace configuration
+├── turbo.json               # Turborepo configuration
+└── .pnp.cjs                 # Yarn PnP manifest
 ```
 
 ## Getting Started
@@ -96,10 +107,20 @@ corepack yarn dev
 # Build specific workspace
 yarn workspace @seedling-hq/web build
 yarn workspace @seedling-hq/api build
+yarn workspace @seedling-hq/api-client build
 yarn workspace @seedling-hq/types build
 ```
 
 ## Apps
+
+### API (@seedling-hq/api)
+Fastify serverless API featuring:
+- **Fastify Framework** - High-performance Node.js web framework
+- **AWS Lambda** - Serverless compute with auto-scaling
+- **TypeScript** - Full type safety with strict configuration
+- **Security** - CORS, Helmet, Rate limiting, Input validation
+- **Development** - Local dev server with hot reload
+- **Deployment** - Serverless Framework for Infrastructure as Code
 
 ### Web (@seedling-hq/web)
 React application built with:
@@ -111,14 +132,12 @@ React application built with:
 
 ## Packages
 
-### API (@seedling-hq/api)
-Fastify serverless API featuring:
-- **Fastify Framework** - High-performance Node.js web framework
-- **AWS Lambda** - Serverless compute with auto-scaling
-- **TypeScript** - Full type safety with strict configuration
-- **Security** - CORS, Helmet, Rate limiting, Input validation
-- **Development** - Local dev server with hot reload
-- **Deployment** - Serverless Framework for Infrastructure as Code
+### API Client (@seedling-hq/api-client)
+TypeScript API client library (stub package for future development):
+- **TypeScript** - Full type safety
+- **ES Modules** - Modern module system
+- **Dependencies** - Uses shared types from @seedling-hq/types
+- **Monorepo Integration** - Builds with Turborepo
 
 ### Types (@seedling-hq/types)
 Shared TypeScript type definitions including:
@@ -157,10 +176,16 @@ Packages can reference each other using workspace protocol:
 ```json
 {
   "dependencies": {
-    "@seedling-hq/types": "workspace:*"
+    "@seedling-hq/types": "workspace:*",
+    "@seedling-hq/api-client": "workspace:*"
   }
 }
 ```
+
+**Dependency Flow:**
+- `apps/api` → `packages/types`
+- `apps/web` → `packages/types`, `packages/api-client`
+- `packages/api-client` → `packages/types`
 
 ## Troubleshooting
 
@@ -212,6 +237,22 @@ yarn clean
 # or
 rm -rf .turbo
 ```
+
+### VS Code Setup
+This project is configured for VS Code with Yarn PnP support:
+
+1. **Install Recommended Extensions**: When opening the project, VS Code will prompt to install recommended extensions including:
+   - ZipFS (arcanis.vscode-zipfs) - Required for Yarn PnP
+   - TypeScript Importer - Better TypeScript support
+
+2. **Select Workspace TypeScript Version**:
+   - Open any `.ts` file
+   - Press `Cmd+Shift+P` → "TypeScript: Select TypeScript Version"
+   - Choose "Use Workspace Version"
+
+3. **Reload VS Code**: `Cmd+Shift+P` → "Developer: Reload Window"
+
+See `.vscode/README.md` for detailed setup instructions and troubleshooting.
 
 ### PnP Issues
 If experiencing module resolution issues, ensure your IDE supports Yarn PnP or install the appropriate extensions.
