@@ -28,17 +28,15 @@
     "fastify": "^4.24.3"
   },
   "devDependencies": {
-    "@eslint/js": "^9.0.0",
+    "@eslint/js": "^9.33.0",
     "@types/aws-lambda": "^8.10.128",
     "@types/node": "^20.0.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "eslint": "^8.0.0",
+    "eslint": "^9.33.0",
     "nodemon": "^3.0.2",
     "serverless": "^3.38.0",
     "serverless-offline": "^13.3.0",
     "serverless-plugin-typescript": "^2.1.5",
     "typescript": "^5.0.0",
-    "typescript-eslint": "^8.0.0"
+    "typescript-eslint": "^8.39.1"
   }
 }

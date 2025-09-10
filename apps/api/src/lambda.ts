@@ -2,14 +2,14 @@ import awsLambda from '@fastify/aws-lambda';
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { buildApp } from './app';
 
-let proxy: any;
+let proxy: ((event: APIGatewayProxyEvent, context: Context) => Promise<APIGatewayProxyResult>) | null = null;
 
 export const handler = async (
   event: APIGatewayProxyEvent,
   context: Context
 ): Promise<APIGatewayProxyResult> => {
   // Initialize the Fastify app only once (cold start optimization)
-  if (!proxy) {
+  if (proxy === null) {
     const app = await buildApp({
       logger: process.env.NODE_ENV !== 'production',
       stage: process.env.STAGE || 'dev'
