@@ -7,6 +7,8 @@ node_modules/
 dist/
 build/
 .turbo/
+.build/
+builds/
 
 # Environment files
 .env
@@ -24,6 +26,18 @@ yarn-error.log*
 .idea/
 *.swp
 *.swo
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+*.tfplan
+*.tfvars.backup
+
+# Temporary files
+response.json
+*.tmp
+*.temp
 
 # OS
 .DS_Store

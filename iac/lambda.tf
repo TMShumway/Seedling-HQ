@@ -39,7 +39,7 @@ data "archive_file" "lambda_zip" {
   type        = "zip"
   output_path = "${path.module}/builds/${local.function_name}.zip"
   
-  # Include the built API code
+  # Use the dist directory as the source (puts compiled JS files at root level)
   source_dir = "${var.api_source_path}/dist"
   
   depends_on = [null_resource.build_api]
@@ -51,16 +51,44 @@ resource "null_resource" "build_api" {
   triggers = {
     package_json = filemd5("${var.api_source_path}/package.json")
     tsconfig     = filemd5("${var.api_source_path}/tsconfig.json")
-    # Note: For production, you'd want to track all source files
   }
 
   provisioner "local-exec" {
     working_dir = var.api_source_path
     command     = <<-EOT
       echo "Building API for Lambda deployment..."
-      yarn install --production=false
+      yarn install
       yarn build
-      echo "API build completed"
+      
+      # Create a temporary deployment directory with proper node_modules
+      echo "Creating Lambda deployment package..."
+      TEMP_DIR=$(mktemp -d)
+      echo "Using temporary directory: $TEMP_DIR"
+      
+      # Copy compiled code
+      cp -R dist/* "$TEMP_DIR/"
+      
+      # Create a Lambda-compatible package.json (remove workspace dependencies)
+      cd "${var.api_source_path}"
+      cat package.json | sed 's/"workspace:\*"/"latest"/' > "$TEMP_DIR/package.json"
+      
+      cd "$TEMP_DIR"
+      # Remove problematic workspace dependencies for Lambda
+      sed -i.bak '/@seedling-hq\/types/d' package.json
+      
+      # Install only production dependencies using npm
+      echo "Installing production dependencies..."
+      npm install --only=production --no-package-lock
+      
+      # Replace the dist directory with our deployment-ready version
+      cd "${var.api_source_path}"
+      rm -rf dist/*
+      cp -R "$TEMP_DIR"/* dist/
+      
+      # Clean up
+      rm -rf "$TEMP_DIR"
+      
+      echo "API build completed and ready for Lambda packaging"
     EOT
   }
 }
@@ -77,8 +105,8 @@ resource "aws_lambda_function" "api" {
   memory_size = var.lambda_memory_size
   timeout     = var.lambda_timeout
   
-  # Performance optimization
-  reserved_concurrent_executions = 5  # Limit to avoid unexpected charges
+  # Performance optimization - removed concurrency limit due to AWS account minimum
+  # reserved_concurrent_executions = 5  # Commented out due to account limits
   
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 
@@ -117,7 +145,7 @@ resource "aws_lambda_function_url" "api_url" {
   cors {
     allow_credentials = false
     allow_origins     = var.cors_origins
-    allow_methods     = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    allow_methods     = ["*"]
     allow_headers     = ["date", "keep-alive", "content-type", "authorization"]
     expose_headers    = ["date", "keep-alive"]
     max_age           = 86400

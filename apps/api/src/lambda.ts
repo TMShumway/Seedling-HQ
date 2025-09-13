@@ -15,10 +15,7 @@ export const handler = async (
       stage: process.env.STAGE || 'dev'
     });
 
-    // Wait for the app to be ready
-    await app.ready();
-    
-    // Create the lambda proxy
+    // Create the lambda proxy before calling app.ready()
     proxy = awsLambda(app, {
       binaryMimeTypes: [
         'application/octet-stream',
@@ -28,6 +25,9 @@ export const handler = async (
         'video/*'
       ]
     });
+    
+    // Wait for the app to be ready after lambda proxy is created
+    await app.ready();
   }
 
   // Handle the request
