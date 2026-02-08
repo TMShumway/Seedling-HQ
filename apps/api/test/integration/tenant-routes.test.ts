@@ -1,0 +1,168 @@
+import { describe, it, expect, beforeEach, afterAll } from 'vitest';
+import { buildTestApp, truncateAll, getPool } from './setup.js';
+
+afterAll(async () => {
+  await getPool().end();
+});
+
+describe('POST /v1/tenants', () => {
+  beforeEach(async () => {
+    await truncateAll();
+  });
+
+  it('returns 201 with tenant and user on success', async () => {
+    const app = await buildTestApp();
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: {
+        businessName: 'Acme Landscaping',
+        ownerEmail: 'owner@acme.test',
+        ownerFullName: 'Jane Doe',
+      },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const body = res.json();
+    expect(body.tenant.slug).toBe('acme-landscaping');
+    expect(body.tenant.name).toBe('Acme Landscaping');
+    expect(body.tenant.status).toBe('active');
+    expect(body.user.email).toBe('owner@acme.test');
+    expect(body.user.fullName).toBe('Jane Doe');
+    expect(body.user.role).toBe('owner');
+    expect(body.user.tenantId).toBe(body.tenant.id);
+  });
+
+  it('returns 409 for duplicate slug', async () => {
+    const app = await buildTestApp();
+
+    // First create
+    await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: {
+        businessName: 'Acme Landscaping',
+        ownerEmail: 'owner1@acme.test',
+        ownerFullName: 'Jane Doe',
+      },
+    });
+
+    // Duplicate
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: {
+        businessName: 'Acme Landscaping',
+        ownerEmail: 'owner2@acme.test',
+        ownerFullName: 'John Doe',
+      },
+    });
+
+    expect(res.statusCode).toBe(409);
+    const body = res.json();
+    expect(body.error.code).toBe('CONFLICT');
+  });
+
+  it('returns 400 for invalid body', async () => {
+    const app = await buildTestApp();
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: {
+        businessName: '',
+        ownerEmail: 'not-an-email',
+        ownerFullName: '',
+      },
+    });
+
+    expect(res.statusCode).toBe(400);
+  });
+});
+
+describe('GET /v1/tenants/me', () => {
+  beforeEach(async () => {
+    await truncateAll();
+  });
+
+  it('returns the seeded tenant for the auth context', async () => {
+    const app = await buildTestApp();
+
+    // Create a tenant first to match auth context
+    await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: {
+        businessName: 'My Business',
+        ownerEmail: 'owner@test.com',
+        ownerFullName: 'Owner',
+      },
+    });
+
+    // Get the created tenant id from the response
+    const createRes = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: {
+        businessName: 'Auth Tenant',
+        ownerEmail: 'auth@test.com',
+        ownerFullName: 'Auth Owner',
+      },
+    });
+    const created = createRes.json();
+
+    // Build app with matching auth context
+    const authedApp = await buildTestApp({
+      DEV_AUTH_TENANT_ID: created.tenant.id,
+      DEV_AUTH_USER_ID: created.user.id,
+    });
+
+    const res = await authedApp.inject({
+      method: 'GET',
+      url: '/v1/tenants/me',
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.id).toBe(created.tenant.id);
+    expect(body.name).toBe('Auth Tenant');
+  });
+});
+
+describe('GET /v1/users/me', () => {
+  beforeEach(async () => {
+    await truncateAll();
+  });
+
+  it('returns the user for the auth context', async () => {
+    const app = await buildTestApp();
+
+    const createRes = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: {
+        businessName: 'User Tenant',
+        ownerEmail: 'user@test.com',
+        ownerFullName: 'Test User',
+      },
+    });
+    const created = createRes.json();
+
+    const authedApp = await buildTestApp({
+      DEV_AUTH_TENANT_ID: created.tenant.id,
+      DEV_AUTH_USER_ID: created.user.id,
+    });
+
+    const res = await authedApp.inject({
+      method: 'GET',
+      url: '/v1/users/me',
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.id).toBe(created.user.id);
+    expect(body.email).toBe('user@test.com');
+    expect(body.fullName).toBe('Test User');
+  });
+});
