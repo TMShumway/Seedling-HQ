@@ -48,3 +48,6 @@ pnpm-debug.log*
 
 # Vite
 apps/web/.vite/ 
+
+# Claude
+.claude/settings.local.json
