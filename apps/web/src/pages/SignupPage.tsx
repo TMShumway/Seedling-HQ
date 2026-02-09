@@ -20,7 +20,9 @@ export function SignupPage() {
     setLoading(true);
 
     try {
-      await apiClient.createTenant({ businessName, ownerEmail, ownerFullName });
+      const result = await apiClient.createTenant({ businessName, ownerEmail, ownerFullName });
+      localStorage.setItem('dev_tenant_id', result.tenant.id);
+      localStorage.setItem('dev_user_id', result.user.id);
       navigate('/dashboard');
     } catch (err) {
       if (err instanceof ApiClientError) {

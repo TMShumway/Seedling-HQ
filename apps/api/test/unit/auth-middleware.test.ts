@@ -16,8 +16,8 @@ function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {
   };
 }
 
-function makeRequest(): FastifyRequest {
-  return { authContext: null } as unknown as FastifyRequest;
+function makeRequest(headers: Record<string, string> = {}): FastifyRequest {
+  return { authContext: null, headers } as unknown as FastifyRequest;
 }
 
 function makeReply(): FastifyReply {
@@ -64,5 +64,20 @@ describe('authMiddleware', () => {
     expect(request.authContext.tenant_id).toBe('custom-tenant');
     expect(request.authContext.user_id).toBe('custom-user');
     expect(request.authContext.role).toBe('admin');
+  });
+
+  it('overrides tenant/user from X-Dev headers in local mode', async () => {
+    const config = makeConfig();
+    const middleware = buildAuthMiddleware(config);
+    const request = makeRequest({
+      'x-dev-tenant-id': 'override-tenant',
+      'x-dev-user-id': 'override-user',
+    });
+
+    await middleware(request, makeReply());
+
+    expect(request.authContext.tenant_id).toBe('override-tenant');
+    expect(request.authContext.user_id).toBe('override-user');
+    expect(request.authContext.role).toBe('owner');
   });
 });

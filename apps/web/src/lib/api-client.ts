@@ -15,6 +15,15 @@ class ApiClientError extends Error {
   }
 }
 
+function getDevAuthHeaders(): Record<string, string> {
+  const tenantId = localStorage.getItem('dev_tenant_id');
+  const userId = localStorage.getItem('dev_user_id');
+  return {
+    ...(tenantId ? { 'X-Dev-Tenant-Id': tenantId } : {}),
+    ...(userId ? { 'X-Dev-User-Id': userId } : {}),
+  };
+}
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const correlationId = crypto.randomUUID();
 
@@ -23,6 +32,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     headers: {
       ...(body ? { 'Content-Type': 'application/json' } : {}),
       'X-Correlation-Id': correlationId,
+      ...getDevAuthHeaders(),
     },
     body: body ? JSON.stringify(body) : undefined,
   });
