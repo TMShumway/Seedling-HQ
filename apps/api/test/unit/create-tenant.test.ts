@@ -175,6 +175,31 @@ describe('CreateTenantUseCase', () => {
     );
   });
 
+  it('maps DB unique-constraint violation on slug to ConflictError (race condition)', async () => {
+    const dbError = Object.assign(new Error('duplicate key value violates unique constraint'), {
+      code: '23505',
+      constraint: 'tenants_slug_unique',
+    });
+    tenantRepo = makeTenantRepo({
+      create: vi.fn(async () => { throw dbError; }),
+    });
+    uow = makeUnitOfWork(tenantRepo, userRepo, auditRepo);
+    useCase = new CreateTenantUseCase(tenantRepo, uow);
+
+    await expect(useCase.execute(validInput, correlationId)).rejects.toThrow(ConflictError);
+  });
+
+  it('re-throws non-unique-constraint errors from uow.run()', async () => {
+    const randomError = new Error('connection lost');
+    tenantRepo = makeTenantRepo({
+      create: vi.fn(async () => { throw randomError; }),
+    });
+    uow = makeUnitOfWork(tenantRepo, userRepo, auditRepo);
+    useCase = new CreateTenantUseCase(tenantRepo, uow);
+
+    await expect(useCase.execute(validInput, correlationId)).rejects.toThrow('connection lost');
+  });
+
   it('calls userRepo.create with correct fields', async () => {
     const result = await useCase.execute(validInput, correlationId);
 

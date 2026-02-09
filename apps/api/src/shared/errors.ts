@@ -32,3 +32,8 @@ export class UnauthorizedError extends AppError {
     super(message, 'UNAUTHORIZED', 401);
   }
 }
+
+/** SQL state 23505 — unique_violation. Works with pg / node-postgres errors. */
+export function isUniqueViolation(err: unknown): boolean {
+  return typeof err === 'object' && err !== null && 'code' in err && (err as { code: unknown }).code === '23505';
+}

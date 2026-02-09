@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { TenantRepository } from '../ports/tenant-repository.js';
 import type { UnitOfWork } from '../ports/unit-of-work.js';
 import type { CreateTenantInput, CreateTenantOutput } from '../dto/create-tenant-dto.js';
-import { ConflictError, ValidationError } from '../../shared/errors.js';
+import { ConflictError, ValidationError, isUniqueViolation } from '../../shared/errors.js';
 
 export function slugify(name: string): string {
   return name
@@ -32,46 +32,53 @@ export class CreateTenantUseCase {
     const tenantId = randomUUID();
     const userId = randomUUID();
 
-    return this.uow.run(async ({ tenantRepo, userRepo, auditRepo }) => {
-      const tenant = await tenantRepo.create({
-        id: tenantId,
-        slug,
-        name: input.businessName,
-        status: 'active',
-      });
+    try {
+      return await this.uow.run(async ({ tenantRepo, userRepo, auditRepo }) => {
+        const tenant = await tenantRepo.create({
+          id: tenantId,
+          slug,
+          name: input.businessName,
+          status: 'active',
+        });
 
-      const user = await userRepo.create({
-        id: userId,
-        tenantId,
-        email: input.ownerEmail,
-        fullName: input.ownerFullName,
-        role: 'owner',
-        status: 'active',
-      });
+        const user = await userRepo.create({
+          id: userId,
+          tenantId,
+          email: input.ownerEmail,
+          fullName: input.ownerFullName,
+          role: 'owner',
+          status: 'active',
+        });
 
-      await auditRepo.record({
-        id: randomUUID(),
-        tenantId,
-        principalType: 'internal',
-        principalId: userId,
-        eventName: 'tenant.created',
-        subjectType: 'tenant',
-        subjectId: tenantId,
-        correlationId,
-      });
+        await auditRepo.record({
+          id: randomUUID(),
+          tenantId,
+          principalType: 'internal',
+          principalId: userId,
+          eventName: 'tenant.created',
+          subjectType: 'tenant',
+          subjectId: tenantId,
+          correlationId,
+        });
 
-      await auditRepo.record({
-        id: randomUUID(),
-        tenantId,
-        principalType: 'internal',
-        principalId: userId,
-        eventName: 'auth.signup',
-        subjectType: 'user',
-        subjectId: userId,
-        correlationId,
-      });
+        await auditRepo.record({
+          id: randomUUID(),
+          tenantId,
+          principalType: 'internal',
+          principalId: userId,
+          eventName: 'auth.signup',
+          subjectType: 'user',
+          subjectId: userId,
+          correlationId,
+        });
 
-      return { tenant, user };
-    });
+        return { tenant, user };
+      });
+    } catch (err: unknown) {
+      if (isUniqueViolation(err)) {
+        throw new ConflictError(`Tenant with slug "${slug}" already exists`);
+      }
+      throw err;
+    }
   }
 }

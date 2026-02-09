@@ -24,6 +24,7 @@
 - **Manual shadcn components** — hand-written instead of CLI-generated (button, input, label, card, sheet)
 - **UnitOfWork pattern** for atomic writes — tenant + user + audit events wrapped in a single DB transaction via `DrizzleUnitOfWork`
 - **Empty slug rejection** — `slugify()` can produce empty strings from non-alphanumeric input; validated before persisting
+- **Slug race-condition safety** — concurrent signups with the same name can pass the pre-check; DB unique-constraint violations (SQL state `23505`) are caught and mapped to `ConflictError` (409) via `isUniqueViolation()`
 
 ## Deferred (not in S-001)
 - Cognito JWT validation (`AUTH_MODE=cognito`)
@@ -96,7 +97,7 @@
 - [x] **4.3** Final cleanup
 
 ## Test Summary
-- **17 unit tests** (create-tenant use case + slugify + empty-slug validation + auth middleware)
+- **19 unit tests** (create-tenant use case + slugify + empty-slug validation + slug race handling + auth middleware)
 - **7 integration tests** (tenant routes + cross-tenant isolation)
 - **8 E2E tests** (signup flow + mobile + a11y, desktop + mobile chrome)
-- **Total: 32 tests, all passing**
+- **Total: 34 tests, all passing**

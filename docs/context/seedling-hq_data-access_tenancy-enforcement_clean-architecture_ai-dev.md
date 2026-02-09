@@ -171,13 +171,22 @@ Atomic writes use a `UnitOfWork` port (`application/ports/unit-of-work.ts`) back
 
 Example:
 ```ts
-return this.uow.run(async ({ tenantRepo, userRepo, auditRepo }) => {
-  const tenant = await tenantRepo.create({ ... });
-  const user = await userRepo.create({ ... });
-  await auditRepo.record({ ... });
-  return { tenant, user };
-});
+try {
+  return await this.uow.run(async ({ tenantRepo, userRepo, auditRepo }) => {
+    const tenant = await tenantRepo.create({ ... });
+    const user = await userRepo.create({ ... });
+    await auditRepo.record({ ... });
+    return { tenant, user };
+  });
+} catch (err) {
+  if (isUniqueViolation(err)) {
+    throw new ConflictError(`Tenant with slug "${slug}" already exists`);
+  }
+  throw err;
+}
 ```
+
+**Defensive unique-constraint handling:** Pre-checks (e.g. `getBySlug`) stay outside the transaction as a fast path, but concurrent requests can race past them. Always wrap `uow.run()` in a try/catch that maps SQL state `23505` (unique_violation) to the appropriate domain error (e.g. `ConflictError`). Use the `isUniqueViolation()` helper from `shared/errors.ts`.
 
 ---
 
