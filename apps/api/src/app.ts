@@ -70,7 +70,7 @@ export async function createApp({ config, db }: CreateAppOptions) {
   await app.register(buildTenantRoutes({ tenantRepo, uow, config }));
   await app.register(buildUserRoutes({ userRepo, config }));
   await app.register(buildBusinessSettingsRoutes({ settingsRepo, auditRepo, config }));
-  await app.register(buildServiceCategoryRoutes({ categoryRepo, auditRepo, config }));
+  await app.register(buildServiceCategoryRoutes({ categoryRepo, serviceItemRepo, auditRepo, config }));
   await app.register(buildServiceItemRoutes({ serviceItemRepo, categoryRepo, auditRepo, config }));
 
   return app;

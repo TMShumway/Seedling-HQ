@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { ServiceCategoryRepository } from '../ports/service-category-repository.js';
+import type { ServiceItemRepository } from '../ports/service-item-repository.js';
 import type { AuditEventRepository } from '../ports/audit-event-repository.js';
 import type { DeactivateServiceCategoryInput } from '../dto/service-category-dto.js';
 import { NotFoundError } from '../../shared/errors.js';
@@ -7,6 +8,7 @@ import { NotFoundError } from '../../shared/errors.js';
 export class DeactivateServiceCategoryUseCase {
   constructor(
     private categoryRepo: ServiceCategoryRepository,
+    private serviceItemRepo: ServiceItemRepository,
     private auditRepo: AuditEventRepository,
   ) {}
 
@@ -18,6 +20,8 @@ export class DeactivateServiceCategoryUseCase {
     if (!deactivated) {
       throw new NotFoundError('Service category not found');
     }
+
+    await this.serviceItemRepo.deactivateByCategoryId(input.tenantId, input.id);
 
     await this.auditRepo.record({
       id: randomUUID(),

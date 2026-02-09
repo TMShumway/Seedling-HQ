@@ -144,7 +144,7 @@ Claude.md
 | Wizard form pattern | `<div>` wrapper, not `<form>` | S-002 | Native inputs (time, number) trigger implicit submit in `<form>`; use explicit `onClick` |
 | E2E DB isolation | `db:reset` → `db:push` → `db:seed` in globalSetup | S-002 | Truncates all tables before each E2E run for clean state |
 | Local auth override | `X-Dev-Tenant-Id` / `X-Dev-User-Id` headers | S-002 | Frontend stores signup IDs in localStorage; backend overrides env var defaults per-request |
-| Service catalog structure | Two-level: categories → service items | S-003 | Soft delete via `active` flag; prices in integer cents |
+| Service catalog structure | Two-level: categories → service items | S-003 | Soft delete via `active` flag (cascades to items on category delete); prices in integer cents |
 | Price storage | Integer (cents) in DB, dollars in UI | S-003 | Avoids floating-point precision; frontend converts |
 | Unit types | String enum: flat, hourly, per_sqft, per_unit, per_visit | S-003 | Fixed set in code, varchar in DB |
 | Read use cases | Direct repo calls in route handlers | S-003 | No business logic for reads; avoids boilerplate wrappers |

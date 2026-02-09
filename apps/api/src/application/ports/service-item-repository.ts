@@ -7,5 +7,6 @@ export interface ServiceItemRepository {
   create(item: Omit<ServiceItem, 'createdAt' | 'updatedAt'>): Promise<ServiceItem>;
   update(tenantId: string, id: string, patch: Partial<Pick<ServiceItem, 'name' | 'description' | 'unitPrice' | 'unitType' | 'estimatedDurationMinutes' | 'sortOrder'>>): Promise<ServiceItem | null>;
   deactivate(tenantId: string, id: string): Promise<boolean>;
+  deactivateByCategoryId(tenantId: string, categoryId: string): Promise<number>;
   countByCategoryId(tenantId: string, categoryId: string): Promise<number>;
 }

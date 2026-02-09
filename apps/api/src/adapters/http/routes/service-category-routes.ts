@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import type { ServiceCategory } from '../../../domain/entities/service-category.js';
 import type { ServiceCategoryRepository } from '../../../application/ports/service-category-repository.js';
+import type { ServiceItemRepository } from '../../../application/ports/service-item-repository.js';
 import type { AuditEventRepository } from '../../../application/ports/audit-event-repository.js';
 import { CreateServiceCategoryUseCase } from '../../../application/usecases/create-service-category.js';
 import { UpdateServiceCategoryUseCase } from '../../../application/usecases/update-service-category.js';
@@ -49,12 +50,13 @@ function serializeCategory(cat: ServiceCategory) {
 
 export function buildServiceCategoryRoutes(deps: {
   categoryRepo: ServiceCategoryRepository;
+  serviceItemRepo: ServiceItemRepository;
   auditRepo: AuditEventRepository;
   config: AppConfig;
 }) {
   const createUseCase = new CreateServiceCategoryUseCase(deps.categoryRepo, deps.auditRepo);
   const updateUseCase = new UpdateServiceCategoryUseCase(deps.categoryRepo, deps.auditRepo);
-  const deactivateUseCase = new DeactivateServiceCategoryUseCase(deps.categoryRepo, deps.auditRepo);
+  const deactivateUseCase = new DeactivateServiceCategoryUseCase(deps.categoryRepo, deps.serviceItemRepo, deps.auditRepo);
   const authMiddleware = buildAuthMiddleware(deps.config);
 
   return async function serviceCategoryRoutes(app: FastifyInstance) {

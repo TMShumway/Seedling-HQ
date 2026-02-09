@@ -3,12 +3,26 @@ import { CreateServiceCategoryUseCase } from '../../src/application/usecases/cre
 import { UpdateServiceCategoryUseCase } from '../../src/application/usecases/update-service-category.js';
 import { DeactivateServiceCategoryUseCase } from '../../src/application/usecases/deactivate-service-category.js';
 import type { ServiceCategoryRepository } from '../../src/application/ports/service-category-repository.js';
+import type { ServiceItemRepository } from '../../src/application/ports/service-item-repository.js';
 import type {
   AuditEventRepository,
   AuditEvent,
 } from '../../src/application/ports/audit-event-repository.js';
 import { ValidationError } from '../../src/shared/errors.js';
 import { NotFoundError } from '../../src/shared/errors.js';
+
+function makeItemRepo(overrides: Partial<ServiceItemRepository> = {}): ServiceItemRepository {
+  return {
+    list: vi.fn(async () => []),
+    getById: vi.fn(async () => null),
+    create: vi.fn(async (item) => ({ ...item, createdAt: new Date(), updatedAt: new Date() })),
+    update: vi.fn(async () => null),
+    deactivate: vi.fn(async () => true),
+    deactivateByCategoryId: vi.fn(async () => 0),
+    countByCategoryId: vi.fn(async () => 0),
+    ...overrides,
+  };
+}
 
 function makeCategoryRepo(
   overrides: Partial<ServiceCategoryRepository> = {},
@@ -122,13 +136,15 @@ describe('UpdateServiceCategoryUseCase', () => {
 
 describe('DeactivateServiceCategoryUseCase', () => {
   let categoryRepo: ServiceCategoryRepository;
+  let itemRepo: ServiceItemRepository;
   let auditRepo: ReturnType<typeof makeAuditRepo>;
   let useCase: DeactivateServiceCategoryUseCase;
 
   beforeEach(() => {
     categoryRepo = makeCategoryRepo();
+    itemRepo = makeItemRepo();
     auditRepo = makeAuditRepo();
-    useCase = new DeactivateServiceCategoryUseCase(categoryRepo, auditRepo);
+    useCase = new DeactivateServiceCategoryUseCase(categoryRepo, itemRepo, auditRepo);
   });
 
   it('deactivates category and records audit event', async () => {
@@ -142,11 +158,25 @@ describe('DeactivateServiceCategoryUseCase', () => {
     expect(auditRepo.recorded[0].eventName).toBe('service_category.deactivated');
   });
 
+  it('cascades deactivation to child service items', async () => {
+    itemRepo = makeItemRepo({
+      deactivateByCategoryId: vi.fn(async () => 3),
+    });
+    useCase = new DeactivateServiceCategoryUseCase(categoryRepo, itemRepo, auditRepo);
+
+    await useCase.execute(
+      { tenantId: 'tenant-1', userId: 'user-1', id: 'cat-1' },
+      correlationId,
+    );
+
+    expect(itemRepo.deactivateByCategoryId).toHaveBeenCalledWith('tenant-1', 'cat-1');
+  });
+
   it('throws NotFoundError when category does not exist', async () => {
     categoryRepo = makeCategoryRepo({
       deactivate: vi.fn(async () => false),
     });
-    useCase = new DeactivateServiceCategoryUseCase(categoryRepo, auditRepo);
+    useCase = new DeactivateServiceCategoryUseCase(categoryRepo, itemRepo, auditRepo);
 
     await expect(
       useCase.execute(

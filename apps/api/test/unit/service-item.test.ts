@@ -31,6 +31,7 @@ function makeItemRepo(overrides: Partial<ServiceItemRepository> = {}): ServiceIt
       ...patch,
     })),
     deactivate: vi.fn(async () => true),
+    deactivateByCategoryId: vi.fn(async () => 0),
     countByCategoryId: vi.fn(async () => 0),
     ...overrides,
   };

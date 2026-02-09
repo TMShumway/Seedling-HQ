@@ -93,6 +93,21 @@ export class DrizzleServiceItemRepository implements ServiceItemRepository {
     return rows.length > 0;
   }
 
+  async deactivateByCategoryId(tenantId: string, categoryId: string): Promise<number> {
+    const rows = await this.db
+      .update(serviceItems)
+      .set({ active: false, updatedAt: new Date() })
+      .where(
+        and(
+          eq(serviceItems.tenantId, tenantId),
+          eq(serviceItems.categoryId, categoryId),
+          eq(serviceItems.active, true),
+        ),
+      )
+      .returning();
+    return rows.length;
+  }
+
   async countByCategoryId(tenantId: string, categoryId: string): Promise<number> {
     const result = await this.db
       .select({ count: sql<number>`count(*)::int` })

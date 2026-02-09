@@ -29,9 +29,9 @@
 ### Phase 3: Infrastructure + Backend Tests
 - [x] Create `DrizzleServiceCategoryRepository`
 - [x] Create `DrizzleServiceItemRepository`
-- [x] Unit tests: service category use cases (6 tests)
+- [x] Unit tests: service category use cases (7 tests)
 - [x] Unit tests: service item use cases (7 tests)
-- [x] Integration tests: service category routes (8 tests)
+- [x] Integration tests: service category routes (9 tests)
 - [x] Integration tests: service item routes (8 tests)
 - [x] Cross-tenant tests (+4 tests)
 - [x] Update integration test `truncateAll`
@@ -74,14 +74,14 @@
 
 | Suite | Count |
 |-------|-------|
-| Unit | 40 |
-| Integration | 36 |
+| Unit | 41 |
+| Integration | 37 |
 | E2E (total) | 30 (23 run + 7 skipped) |
-| **Total** | **106** |
+| **Total** | **108** |
 
 ## Design Decisions
 - Price stored as integer cents in DB
-- Soft delete via `active` boolean
+- Soft delete via `active` boolean — cascades to child service items when category is deactivated
 - Unique constraints: `(tenant_id, name)` for categories, `(tenant_id, category_id, name)` for services
 - Unit types: flat, hourly, per_sqft, per_unit, per_visit
 - Read operations done directly in route handlers (no use case class)

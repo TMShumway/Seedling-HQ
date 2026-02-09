@@ -216,4 +216,56 @@ describe('DELETE /v1/services/categories/:id', () => {
 
     expect(deleteRes.statusCode).toBe(204);
   });
+
+  it('cascades deactivation to child service items', async () => {
+    const { app } = await createTenantAndGetApp();
+
+    // Create a category with two services
+    const catRes = await app.inject({
+      method: 'POST',
+      url: '/v1/services/categories',
+      payload: { name: 'Cascade Test' },
+    });
+    const catId = catRes.json().id;
+
+    await app.inject({
+      method: 'POST',
+      url: '/v1/services',
+      payload: { categoryId: catId, name: 'Service A', unitPrice: 1000, unitType: 'flat' },
+    });
+    await app.inject({
+      method: 'POST',
+      url: '/v1/services',
+      payload: { categoryId: catId, name: 'Service B', unitPrice: 2000, unitType: 'hourly' },
+    });
+
+    // Verify services exist
+    const beforeList = await app.inject({
+      method: 'GET',
+      url: `/v1/services?categoryId=${catId}`,
+    });
+    expect(beforeList.json()).toHaveLength(2);
+
+    // Delete the category
+    const deleteRes = await app.inject({
+      method: 'DELETE',
+      url: `/v1/services/categories/${catId}`,
+    });
+    expect(deleteRes.statusCode).toBe(204);
+
+    // Verify services are also deactivated
+    const afterList = await app.inject({
+      method: 'GET',
+      url: `/v1/services?categoryId=${catId}`,
+    });
+    expect(afterList.json()).toHaveLength(0);
+
+    // Verify services still exist when including inactive
+    const inactiveList = await app.inject({
+      method: 'GET',
+      url: `/v1/services?categoryId=${catId}&includeInactive=true`,
+    });
+    expect(inactiveList.json()).toHaveLength(2);
+    expect(inactiveList.json().every((s: { active: boolean }) => s.active === false)).toBe(true);
+  });
 });
