@@ -6,7 +6,7 @@
 - [x] Add `properties` table to schema
 - [x] Update `reset.ts` TRUNCATE order
 - [x] Update integration `setup.ts` TRUNCATE order
-- [ ] Run `db:push` (DB not running — apply when starting docker-compose)
+- [x] Run `db:push`
 
 ## Phase 2: Domain Layer
 - [x] Create `client.ts` entity
@@ -73,6 +73,6 @@
 ## Verification
 - [x] Frontend builds cleanly
 - [x] All 56 unit tests pass (41 existing + 15 new)
-- [ ] Integration tests (requires DB)
-- [ ] E2E tests (requires DB + dev server)
-- [ ] `db:push` schema applied
+- [x] Integration tests — 61 passing (including 27 new client/property + 4 cross-tenant)
+- [x] E2E tests — 32 passing, 12 skipped (non-desktop-chrome)
+- [x] `db:push` schema applied

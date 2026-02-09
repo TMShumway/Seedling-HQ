@@ -9,7 +9,7 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 
 ## 1) Entity overview
 
-### 1.1 Implemented entities (S-001 through S-003)
+### 1.1 Implemented entities (S-001 through S-004)
 
 | Entity | Story | Tenant-scoped | Singleton | Soft delete |
 |--------|-------|---------------|-----------|-------------|
@@ -18,14 +18,14 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 | BusinessSettings | S-002 | Yes | Yes (per tenant) | No |
 | ServiceCategory | S-003 | Yes | No | Yes (`active` flag) |
 | ServiceItem | S-003 | Yes | No | Yes (`active` flag) |
+| Client | S-004 | Yes | No | Yes (`active` flag) |
+| Property | S-004 | Yes | No | Yes (`active` flag) |
 | AuditEvent | S-001 | Yes | No | No (append-only) |
 
 ### 1.2 Planned entities (future stories)
 
 | Entity | Story | Description |
 |--------|-------|-------------|
-| Client | S-004 | External customer of a tenant (contact info, notes) |
-| Property | S-004 | Service address belonging to a client |
 | Request | S-006 | Lead intake from public form or manual entry |
 | Quote | S-009 | Priced proposal sent to client for approval |
 | Job | S-012 | Work order created from an approved quote |
@@ -157,33 +157,57 @@ interface ServiceItem {
 **Unit type values:** `flat`, `hourly`, `per_sqft`, `per_unit`, `per_visit`
 **Price convention:** Stored as integer cents in DB, displayed as dollars in UI.
 
+### Client
+
+```typescript
+interface Client {
+  id: string;              // UUID
+  tenantId: string;        // FK → tenants.id
+  firstName: string;
+  lastName: string;
+  email: string | null;    // nullable (phone-only clients OK)
+  phone: string | null;
+  company: string | null;
+  notes: string | null;
+  tags: string[];          // JSONB array
+  active: boolean;         // soft delete flag
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
+
+**Uniqueness:** `(tenantId, email)` — nulls are distinct in Postgres, so phone-only clients are fine.
+**Soft delete:** Setting `active = false` also cascades to all child Properties via `deactivateByClientId`.
+**Pagination:** Cursor-based keyset on `(created_at DESC, id DESC)` with base64url-encoded JSON cursor.
+**Search:** ILIKE across firstName, lastName, email, phone, company.
+
+### Property
+
+```typescript
+interface Property {
+  id: string;              // UUID
+  tenantId: string;        // FK → tenants.id
+  clientId: string;        // FK → clients.id
+  addressLine1: string;
+  addressLine2: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  notes: string | null;
+  active: boolean;         // soft delete flag
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
+
+**Uniqueness:** `(tenantId, clientId, addressLine1)`
+**URL pattern:** Listed at `/v1/clients/:clientId/properties` (nested), operated at `/v1/properties/:id` (flat).
+
 ---
 
 ## 3) Planned entity definitions and status machines
 
 > These definitions are **draft specifications** for upcoming stories. Finalize during story planning.
-
-### Client (S-004)
-
-```
-Client {
-  id, tenantId, firstName, lastName, email, phone, company,
-  notes, tags, createdAt, updatedAt
-}
-```
-
-No status machine. Clients are active records; deactivation TBD.
-
-### Property (S-004)
-
-```
-Property {
-  id, tenantId, clientId, addressLine1, addressLine2, city, state, zip,
-  notes, createdAt, updatedAt
-}
-```
-
-A client can have multiple properties (service addresses).
 
 ### Request (S-006)
 
@@ -350,7 +374,7 @@ Tenant
 
 ## 5) Audit event catalog
 
-### Implemented events (S-001 through S-003)
+### Implemented events (S-001 through S-004)
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
@@ -364,12 +388,17 @@ Tenant
 | `service_item.created` | service_item | New service item added | S-003 |
 | `service_item.updated` | service_item | Service item fields changed | S-003 |
 | `service_item.deactivated` | service_item | Service item soft-deleted | S-003 |
+| `client.created` | client | New client record created | S-004 |
+| `client.updated` | client | Client fields changed | S-004 |
+| `client.deactivated` | client | Client soft-deleted (cascades to properties) | S-004 |
+| `property.created` | property | New property added to client | S-004 |
+| `property.updated` | property | Property fields changed | S-004 |
+| `property.deactivated` | property | Property soft-deleted | S-004 |
 
 ### Planned events (future stories)
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
-| `client.created` | client | New client record created | S-004 |
 | `request.created` | request | New request submitted | S-006 |
 | `request.converted` | request | Request converted to quote | S-008 |
 | `quote.created` | quote | Quote draft created | S-009 |

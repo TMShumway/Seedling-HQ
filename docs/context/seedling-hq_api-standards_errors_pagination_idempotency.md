@@ -142,11 +142,11 @@ All other routes require auth via the `requireAuth` preHandler hook.
 
 ---
 
-## 5) Pagination (conventions for future stories)
+## 5) Pagination
 
-> Not yet implemented. These conventions should be followed starting with the first list endpoint that needs pagination (likely S-004 Client list or S-006 Request list).
+> Implemented in S-004 (Client list). All future list endpoints that need pagination should follow this pattern.
 
-### Cursor-based pagination (preferred)
+### Cursor-based pagination
 
 ```
 GET /v1/clients?limit=50&cursor=<opaque_string>
@@ -161,6 +161,13 @@ GET /v1/clients?limit=50&cursor=<opaque_string>
   "hasMore": true
 }
 ```
+
+### Implementation details (S-004)
+
+- **Cursor encoding:** base64url JSON of `{ id, createdAt }` — opaque to clients
+- **Keyset condition:** `WHERE (created_at, id) < (cursor_ca, cursor_id) ORDER BY created_at DESC, id DESC`
+- **hasMore detection:** Fetch `limit + 1` rows; if extra row exists, `hasMore = true` and trim the result
+- **Code location:** `encodeCursor()` / `decodeCursor()` in `drizzle-client-repository.ts`
 
 ### Defaults
 
@@ -178,12 +185,15 @@ GET /v1/clients?limit=50&cursor=<opaque_string>
 
 ## 6) Filtering conventions
 
-### Established patterns (S-003)
+### Established patterns (S-003 through S-004)
 
 | Parameter | Type | Description | Example |
 |-----------|------|-------------|---------|
 | `includeInactive` | boolean | Include soft-deleted entities | `?includeInactive=true` |
 | `categoryId` | UUID | Filter items by category | `?categoryId=abc-123` |
+| `search` | string | ILIKE search across multiple columns | `?search=smith` |
+| `limit` | number | Page size for cursor pagination | `?limit=25` |
+| `cursor` | string | Opaque cursor from previous page | `?cursor=eyJpZCI6...` |
 
 ### Future conventions
 

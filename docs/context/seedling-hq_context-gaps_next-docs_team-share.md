@@ -44,8 +44,8 @@ Seedling-HQ currently has ten context packs:
    - Secure-link token storage, outbox data model, S3 keying rules
 
 9) **Domain model + status machines + audit catalog**
-   - Implemented and planned entity definitions, status machines
-   - Audit event catalog (10 implemented + 21 planned), entity relationships
+   - Implemented entity definitions (through S-004) and planned entity definitions with status machines
+   - Audit event catalog (16 implemented + 15 planned), entity relationships
 
 10) **API standards (errors, pagination, idempotency)**
     - Error shape and codes, response conventions, auth context contract
@@ -57,6 +57,7 @@ This foundation is strong. What remains are the "rails" that prevent agents (and
 - **Internal auth mechanism (2026-02-08):** AWS Cognito chosen. Documented in Architecture doc Section 4.1, Security Baseline Section 3.2/3.4, DevEx Section 5.2. Resolves Architecture doc Section 15F open risk.
 - **S-002 implemented (2026-02-08):** Business settings CRUD (singleton upsert pattern), onboarding wizard, settings page. Introduces `BusinessSettings`, `DaySchedule`, `BusinessHours` domain entities. Establishes patterns: singleton upsert via `onConflictDoUpdate`, GET-returns-null-on-empty, wizard `<div>` (not `<form>`), `db:reset` for E2E isolation.
 - **S-003 implemented (2026-02-08):** Service catalog (price book v1). Two-level hierarchy: `ServiceCategory` → `ServiceItem`. Prices stored as integer cents, soft delete via `active` boolean with cascade (deactivating a category also deactivates its items via `deactivateByCategoryId`). Unit types: flat/hourly/per_sqft/per_unit/per_visit. Establishes patterns: read-only routes skip use cases (direct repo calls), DELETE returns 204, dollar↔cents conversion in frontend, E2E scoped locators via `.filter({ hasText })`, defensive unique-constraint catch with `isUniqueViolation()`.
+- **S-004 implemented (2026-02-09):** Client + Property management (CRM layer). Two-level hierarchy: `Client` → `Property`. Soft delete with cascade (deactivating a client also deactivates its properties). Introduces cursor-based pagination (`PaginatedResult<T>` with keyset on `(created_at DESC, id DESC)`), server-side ILIKE search across multiple columns, count endpoint for dashboard metrics, nested+flat URL pattern (properties listed under client, operated individually). Frontend uses `useInfiniteQuery` for "Load More" pagination with debounced search. 56 unit, 61 integration, 32 E2E tests passing.
 
 ---
 
@@ -64,7 +65,7 @@ This foundation is strong. What remains are the "rails" that prevent agents (and
 
 ### ~~1) Domain model + canonical status/state machines~~ — DONE
 > Covered by: `seedling-hq_domain-model_status-machines_audit-catalog.md`
-> Defines all implemented entities (Tenant, User, BusinessSettings, ServiceCategory, ServiceItem) with full field lists, planned entities with status machines (Request, Quote, Job, Visit, Invoice), audit event catalog (10 implemented + 21 planned), entity relationships, and source-of-truth rules.
+> Defines all implemented entities (Tenant, User, BusinessSettings, ServiceCategory, ServiceItem) with full field lists, planned entities with status machines (Request, Quote, Job, Visit, Invoice), audit event catalog (16 implemented + 15 planned), entity relationships, and source-of-truth rules.
 
 ### ~~2) API standards and conventions (behavioral contract)~~ — DONE
 > Covered by: `seedling-hq_api-standards_errors_pagination_idempotency.md`
