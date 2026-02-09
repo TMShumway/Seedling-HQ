@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
+import type { ServiceItem } from '../../../domain/entities/service-item.js';
 import type { ServiceItemRepository } from '../../../application/ports/service-item-repository.js';
 import type { ServiceCategoryRepository } from '../../../application/ports/service-category-repository.js';
 import type { AuditEventRepository } from '../../../application/ports/audit-event-repository.js';
@@ -47,9 +48,18 @@ const updateServiceItemBodySchema = z.object({
   sortOrder: z.number().int().min(0).optional(),
 });
 
-function serializeItem(item: { createdAt: Date; updatedAt: Date; [key: string]: unknown }) {
+function serializeItem(item: ServiceItem) {
   return {
-    ...item,
+    id: item.id,
+    tenantId: item.tenantId,
+    categoryId: item.categoryId,
+    name: item.name,
+    description: item.description,
+    unitPrice: item.unitPrice,
+    unitType: item.unitType,
+    estimatedDurationMinutes: item.estimatedDurationMinutes,
+    active: item.active,
+    sortOrder: item.sortOrder,
     createdAt: item.createdAt.toISOString(),
     updatedAt: item.updatedAt.toISOString(),
   };

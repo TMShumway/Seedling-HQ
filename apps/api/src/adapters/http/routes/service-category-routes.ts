@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
+import type { ServiceCategory } from '../../../domain/entities/service-category.js';
 import type { ServiceCategoryRepository } from '../../../application/ports/service-category-repository.js';
 import type { AuditEventRepository } from '../../../application/ports/audit-event-repository.js';
 import { CreateServiceCategoryUseCase } from '../../../application/usecases/create-service-category.js';
@@ -33,9 +34,14 @@ const updateCategoryBodySchema = z.object({
   sortOrder: z.number().int().min(0).optional(),
 });
 
-function serializeCategory(cat: { createdAt: Date; updatedAt: Date; [key: string]: unknown }) {
+function serializeCategory(cat: ServiceCategory) {
   return {
-    ...cat,
+    id: cat.id,
+    tenantId: cat.tenantId,
+    name: cat.name,
+    description: cat.description,
+    sortOrder: cat.sortOrder,
+    active: cat.active,
     createdAt: cat.createdAt.toISOString(),
     updatedAt: cat.updatedAt.toISOString(),
   };
