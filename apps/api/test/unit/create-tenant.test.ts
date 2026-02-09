@@ -6,7 +6,7 @@ import type {
   AuditEventRepository,
   AuditEvent,
 } from '../../src/application/ports/audit-event-repository.js';
-import { ConflictError } from '../../src/shared/errors.js';
+import { ConflictError, ValidationError } from '../../src/shared/errors.js';
 
 function makeTenantRepo(overrides: Partial<TenantRepository> = {}): TenantRepository {
   return {
@@ -58,6 +58,14 @@ describe('slugify', () => {
   it('handles numbers', () => {
     expect(slugify('123 Business')).toBe('123-business');
   });
+
+  it('returns empty string for whitespace-only input', () => {
+    expect(slugify('   ')).toBe('');
+  });
+
+  it('returns empty string for symbol-only input', () => {
+    expect(slugify('!!!')).toBe('');
+  });
 });
 
 describe('CreateTenantUseCase', () => {
@@ -93,6 +101,18 @@ describe('CreateTenantUseCase', () => {
     expect(result.user.role).toBe('owner');
     expect(result.user.status).toBe('active');
     expect(result.user.tenantId).toBe(result.tenant.id);
+  });
+
+  it('throws ValidationError when business name produces empty slug', async () => {
+    await expect(
+      useCase.execute({ ...validInput, businessName: '!!!' }, correlationId),
+    ).rejects.toThrow(ValidationError);
+  });
+
+  it('throws ValidationError for whitespace-only business name', async () => {
+    await expect(
+      useCase.execute({ ...validInput, businessName: '   ' }, correlationId),
+    ).rejects.toThrow(ValidationError);
   });
 
   it('throws ConflictError when slug already exists', async () => {

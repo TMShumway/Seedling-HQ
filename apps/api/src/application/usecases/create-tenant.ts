@@ -3,7 +3,7 @@ import type { TenantRepository } from '../ports/tenant-repository.js';
 import type { UserRepository } from '../ports/user-repository.js';
 import type { AuditEventRepository } from '../ports/audit-event-repository.js';
 import type { CreateTenantInput, CreateTenantOutput } from '../dto/create-tenant-dto.js';
-import { ConflictError } from '../../shared/errors.js';
+import { ConflictError, ValidationError } from '../../shared/errors.js';
 
 export function slugify(name: string): string {
   return name
@@ -22,6 +22,9 @@ export class CreateTenantUseCase {
 
   async execute(input: CreateTenantInput, correlationId: string): Promise<CreateTenantOutput> {
     const slug = slugify(input.businessName);
+    if (!slug) {
+      throw new ValidationError('Business name must contain at least one alphanumeric character');
+    }
 
     const existing = await this.tenantRepo.getBySlug(slug);
     if (existing) {
