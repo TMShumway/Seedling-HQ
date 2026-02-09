@@ -355,6 +355,29 @@ export const apiClient = {
   deactivateProperty: (id: string) =>
     request<void>('DELETE', `/v1/properties/${id}`),
 
+  // Requests (public)
+  submitPublicRequest: (slug: string, input: PublicRequestPayload) =>
+    publicRequest<PublicRequestResponse>('POST', `/v1/public/requests/${slug}`, input),
+
+  // Requests (authenticated)
+  listRequests: (params?: { limit?: number; cursor?: string; search?: string; status?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.limit) qs.set('limit', String(params.limit));
+    if (params?.cursor) qs.set('cursor', params.cursor);
+    if (params?.search) qs.set('search', params.search);
+    if (params?.status) qs.set('status', params.status);
+    const q = qs.toString();
+    return request<PaginatedResponse<RequestResponse>>('GET', `/v1/requests${q ? `?${q}` : ''}`);
+  },
+
+  getRequest: (id: string) =>
+    request<RequestResponse>('GET', `/v1/requests/${id}`),
+
+  countRequests: (status?: string) => {
+    const qs = status ? `?status=${status}` : '';
+    return request<{ count: number }>('GET', `/v1/requests/count${qs}`);
+  },
+
   // Timeline
   getClientTimeline: (clientId: string, params?: { limit?: number; cursor?: string; exclude?: string }) => {
     const qs = new URLSearchParams();
@@ -365,5 +388,60 @@ export const apiClient = {
     return request<PaginatedResponse<TimelineEvent>>('GET', `/v1/clients/${clientId}/timeline${q ? `?${q}` : ''}`);
   },
 };
+
+// Public request (no auth headers)
+async function publicRequest<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const correlationId = crypto.randomUUID();
+
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method,
+    headers: {
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+      'X-Correlation-Id': correlationId,
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!res.ok) {
+    const err: ApiError = await res.json().catch(() => ({
+      error: { code: 'UNKNOWN', message: res.statusText },
+    }));
+    throw new ApiClientError(res.status, err.error.code, err.error.message);
+  }
+
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
+  return res.json() as Promise<T>;
+}
+
+export interface PublicRequestPayload {
+  clientName: string;
+  clientEmail: string;
+  clientPhone?: string | null;
+  description: string;
+  website?: string; // honeypot
+}
+
+export interface PublicRequestResponse {
+  id: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface RequestResponse {
+  id: string;
+  tenantId: string;
+  source: string;
+  clientName: string;
+  clientEmail: string;
+  clientPhone: string | null;
+  description: string;
+  status: string;
+  assignedUserId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export { ApiClientError };
