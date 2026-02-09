@@ -68,6 +68,10 @@ export class DrizzleAuditEventRepository implements AuditEventRepository {
       inArray(auditEvents.subjectId, subjectIds),
     ];
 
+    if (filters?.subjectTypes && filters.subjectTypes.length > 0) {
+      conditions.push(inArray(auditEvents.subjectType, filters.subjectTypes));
+    }
+
     if (filters?.excludeEventNames && filters.excludeEventNames.length > 0) {
       conditions.push(notInArray(auditEvents.eventName, filters.excludeEventNames));
     }

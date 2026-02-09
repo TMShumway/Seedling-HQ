@@ -127,7 +127,7 @@ All other routes require auth via the `requireAuth` preHandler hook.
 - **Examples:** `/v1/services/categories`, `/v1/services`, `/v1/tenants/me/settings`
 - **`/me` convention:** used for current-tenant-scoped singletons (`/v1/tenants/me`, `/v1/users/me`, `/v1/tenants/me/settings`)
 - **Version prefix:** always `/v1/` (bump only on breaking changes)
-- **Nested read-only aggregate endpoints:** `/v1/<resource>/:id/<view>` for non-CRUD queries scoped to a parent resource (e.g., `/v1/clients/:clientId/timeline` returns paginated audit events for the client and its children). Same cursor pagination as list endpoints; supports query-param filters (e.g., `?exclude=deactivated`).
+- **Nested read-only aggregate endpoints:** `/v1/<resource>/:id/<view>` for non-CRUD queries scoped to a parent resource (e.g., `/v1/clients/:clientId/timeline` returns paginated audit events for the client and its children). Same cursor pagination as list endpoints; supports query-param filters (e.g., `?exclude=deactivated`). **Index-matching rule:** always include a `subjectType IN (...)` predicate so the composite index `(tenant_id, subject_type, subject_id, created_at)` is fully utilized — omitting it forces Postgres to scan all tenant events before filtering by subject_id.
 
 ### JSON field names
 

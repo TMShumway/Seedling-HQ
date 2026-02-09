@@ -50,3 +50,10 @@
 - [x] Update `CLAUDE.md` — tab layout + timeline patterns
 - [x] Update `MEMORY.md` — test counts
 - [x] Check off all items in this file
+
+### PR Feedback
+- [x] Add `subjectTypes` filter to `ListBySubjectsFilters` port interface
+- [x] Pass `subjectTypes: ['client', 'property']` in timeline route to match composite index
+- [x] Add `inArray(subjectType, subjectTypes)` condition in Drizzle repo query
+- [x] Add integration test verifying non-client/property subject types are excluded
+- [x] Update CLAUDE.md, API standards context doc, and story file

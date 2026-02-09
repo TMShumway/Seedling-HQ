@@ -92,7 +92,7 @@
 | Count endpoint | S-004 | `GET /v1/clients/count` for dashboard metrics |
 | Nested + flat URLs | S-004 | Properties listed at `/v1/clients/:clientId/properties`, operated at `/v1/properties/:id` |
 | Post-trim validation on updates | S-004 | Update use cases must validate required fields after trimming; create and update paths should have matching validation |
-| Timeline via audit_events query | S-005 | `listBySubjects(tenantId, subjectIds[], filters)` — no new table, reuse audit_events with composite index |
+| Timeline via audit_events query | S-005 | `listBySubjects(tenantId, subjectIds[], filters)` — no new table, reuse audit_events with composite index; always pass `subjectTypes` filter to match the `(tenant_id, subject_type, subject_id, created_at)` index |
 | Event label mapping | S-005 | `getEventLabel()` maps `client.created` → "Client created" etc.; titlecase fallback for unknown events |
 | Timeline exclude filter | S-005 | `?exclude=deactivated` filters out `*.deactivated` event names server-side |
 

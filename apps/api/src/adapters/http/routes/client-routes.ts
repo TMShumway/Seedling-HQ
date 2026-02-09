@@ -283,6 +283,7 @@ export function buildClientRoutes(deps: {
           limit: request.query.limit,
           cursor: request.query.cursor,
           excludeEventNames,
+          subjectTypes: ['client', 'property'],
         });
 
         return {

@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
-import { buildTestApp, truncateAll, getPool } from './setup.js';
+import { randomUUID } from 'node:crypto';
+import { buildTestApp, truncateAll, getPool, getDb } from './setup.js';
+import { auditEvents } from '../../src/infra/db/schema.js';
 
 afterAll(async () => {
   await getPool().end();
@@ -219,6 +221,46 @@ describe('GET /v1/clients/:clientId/timeline', () => {
     });
 
     expect(res.statusCode).toBe(404);
+  });
+
+  it('only returns events with client/property subjectType (index optimization)', async () => {
+    const { app, tenant, user } = await createTenantAndGetApp();
+
+    // Create a client
+    const clientRes = await app.inject({
+      method: 'POST',
+      url: '/v1/clients',
+      payload: { firstName: 'Subject', lastName: 'TypeTest' },
+    });
+    const client = clientRes.json();
+
+    // Insert a rogue audit event with the client's ID as subjectId
+    // but a non-client/property subjectType — should be excluded by the
+    // subjectTypes filter that ensures the composite index is used
+    const db = getDb();
+    await db.insert(auditEvents).values({
+      id: randomUUID(),
+      tenantId: tenant.id,
+      principalType: 'user',
+      principalId: user.id,
+      eventName: 'tenant.updated',
+      subjectType: 'tenant',
+      subjectId: client.id,
+      correlationId: randomUUID(),
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/v1/clients/${client.id}/timeline`,
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    const subjectTypes = body.data.map((e: { subjectType: string }) => e.subjectType);
+    expect(subjectTypes).not.toContain('tenant');
+    expect(body.data.every(
+      (e: { subjectType: string }) => e.subjectType === 'client' || e.subjectType === 'property',
+    )).toBe(true);
   });
 
   it('returns empty timeline for client with no events beyond creation', async () => {

@@ -16,6 +16,7 @@ export interface ListBySubjectsFilters {
   limit?: number;
   cursor?: string;
   excludeEventNames?: string[];
+  subjectTypes?: string[];
 }
 
 export interface AuditEventRepository {
