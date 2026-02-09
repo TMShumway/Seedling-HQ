@@ -26,5 +26,5 @@ export function buildAuthMiddleware(config: AppConfig) {
 }
 
 export function registerAuthDecorator(app: FastifyInstance) {
-  app.decorateRequest('authContext', null);
+  app.decorateRequest('authContext', null as unknown as InternalAuthContext);
 }

@@ -1,5 +1,5 @@
 import pg from 'pg';
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from './schema.js';
 
 export function createDb(connectionString: string) {
@@ -7,4 +7,5 @@ export function createDb(connectionString: string) {
   return drizzle(pool, { schema });
 }
 
-export type Database = ReturnType<typeof createDb>;
+/** Query-compatible type that both `db` and `tx` (PgTransaction) satisfy. */
+export type Database = NodePgDatabase<typeof schema>;
