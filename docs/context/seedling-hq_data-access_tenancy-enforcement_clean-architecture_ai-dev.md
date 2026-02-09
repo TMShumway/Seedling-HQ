@@ -161,6 +161,24 @@ Use DB transactions when:
 Do NOT wrap external calls (SMS/SES/Stripe) inside DB transactions:
 - write outbox first, commit, then async worker sends.
 
+### 9.1 UnitOfWork pattern (implemented in S-001)
+
+Atomic writes use a `UnitOfWork` port (`application/ports/unit-of-work.ts`) backed by `DrizzleUnitOfWork` (`infra/db/drizzle-unit-of-work.ts`).
+
+- `UnitOfWork.run(fn)` provides transaction-scoped repo instances to the callback.
+- Use cases take `(readRepo, uow)` — reads stay outside the transaction, writes go inside `uow.run()`.
+- Drizzle's `PgTransaction extends PgDatabase`, so repos that accept `Database` work with `tx` directly — no casts needed.
+
+Example:
+```ts
+return this.uow.run(async ({ tenantRepo, userRepo, auditRepo }) => {
+  const tenant = await tenantRepo.create({ ... });
+  const user = await userRepo.create({ ... });
+  await auditRepo.record({ ... });
+  return { tenant, user };
+});
+```
+
 ---
 
 ## 10) Multi-tenant enforcement strategies (pick at least one)

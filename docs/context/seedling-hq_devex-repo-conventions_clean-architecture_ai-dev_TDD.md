@@ -45,15 +45,16 @@ Clean Architecture in this repo means:
 - Invariants (e.g., “cannot approve already approved quote”)
 - Pure calculators (totals, tax, durations)
 
-**Application (Use Cases)**
-- “Send quote link”
-- “Approve quote”
-- “Create job from approved quote”
-- “Schedule visit + create reminders”
-- “Complete visit + photos”
-- “Generate invoice + send”
-- “Pay invoice (webhook)”
-- “Enqueue SMS job and update outbox”
+**Application (Use Cases + Ports)**
+- "Send quote link"
+- "Approve quote"
+- "Create job from approved quote"
+- "Schedule visit + create reminders"
+- "Complete visit + photos"
+- "Generate invoice + send"
+- "Pay invoice (webhook)"
+- "Enqueue SMS job and update outbox"
+- `UnitOfWork` port — wraps atomic multi-repo writes in a transaction
 
 **Interface adapters**
 - Fastify route handler wiring
@@ -65,6 +66,7 @@ Clean Architecture in this repo means:
 - Cognito JWKS client (JWT signature verification, key caching)
 - Auth mode switch (`AUTH_MODE=cognito` vs `AUTH_MODE=local`)
 - Postgres repositories
+- `DrizzleUnitOfWork` — implements `UnitOfWork` via `db.transaction()`
 - SQS publisher/consumer wiring
 - EventBridge Scheduler client
 - S3 presigned URL generation
