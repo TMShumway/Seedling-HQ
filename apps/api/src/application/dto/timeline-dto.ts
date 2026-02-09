@@ -15,6 +15,7 @@ const EVENT_LABELS: Record<string, string> = {
   'property.created': 'Property added',
   'property.updated': 'Property updated',
   'property.deactivated': 'Property removed',
+  'request.created': 'Request submitted',
 };
 
 export function getEventLabel(eventName: string): string {
