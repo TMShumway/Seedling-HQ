@@ -1,0 +1,15 @@
+{
+  "name": "seedling-hq",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "dev": "pnpm --filter @seedling/api run dev & pnpm --filter @seedling/web run dev",
+    "build": "pnpm -r run build",
+    "gen": "pnpm --filter @seedling/api run gen",
+    "lint": "pnpm -r run lint",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm -r run test",
+    "test:integration": "pnpm --filter @seedling/api run test:integration",
+    "test:e2e": "pnpm --filter @seedling/e2e run test"
+  }
+}

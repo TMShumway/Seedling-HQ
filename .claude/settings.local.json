@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm view:*)",
+      "Bash(pnpm --filter @seedling/api run db:push:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm --filter @seedling/api run test:*)",
+      "Bash(pnpm --filter @seedling/api run db:seed:*)",
+      "Bash(pnpm --filter @seedling/api run test:integration)",
+      "Bash(pnpm --filter @seedling/api run gen:*)",
+      "Bash(pnpm --filter @seedling/web run build:*)",
+      "Bash(pnpm --filter @seedling/e2e exec playwright install:*)",
+      "Bash(pnpm exec playwright test:*)",
+      "Bash(curl:*)"
+    ]
+  }
+}
