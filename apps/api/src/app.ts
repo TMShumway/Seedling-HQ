@@ -16,10 +16,14 @@ import { healthRoutes } from './adapters/http/routes/health-routes.js';
 import { buildTenantRoutes } from './adapters/http/routes/tenant-routes.js';
 import { buildUserRoutes } from './adapters/http/routes/user-routes.js';
 import { buildBusinessSettingsRoutes } from './adapters/http/routes/business-settings-routes.js';
+import { buildServiceCategoryRoutes } from './adapters/http/routes/service-category-routes.js';
+import { buildServiceItemRoutes } from './adapters/http/routes/service-item-routes.js';
 import { DrizzleTenantRepository } from './infra/db/repositories/drizzle-tenant-repository.js';
 import { DrizzleUserRepository } from './infra/db/repositories/drizzle-user-repository.js';
 import { DrizzleAuditEventRepository } from './infra/db/repositories/drizzle-audit-event-repository.js';
 import { DrizzleBusinessSettingsRepository } from './infra/db/repositories/drizzle-business-settings-repository.js';
+import { DrizzleServiceCategoryRepository } from './infra/db/repositories/drizzle-service-category-repository.js';
+import { DrizzleServiceItemRepository } from './infra/db/repositories/drizzle-service-item-repository.js';
 import { DrizzleUnitOfWork } from './infra/db/drizzle-unit-of-work.js';
 
 export interface CreateAppOptions {
@@ -57,6 +61,8 @@ export async function createApp({ config, db }: CreateAppOptions) {
   const userRepo = new DrizzleUserRepository(db);
   const auditRepo = new DrizzleAuditEventRepository(db);
   const settingsRepo = new DrizzleBusinessSettingsRepository(db);
+  const categoryRepo = new DrizzleServiceCategoryRepository(db);
+  const serviceItemRepo = new DrizzleServiceItemRepository(db);
   const uow = new DrizzleUnitOfWork(db);
 
   // Routes
@@ -64,6 +70,8 @@ export async function createApp({ config, db }: CreateAppOptions) {
   await app.register(buildTenantRoutes({ tenantRepo, uow, config }));
   await app.register(buildUserRoutes({ userRepo, config }));
   await app.register(buildBusinessSettingsRoutes({ settingsRepo, auditRepo, config }));
+  await app.register(buildServiceCategoryRoutes({ categoryRepo, auditRepo, config }));
+  await app.register(buildServiceItemRoutes({ serviceItemRepo, categoryRepo, auditRepo, config }));
 
   return app;
 }

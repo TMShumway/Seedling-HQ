@@ -208,6 +208,183 @@ describe('Cross-tenant isolation', () => {
     expect(getResB.json().phone).toBe('(555) 222-2222');
   });
 
+  it('Tenant B cannot list Tenant A service categories', async () => {
+    const app = await buildTestApp();
+
+    // Create Tenant A
+    const resA = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Tenant A Categories', ownerEmail: 'a-cat@test.com', ownerFullName: 'Owner A' },
+    });
+    const tenantA = resA.json();
+
+    // Create Tenant B
+    const resB = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Tenant B Categories', ownerEmail: 'b-cat@test.com', ownerFullName: 'Owner B' },
+    });
+    const tenantB = resB.json();
+
+    // Tenant A creates a category
+    const appA = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenantA.tenant.id,
+      DEV_AUTH_USER_ID: tenantA.user.id,
+    });
+    await appA.inject({
+      method: 'POST',
+      url: '/v1/services/categories',
+      payload: { name: 'Lawn Care' },
+    });
+
+    // Tenant B should see empty list
+    const appB = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenantB.tenant.id,
+      DEV_AUTH_USER_ID: tenantB.user.id,
+    });
+    const listRes = await appB.inject({
+      method: 'GET',
+      url: '/v1/services/categories',
+    });
+    expect(listRes.statusCode).toBe(200);
+    expect(listRes.json()).toHaveLength(0);
+  });
+
+  it('Tenant B cannot update Tenant A service category', async () => {
+    const app = await buildTestApp();
+
+    const resA = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Tenant A Cat Update', ownerEmail: 'a-cat-u@test.com', ownerFullName: 'Owner A' },
+    });
+    const tenantA = resA.json();
+
+    const resB = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Tenant B Cat Update', ownerEmail: 'b-cat-u@test.com', ownerFullName: 'Owner B' },
+    });
+    const tenantB = resB.json();
+
+    // Tenant A creates a category
+    const appA = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenantA.tenant.id,
+      DEV_AUTH_USER_ID: tenantA.user.id,
+    });
+    const catRes = await appA.inject({
+      method: 'POST',
+      url: '/v1/services/categories',
+      payload: { name: 'Lawn Care' },
+    });
+    const catId = catRes.json().id;
+
+    // Tenant B tries to update it
+    const appB = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenantB.tenant.id,
+      DEV_AUTH_USER_ID: tenantB.user.id,
+    });
+    const updateRes = await appB.inject({
+      method: 'PUT',
+      url: `/v1/services/categories/${catId}`,
+      payload: { name: 'Hacked' },
+    });
+    expect(updateRes.statusCode).toBe(404);
+  });
+
+  it('Tenant B cannot list Tenant A service items', async () => {
+    const app = await buildTestApp();
+
+    const resA = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Tenant A Services', ownerEmail: 'a-svc@test.com', ownerFullName: 'Owner A' },
+    });
+    const tenantA = resA.json();
+
+    const resB = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Tenant B Services', ownerEmail: 'b-svc@test.com', ownerFullName: 'Owner B' },
+    });
+    const tenantB = resB.json();
+
+    // Tenant A creates category + service
+    const appA = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenantA.tenant.id,
+      DEV_AUTH_USER_ID: tenantA.user.id,
+    });
+    const catRes = await appA.inject({
+      method: 'POST',
+      url: '/v1/services/categories',
+      payload: { name: 'Lawn Care' },
+    });
+    await appA.inject({
+      method: 'POST',
+      url: '/v1/services',
+      payload: { categoryId: catRes.json().id, name: 'Mowing', unitPrice: 4500, unitType: 'flat' },
+    });
+
+    // Tenant B should see empty list
+    const appB = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenantB.tenant.id,
+      DEV_AUTH_USER_ID: tenantB.user.id,
+    });
+    const listRes = await appB.inject({
+      method: 'GET',
+      url: '/v1/services',
+    });
+    expect(listRes.statusCode).toBe(200);
+    expect(listRes.json()).toHaveLength(0);
+  });
+
+  it('Tenant B cannot deactivate Tenant A service item', async () => {
+    const app = await buildTestApp();
+
+    const resA = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Tenant A Svc Del', ownerEmail: 'a-svc-d@test.com', ownerFullName: 'Owner A' },
+    });
+    const tenantA = resA.json();
+
+    const resB = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Tenant B Svc Del', ownerEmail: 'b-svc-d@test.com', ownerFullName: 'Owner B' },
+    });
+    const tenantB = resB.json();
+
+    // Tenant A creates category + service
+    const appA = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenantA.tenant.id,
+      DEV_AUTH_USER_ID: tenantA.user.id,
+    });
+    const catRes = await appA.inject({
+      method: 'POST',
+      url: '/v1/services/categories',
+      payload: { name: 'Lawn Care' },
+    });
+    const svcRes = await appA.inject({
+      method: 'POST',
+      url: '/v1/services',
+      payload: { categoryId: catRes.json().id, name: 'Mowing', unitPrice: 4500, unitType: 'flat' },
+    });
+    const svcId = svcRes.json().id;
+
+    // Tenant B tries to deactivate
+    const appB = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenantB.tenant.id,
+      DEV_AUTH_USER_ID: tenantB.user.id,
+    });
+    const deleteRes = await appB.inject({
+      method: 'DELETE',
+      url: `/v1/services/${svcId}`,
+    });
+    expect(deleteRes.statusCode).toBe(404);
+  });
+
   it('Tenant B context cannot see Tenant A users via GET /v1/users/me', async () => {
     const app = await buildTestApp();
 
