@@ -45,3 +45,6 @@ apps/api/drizzle/
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+# Vite
+apps/web/.vite/ 

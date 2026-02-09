@@ -257,8 +257,8 @@ Suggested table (name is up to you, e.g., `secure_link_tokens`):
 ## 8) MVP epics & stories (R1 snapshot + secure-link AC updates)
 
 **Epic A — Multi-tenant setup + onboarding**
-- S-001 Business signup + first tenant (tenant enforcement, owner role, demo seed)
-- S-002 Onboarding wizard (business profile/settings)
+- S-001 Business signup + first tenant (tenant enforcement, owner role, demo seed) **— DONE**
+- S-002 Onboarding wizard (business profile/settings) **— DONE**: singleton `business_settings` table (JSONB hours), GET/PUT `/v1/tenants/me/settings`, 4-step wizard + quick-setup form, settings edit page
 - S-003 Service catalog (price book v1)
 
 **Epic B — CRM (clients + properties)**

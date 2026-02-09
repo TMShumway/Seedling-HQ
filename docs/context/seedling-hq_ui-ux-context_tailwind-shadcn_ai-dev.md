@@ -124,12 +124,16 @@ Use these shadcn/ui components (or equivalents) consistently:
   - Secondary actions in dropdown (kebab menu)
 
 ### Forms
-- Input, textarea
-- Select/combobox (Radix)
+- Input, Textarea (styled `<textarea>` wrapper)
+- Select (native `<select>` wrapper, styled to match Input) / combobox (Radix, when needed)
 - Date picker (choose one library; keep consistent)
-- Checkbox/toggle
+- Checkbox (styled `<input type="checkbox">`) / toggle
 - Form validation + inline field errors
-- “Error summary” at top on submit failures (USWDS pattern)
+- "Error summary" at top on submit failures (USWDS pattern)
+
+> **Implemented in S-002:** Input, Select, Textarea, Checkbox are in `apps/web/src/components/ui/`.
+> Multi-step wizard stepper (numbered circles) in `OnboardingWizard.tsx`.
+> **Gotcha:** Do NOT wrap multi-step wizards in `<form>` — native inputs (time, number) trigger implicit submit. Use `<div>` + explicit `onClick` handlers.
 
 ### Feedback
 - Toasts (success/error)
@@ -143,9 +147,9 @@ Use these shadcn/ui components (or equivalents) consistently:
 - Status badges/pills (Draft/Sent/Approved/Paid/Overdue/etc.)
 
 ### Workflow helpers
-- Stepper for multi-step flows (quote builder, onboarding)
+- Stepper for multi-step flows (quote builder, onboarding) — **Implemented in S-002** as numbered step indicator in `OnboardingWizard`
 - Confirm dialogs for destructive actions
-- “Unsaved changes” guard on forms
+- "Unsaved changes" guard on forms
 
 ---
 
@@ -208,7 +212,15 @@ External (secure link):
 - Pay CTA (Stripe)
 - Payment success page
 
-### 7.6 Client Hub (portal via secure link)
+### 7.6 Settings + Onboarding (S-002 — implemented)
+Internal:
+- **Onboarding page** (`/onboarding`): choice card (Quick Setup vs Guided Setup), or "Already configured" if settings exist
+- **Guided Setup wizard**: 4 steps — Business Info → Hours → Service Defaults → Review & Submit
+- **Quick Setup**: single scrollable form with all fields
+- **Settings page** (`/settings`): same form fields, pre-populated from saved data, "Save Settings" button
+- **Dashboard CTA**: "Complete your business profile" card when settings are null; settings summary when configured
+
+### 7.7 Client Hub (portal via secure link)
 External:
 - Minimal “hub” page:
   - upcoming visits

@@ -47,6 +47,7 @@ This foundation is strong. What remains are the "rails" that prevent agents (and
 
 ### Recently resolved decisions
 - **Internal auth mechanism (2026-02-08):** AWS Cognito chosen. Documented in Architecture doc Section 4.1, Security Baseline Section 3.2/3.4, DevEx Section 5.2. Resolves Architecture doc Section 15F open risk.
+- **S-002 implemented (2026-02-08):** Business settings CRUD (singleton upsert pattern), onboarding wizard, settings page. Introduces `BusinessSettings`, `DaySchedule`, `BusinessHours` domain entities. Establishes patterns: singleton upsert via `onConflictDoUpdate`, GET-returns-null-on-empty, wizard `<div>` (not `<form>`), `db:reset` for E2E isolation.
 
 ---
 
@@ -55,9 +56,12 @@ This foundation is strong. What remains are the "rails" that prevent agents (and
 ### 1) Domain model + canonical status/state machines
 Agents know the flows and screens, but not the canonical shapes and transitions.
 
+> **Partial progress:** S-001 defined Tenant + User entities. S-002 added BusinessSettings, DaySchedule, BusinessHours.
+> Remaining: full status machines for Request, Quote, Job, Visit, Invoice and audit event catalog.
+
 Add a context file that defines:
 - Core entities and minimal fields:
-  - Tenant, User, Client, Property, Request, Quote, Job, Visit, Invoice, MessageOutbox, SecureLinkToken
+  - ~~Tenant, User~~ (S-001), ~~BusinessSettings~~ (S-002), Client, Property, Request, Quote, Job, Visit, Invoice, MessageOutbox, SecureLinkToken
 - Status enums + allowed transitions:
   - Example: Quote `Draft → Sent → Approved/Declined`
   - Example: Invoice `Draft → Sent → Paid/Overdue`
@@ -77,12 +81,13 @@ Add definitions for:
 - Auth context contract (internal vs external principal), how it is represented on requests
   > **Partial resolution (2026-02-08):** Auth mechanism decided — AWS Cognito for internal users.
   > Auth context contract for internal principals is now documented in Architecture doc (Section 4.1) and DevEx doc (Section 5.2).
+  > S-002 establishes precedents: idempotent `PUT` for singleton upsert, `GET` returns `null` (200) when entity doesn't exist.
   > Remaining sub-gap: full API standards doc (errors, pagination, idempotency) still needed.
 - Tenant resolution rules for internal vs external endpoints
 
 ### ~~3) Data access patterns + tenancy enforcement~~ — DONE
 > Covered by: `seedling-hq_data-access_tenancy-enforcement_clean-architecture_ai-dev.md`
-> Remaining sub-gap: ORM/query builder choice and migration tooling are not yet decided.
+> ~~Remaining sub-gap: ORM/query builder choice and migration tooling are not yet decided.~~ Resolved in S-001: Drizzle ORM + drizzle-kit.
 
 ### ~~4) Security baseline beyond stories~~ — DONE
 > Covered by: `seedling-hq_security-baseline_context_ai-dev.md`
@@ -106,7 +111,7 @@ Document:
 
 ### ~~7) Observability + telemetry specification~~ — DONE
 > Covered by: `seedling-hq_observability-telemetry-spec_context_ai-dev.md`
-> Remaining sub-gaps: concrete logging library choice, CloudWatch EMF code patterns, client-side error tracking approach.
+> ~~Remaining sub-gaps: concrete logging library choice~~ Resolved in S-001: Pino (structured JSON). Remaining sub-gaps: CloudWatch EMF code patterns, client-side error tracking approach.
 
 ### 8) Automation/reminders policy (cadences + cancellation keys)
 MVP requires automation, but exact defaults and cancelation rules aren’t a single source of truth.
