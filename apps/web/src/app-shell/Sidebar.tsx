@@ -18,7 +18,7 @@ const navItems = [
   { label: 'Schedule', icon: Calendar, href: '#', active: false },
   { label: 'Jobs', icon: Briefcase, href: '#', active: false },
   { label: 'Invoices', icon: Receipt, href: '#', active: false },
-  { label: 'Settings', icon: Settings, href: '#', active: false },
+  { label: 'Settings', icon: Settings, href: '/settings', active: true },
 ];
 
 export function Sidebar() {

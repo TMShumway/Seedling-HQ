@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { apiClient } from '@/lib/api-client';
 
 export function DashboardPage() {
@@ -13,7 +15,14 @@ export function DashboardPage() {
     queryFn: () => apiClient.getUserMe(),
   });
 
-  if (tenantQuery.isLoading || userQuery.isLoading) {
+  const navigate = useNavigate();
+
+  const settingsQuery = useQuery({
+    queryKey: ['business-settings'],
+    queryFn: () => apiClient.getBusinessSettings(),
+  });
+
+  if (tenantQuery.isLoading || userQuery.isLoading || settingsQuery.isLoading) {
     return <div className="text-muted-foreground">Loading...</div>;
   }
 
@@ -27,6 +36,7 @@ export function DashboardPage() {
 
   const tenant = tenantQuery.data;
   const user = userQuery.data;
+  const settings = settingsQuery.data;
 
   return (
     <div className="space-y-6">
@@ -70,11 +80,52 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      <Card>
-        <CardContent className="py-8 text-center text-muted-foreground">
-          Complete onboarding to get started
-        </CardContent>
-      </Card>
+      {!settings ? (
+        <Card data-testid="onboarding-cta">
+          <CardContent className="flex flex-col items-center gap-4 py-8 text-center">
+            <p className="text-muted-foreground">
+              Complete your business profile to get started with Seedling.
+            </p>
+            <Button onClick={() => navigate('/onboarding')}>
+              Complete Business Profile
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card data-testid="settings-summary">
+          <CardHeader>
+            <CardTitle>Business Profile</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-2 text-sm sm:grid-cols-2">
+            {settings.phone && (
+              <div>
+                <span className="text-muted-foreground">Phone:</span> {settings.phone}
+              </div>
+            )}
+            {settings.city && settings.state && (
+              <div>
+                <span className="text-muted-foreground">Location:</span> {settings.city}, {settings.state}
+              </div>
+            )}
+            {settings.timezone && (
+              <div>
+                <span className="text-muted-foreground">Time Zone:</span> {settings.timezone}
+              </div>
+            )}
+            {settings.defaultDurationMinutes && (
+              <div>
+                <span className="text-muted-foreground">Default Duration:</span>{' '}
+                {settings.defaultDurationMinutes} min
+              </div>
+            )}
+            <div className="sm:col-span-2">
+              <Button variant="outline" size="sm" onClick={() => navigate('/settings')}>
+                Edit Settings
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
