@@ -378,6 +378,9 @@ export const apiClient = {
     return request<{ count: number }>('GET', `/v1/requests/count${qs}`);
   },
 
+  convertRequest: (requestId: string, input: ConvertRequestPayload) =>
+    request<ConvertRequestResponse>('POST', `/v1/requests/${requestId}/convert`, input),
+
   // Timeline
   getClientTimeline: (clientId: string, params?: { limit?: number; cursor?: string; exclude?: string }) => {
     const qs = new URLSearchParams();
@@ -442,6 +445,48 @@ export interface RequestResponse {
   assignedUserId: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface QuoteResponse {
+  id: string;
+  tenantId: string;
+  requestId: string | null;
+  clientId: string;
+  propertyId: string | null;
+  title: string;
+  lineItems: unknown[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  status: string;
+  sentAt: string | null;
+  approvedAt: string | null;
+  declinedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConvertRequestPayload {
+  existingClientId?: string;
+  firstName: string;
+  lastName: string;
+  email?: string | null;
+  phone?: string | null;
+  company?: string | null;
+  addressLine1: string;
+  addressLine2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
+  quoteTitle: string;
+}
+
+export interface ConvertRequestResponse {
+  request: RequestResponse;
+  client: ClientResponse;
+  property: PropertyResponse;
+  quote: QuoteResponse;
+  clientCreated: boolean;
 }
 
 export { ApiClientError };
