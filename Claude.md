@@ -143,6 +143,7 @@ Claude.md
 | Business settings | Singleton upsert via `PUT /v1/tenants/me/settings` | S-002 | JSONB business hours; `onConflictDoUpdate` on unique `tenant_id`; no UoW needed |
 | Wizard form pattern | `<div>` wrapper, not `<form>` | S-002 | Native inputs (time, number) trigger implicit submit in `<form>`; use explicit `onClick` |
 | E2E DB isolation | `db:reset` → `db:push` → `db:seed` in globalSetup | S-002 | Truncates all tables before each E2E run for clean state |
+| Local auth override | `X-Dev-Tenant-Id` / `X-Dev-User-Id` headers | S-002 | Frontend stores signup IDs in localStorage; backend overrides env var defaults per-request |
 
 ## Deferred to later stories
 
