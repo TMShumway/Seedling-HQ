@@ -8,6 +8,7 @@ import type { AuditEventRepository } from '../../../application/ports/audit-even
 import { CreateClientUseCase } from '../../../application/usecases/create-client.js';
 import { UpdateClientUseCase } from '../../../application/usecases/update-client.js';
 import { DeactivateClientUseCase } from '../../../application/usecases/deactivate-client.js';
+import { getEventLabel } from '../../../application/dto/timeline-dto.js';
 import { NotFoundError } from '../../../shared/errors.js';
 import { buildAuthMiddleware } from '../middleware/auth-middleware.js';
 import type { AppConfig } from '../../../shared/config.js';
@@ -51,6 +52,22 @@ const updateClientBodySchema = z.object({
   company: z.string().max(255).nullable().optional(),
   notes: z.string().nullable().optional(),
   tags: z.array(z.string()).optional(),
+});
+
+const timelineEventSchema = z.object({
+  id: z.string(),
+  eventName: z.string(),
+  label: z.string(),
+  subjectType: z.string(),
+  subjectId: z.string(),
+  principalId: z.string(),
+  createdAt: z.string(),
+});
+
+const paginatedTimelineResponseSchema = z.object({
+  data: z.array(timelineEventSchema),
+  cursor: z.string().nullable(),
+  hasMore: z.boolean(),
 });
 
 function serializeClient(client: Client) {
@@ -224,6 +241,63 @@ export function buildClientRoutes(deps: {
           request.correlationId,
         );
         return reply.status(204).send();
+      },
+    );
+
+    // GET /v1/clients/:clientId/timeline
+    const DEACTIVATION_EVENTS = ['client.deactivated', 'property.deactivated'];
+
+    typedApp.get(
+      '/v1/clients/:clientId/timeline',
+      {
+        preHandler: authMiddleware,
+        schema: {
+          params: z.object({ clientId: z.string().uuid() }),
+          querystring: z.object({
+            limit: z.coerce.number().int().min(1).max(100).optional(),
+            cursor: z.string().optional(),
+            exclude: z.string().optional(),
+          }),
+          response: { 200: paginatedTimelineResponseSchema },
+        },
+      },
+      async (request) => {
+        const { clientId } = request.params;
+        const tenantId = request.authContext.tenant_id;
+
+        // Verify client exists and belongs to tenant
+        const client = await deps.clientRepo.getById(tenantId, clientId);
+        if (!client) {
+          throw new NotFoundError('Client not found');
+        }
+
+        // Get property IDs for this client
+        const clientProperties = await deps.propertyRepo.listByClientId(tenantId, clientId, true);
+        const subjectIds = [clientId, ...clientProperties.map((p) => p.id)];
+
+        // Build filters
+        const excludeEventNames =
+          request.query.exclude === 'deactivated' ? DEACTIVATION_EVENTS : undefined;
+
+        const result = await deps.auditRepo.listBySubjects(tenantId, subjectIds, {
+          limit: request.query.limit,
+          cursor: request.query.cursor,
+          excludeEventNames,
+        });
+
+        return {
+          data: result.data.map((event) => ({
+            id: event.id,
+            eventName: event.eventName,
+            label: getEventLabel(event.eventName),
+            subjectType: event.subjectType,
+            subjectId: event.subjectId,
+            principalId: event.principalId,
+            createdAt: event.createdAt.toISOString(),
+          })),
+          cursor: result.cursor,
+          hasMore: result.hasMore,
+        };
       },
     );
   };

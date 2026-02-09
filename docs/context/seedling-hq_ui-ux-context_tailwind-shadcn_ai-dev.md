@@ -190,12 +190,12 @@ External:
 - Confirmation page
 
 ### 7.2 Clients (CRM)
-- Clients list: search by name/phone/email
-- Client detail:
-  - contact info
-  - properties/addresses
-  - activity timeline feed (newest first)
-  - quick actions: create quote, schedule, invoice
+- Clients list: search by name/phone/email, cursor-based pagination with "Load More"
+- Client detail (tabbed layout — Info / Properties / Activity):
+  - **Info tab:** contact info, tags, notes, edit + delete actions
+  - **Properties tab:** properties/addresses list with "Add Property" action
+  - **Activity tab:** audit-event timeline feed (newest first), toggle to hide deactivation events, "Load More" pagination
+  - Quick actions (future): create quote, schedule, invoice
 
 ### 7.3 Quotes
 Internal:

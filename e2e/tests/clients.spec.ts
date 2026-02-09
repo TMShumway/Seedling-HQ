@@ -49,11 +49,13 @@ test.describe('Client Management', () => {
     await page.getByTestId('client-card').filter({ hasText: 'E2E Test Client' }).click();
     await expect(page.getByTestId('client-detail-page')).toBeVisible({ timeout: 10000 });
 
-    // Verify client info
+    // Verify client info on Info tab
     await expect(page.getByText('e2e-client@test.com')).toBeVisible();
     await expect(page.getByText('(555) 999-0001')).toBeVisible();
 
-    // Add property
+    // Switch to Properties tab and add property
+    await page.getByRole('tab', { name: 'Properties' }).click();
+    await expect(page.getByTestId('tab-properties')).toBeVisible();
     await page.getByRole('button', { name: 'Add Property' }).click();
     await expect(page.getByTestId('property-form')).toBeVisible();
 

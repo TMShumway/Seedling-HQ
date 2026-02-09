@@ -261,6 +261,16 @@ export interface UpdatePropertyRequest {
   notes?: string | null;
 }
 
+export interface TimelineEvent {
+  id: string;
+  eventName: string;
+  label: string;
+  subjectType: string;
+  subjectId: string;
+  principalId: string;
+  createdAt: string;
+}
+
 export const apiClient = {
   createTenant: (input: CreateTenantRequest) =>
     request<CreateTenantResponse>('POST', '/v1/tenants', input),
@@ -344,6 +354,16 @@ export const apiClient = {
 
   deactivateProperty: (id: string) =>
     request<void>('DELETE', `/v1/properties/${id}`),
+
+  // Timeline
+  getClientTimeline: (clientId: string, params?: { limit?: number; cursor?: string; exclude?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.limit) qs.set('limit', String(params.limit));
+    if (params?.cursor) qs.set('cursor', params.cursor);
+    if (params?.exclude) qs.set('exclude', params.exclude);
+    const q = qs.toString();
+    return request<PaginatedResponse<TimelineEvent>>('GET', `/v1/clients/${clientId}/timeline${q ? `?${q}` : ''}`);
+  },
 };
 
 export { ApiClientError };
