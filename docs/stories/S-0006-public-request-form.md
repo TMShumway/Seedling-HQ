@@ -10,31 +10,31 @@
 ## Checklist
 
 ### Backend
-- [ ] Domain entity: `Request` interface + types
-- [ ] DB schema: `requests` table with indexes
-- [ ] Repository port: `RequestRepository`
-- [ ] Drizzle repository implementation
-- [ ] DTOs: `CreatePublicRequestInput`, `RequestOutput`
-- [ ] Use case: `CreatePublicRequestUseCase` (TDD)
-- [ ] Rate limit middleware (in-memory sliding window)
-- [ ] Routes: public POST + authenticated GET list/count/by-id
-- [ ] Register in app.ts
-- [ ] Seed data: 3 demo requests + audit events
-- [ ] Event label: `request.created` → "Request submitted"
+- [x] Domain entity: `Request` interface + types
+- [x] DB schema: `requests` table with indexes
+- [x] Repository port: `RequestRepository`
+- [x] Drizzle repository implementation
+- [x] DTOs: `CreatePublicRequestInput`, `RequestOutput`
+- [x] Use case: `CreatePublicRequestUseCase` (TDD)
+- [x] Rate limit middleware (in-memory sliding window)
+- [x] Routes: public POST + authenticated GET list/count/by-id
+- [x] Register in app.ts
+- [x] Seed data: 3 demo requests + audit events
+- [x] Event label: `request.created` → "Request submitted"
 
 ### Frontend
-- [ ] API client: `publicRequest()` + request methods
-- [ ] Public form page (`/request/:tenantSlug`)
-- [ ] Confirmation page (`/request/:tenantSlug/success`)
-- [ ] Authenticated list page (`/requests`)
-- [ ] Routing: add public + authenticated routes
-- [ ] Sidebar: activate Requests nav item
-- [ ] Dashboard: "New Requests" count card
+- [x] API client: `publicRequest()` + request methods
+- [x] Public form page (`/request/:tenantSlug`)
+- [x] Confirmation page (`/request/:tenantSlug/success`)
+- [x] Authenticated list page (`/requests`)
+- [x] Routing: add public + authenticated routes
+- [x] Sidebar: activate Requests nav item
+- [x] Dashboard: "New Requests" count card
 
 ### Testing
-- [ ] Unit tests: use case + rate limiter
-- [ ] Integration tests: public + authenticated routes
-- [ ] E2E tests: form submission + owner list
+- [x] Unit tests: use case (9 tests)
+- [x] Integration tests: public + authenticated routes (12 tests)
+- [x] E2E tests: form submission + owner list + a11y (3 tests)
 
 ### Documentation
-- [ ] Update CLAUDE.md with new patterns
+- [x] Update CLAUDE.md with new patterns
