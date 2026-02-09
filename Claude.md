@@ -67,9 +67,15 @@
 
 ## 8) Data access + tenancy enforcement
 
-**File:** `seedling-hq_data-access_tenancy-enforcement_clean-architecture_ai-dev.md`  
+**File:** `seedling-hq_data-access_tenancy-enforcement_clean-architecture_ai-dev.md`
 **What it covers:** tenant-safe repository method signatures, per-tenant indexes/constraints, secure link token storage rules, outbox idempotency, and S3 tenant prefix conventions.
 
+---
+
+## 9) Domain model + status machines + audit catalog
+
+**File:** `seedling-hq_domain-model_status-machines_audit-catalog.md`
+**What it covers:** canonical entity definitions (implemented and planned), status machines for Quote/Job/Visit/Invoice, audit event catalog (10 implemented + 21 planned), entity relationships, and source-of-truth rules.
 
 ## How to apply these docs when building
 
@@ -107,12 +113,14 @@ docs/context/
   seedling-hq_observability-telemetry-spec_context_ai-dev.md
   seedling-hq_devex-repo-conventions_clean-architecture_ai-dev_TDD.md
   seedling-hq_data-access_tenancy-enforcement_clean-architecture_ai-dev.md
+  seedling-hq_domain-model_status-machines_audit-catalog.md
   seedling-hq_context-gaps_next-docs_team-share.md
 docs/stories/
   S-001-business-signup-first-tenant.md
   S-002-onboarding-wizard.md          # (created per story)
+  S-003-service-catalog.md
   ...
-Claude.md
+CLAUDE.md
 ```
 
 ---

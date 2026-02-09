@@ -1,6 +1,6 @@
 # Seedling-HQ — Context Documentation Gaps & Next Files to Add (Team Share)
 
-_Last updated: 2026-02-08 (America/Chihuahua)_
+_Last updated: 2026-02-09 (America/Chihuahua)_
 
 > Purpose: Share this with the team to identify what context documentation is still missing for AI-Driven Development and consistent engineering.
 
@@ -54,23 +54,9 @@ This foundation is strong. What remains are the "rails" that prevent agents (and
 
 ## Biggest gaps (high leverage to document next)
 
-### 1) Domain model + canonical status/state machines
-Agents know the flows and screens, but not the canonical shapes and transitions.
-
-> **Partial progress:** S-001 defined Tenant + User entities. S-002 added BusinessSettings, DaySchedule, BusinessHours. S-003 added ServiceCategory, ServiceItem, UnitType.
-> Remaining: full status machines for Request, Quote, Job, Visit, Invoice and audit event catalog.
-
-Add a context file that defines:
-- Core entities and minimal fields:
-  - ~~Tenant, User~~ (S-001), ~~BusinessSettings~~ (S-002), ~~ServiceCategory, ServiceItem~~ (S-003), Client, Property, Request, Quote, Job, Visit, Invoice, MessageOutbox, SecureLinkToken
-- Status enums + allowed transitions:
-  - Example: Quote `Draft → Sent → Approved/Declined`
-  - Example: Invoice `Draft → Sent → Paid/Overdue`
-- Audit/event names and when they fire:
-  - e.g., `quote.sent`, `quote.viewed`, `invoice.paid`
-- “Source of truth” rules:
-  - message_outbox is durable truth for outbound comms
-  - secure-link token table is truth for external links
+### ~~1) Domain model + canonical status/state machines~~ — DONE
+> Covered by: `seedling-hq_domain-model_status-machines_audit-catalog.md`
+> Defines all implemented entities (Tenant, User, BusinessSettings, ServiceCategory, ServiceItem) with full field lists, planned entities with status machines (Request, Quote, Job, Visit, Invoice), audit event catalog (10 implemented + 21 planned), entity relationships, and source-of-truth rules.
 
 ### 2) API standards and conventions (behavioral contract)
 You’re OpenAPI-driven, but conventions aren’t spelled out yet.
@@ -148,7 +134,7 @@ Document:
 
 ## Recommended "next context files" (priority order)
 
-1) **Domain Model + Status/Transitions + Audit/Event Catalog**
+1) ~~Domain Model + Status/Transitions + Audit/Event Catalog~~ — DONE
 2) **API Standards (errors, pagination, auth context, idempotency)**
 3) ~~Data Access + Tenancy Enforcement~~ — DONE
 4) ~~Security Baseline~~ — DONE
@@ -158,7 +144,7 @@ Document:
 8) **Automation Policy (cadences + cancellation keys + schedules)**
 9) **Comms + Payments Ops Notes (Stripe/SES/SMS setup)**
 
-**Remaining (5 of 9):** items 1, 2, 6, 8, 9 above.
+**Remaining (4 of 9):** items 2, 6, 8, 9 above.
 
 ---
 
