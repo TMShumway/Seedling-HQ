@@ -89,6 +89,7 @@
 | Server-side search (ILIKE) | S-004 | `OR(ILIKE(col, %term%))` across name/email/phone/company columns |
 | Count endpoint | S-004 | `GET /v1/clients/count` for dashboard metrics |
 | Nested + flat URLs | S-004 | Properties listed at `/v1/clients/:clientId/properties`, operated at `/v1/properties/:id` |
+| Post-trim validation on updates | S-004 | Update use cases must validate required fields after trimming; create and update paths should have matching validation |
 
 ### Frontend
 
