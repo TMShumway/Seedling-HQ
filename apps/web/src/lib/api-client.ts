@@ -68,6 +68,54 @@ export interface CreateTenantResponse {
   user: UserResponse;
 }
 
+export interface DaySchedule {
+  open: string | null;
+  close: string | null;
+  closed: boolean;
+}
+
+export interface BusinessHoursResponse {
+  monday: DaySchedule;
+  tuesday: DaySchedule;
+  wednesday: DaySchedule;
+  thursday: DaySchedule;
+  friday: DaySchedule;
+  saturday: DaySchedule;
+  sunday: DaySchedule;
+}
+
+export interface BusinessSettingsResponse {
+  id: string;
+  tenantId: string;
+  phone: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  timezone: string | null;
+  businessHours: BusinessHoursResponse | null;
+  serviceArea: string | null;
+  defaultDurationMinutes: number | null;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpsertBusinessSettingsRequest {
+  phone: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  timezone: string | null;
+  businessHours: BusinessHoursResponse | null;
+  serviceArea: string | null;
+  defaultDurationMinutes: number | null;
+  description: string | null;
+}
+
 export const apiClient = {
   createTenant: (input: CreateTenantRequest) =>
     request<CreateTenantResponse>('POST', '/v1/tenants', input),
@@ -75,6 +123,12 @@ export const apiClient = {
   getTenantMe: () => request<TenantResponse>('GET', '/v1/tenants/me'),
 
   getUserMe: () => request<UserResponse>('GET', '/v1/users/me'),
+
+  getBusinessSettings: () =>
+    request<BusinessSettingsResponse | null>('GET', '/v1/tenants/me/settings'),
+
+  upsertBusinessSettings: (input: UpsertBusinessSettingsRequest) =>
+    request<BusinessSettingsResponse>('PUT', '/v1/tenants/me/settings', input),
 };
 
 export { ApiClientError };
