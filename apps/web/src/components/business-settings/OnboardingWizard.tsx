@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -62,8 +62,7 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
     },
   });
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault();
+  function handleComplete() {
     mutation.mutate();
   }
 
@@ -92,7 +91,7 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
         ))}
       </nav>
 
-      <form onSubmit={handleSubmit}>
+      <div>
         <Card>
           <CardHeader>
             <CardTitle>{STEPS[step].title}</CardTitle>
@@ -152,13 +151,13 @@ export function OnboardingWizard({ initialData, onComplete }: OnboardingWizardPr
                 Next
               </Button>
             ) : (
-              <Button type="submit" disabled={mutation.isPending}>
+              <Button type="button" onClick={handleComplete} disabled={mutation.isPending}>
                 {mutation.isPending ? 'Saving...' : 'Complete Setup'}
               </Button>
             )}
           </CardFooter>
         </Card>
-      </form>
+      </div>
     </div>
   );
 }
