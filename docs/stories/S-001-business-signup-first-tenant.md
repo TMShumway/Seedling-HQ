@@ -22,6 +22,8 @@
 - **`--env-file=../../.env`** on tsx scripts — loads root .env without dotenv dependency (Node 24)
 - **Tailwind CSS v4** with `@tailwindcss/vite` plugin — no postcss.config or tailwind.config needed
 - **Manual shadcn components** — hand-written instead of CLI-generated (button, input, label, card, sheet)
+- **UnitOfWork pattern** for atomic writes — tenant + user + audit events wrapped in a single DB transaction via `DrizzleUnitOfWork`
+- **Empty slug rejection** — `slugify()` can produce empty strings from non-alphanumeric input; validated before persisting
 
 ## Deferred (not in S-001)
 - Cognito JWT validation (`AUTH_MODE=cognito`)
@@ -94,7 +96,7 @@
 - [x] **4.3** Final cleanup
 
 ## Test Summary
-- **13 unit tests** (create-tenant use case + slugify + auth middleware)
+- **17 unit tests** (create-tenant use case + slugify + empty-slug validation + auth middleware)
 - **7 integration tests** (tenant routes + cross-tenant isolation)
 - **8 E2E tests** (signup flow + mobile + a11y, desktop + mobile chrome)
-- **Total: 28 tests, all passing**
+- **Total: 32 tests, all passing**

@@ -139,6 +139,7 @@ Claude.md
 | Monorepo | pnpm workspaces | S-001 | |
 | Testing | Vitest (unit/integration) + Playwright (E2E) + axe-core (a11y) | S-001 | |
 | DB schema management | `db:push` for local dev, `db:generate` + `db:migrate` for prod | S-001 | Migrations introduced as schema evolves |
+| Transaction strategy | UnitOfWork port + `DrizzleUnitOfWork` | S-001 | Wraps `db.transaction()`; provides transaction-scoped repos to use cases |
 
 ## Deferred to later stories
 
