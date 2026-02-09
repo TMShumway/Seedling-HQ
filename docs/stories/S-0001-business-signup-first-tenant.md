@@ -1,4 +1,4 @@
-# S-001 — Business Signup + First Tenant
+# S-0001 — Business Signup + First Tenant
 
 **Status:** Complete
 **Last updated:** 2026-02-08
@@ -12,9 +12,9 @@
 - [x] Telemetry: `auth.signup`, `tenant.created`
 - [x] Local dev contract works: `pnpm i` → `make deps` → `pnpm gen` → `pnpm dev`
 
-## Design Decisions (S-001 specific)
+## Design Decisions (S-0001 specific)
 - **POST /v1/tenants is unauthenticated** — signup endpoint; no existing tenant/user to auth against
-- **`db:push` not `db:migrate`** — simpler for greenfield; migrations introduced in S-002+
+- **`db:push` not `db:migrate`** — simpler for greenfield; migrations introduced in S-0002+
 - **Vite proxy** to API at localhost:4000 — avoids CORS config for local dev
 - **No Testcontainers** — reuse docker-compose Postgres; truncate tables between tests
 - **Pino** for structured JSON logging
@@ -26,11 +26,11 @@
 - **Empty slug rejection** — `slugify()` can produce empty strings from non-alphanumeric input; validated before persisting
 - **Slug race-condition safety** — concurrent signups with the same name can pass the pre-check; DB unique-constraint violations (SQL state `23505`) are caught and mapped to `ConflictError` (409) via `isUniqueViolation()`
 
-## Deferred (not in S-001)
+## Deferred (not in S-0001)
 - Cognito JWT validation (`AUTH_MODE=cognito`)
-- `message_outbox` table (S-021)
-- `secure_link_tokens` table (S-010)
-- LocalStack / SQS / EventBridge (S-007+)
+- `message_outbox` table (S-0021)
+- `secure_link_tokens` table (S-0010)
+- LocalStack / SQS / EventBridge (S-0007+)
 - CI/CD pipeline
 - Full OpenAPI client generation (simple fetch wrapper for now)
 

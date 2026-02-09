@@ -9,30 +9,30 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 
 ## 1) Entity overview
 
-### 1.1 Implemented entities (S-001 through S-004)
+### 1.1 Implemented entities (S-0001 through S-0004)
 
 | Entity | Story | Tenant-scoped | Singleton | Soft delete |
 |--------|-------|---------------|-----------|-------------|
-| Tenant | S-001 | N/A (is the tenant) | No | No |
-| User | S-001 | Yes | No | No |
-| BusinessSettings | S-002 | Yes | Yes (per tenant) | No |
-| ServiceCategory | S-003 | Yes | No | Yes (`active` flag) |
-| ServiceItem | S-003 | Yes | No | Yes (`active` flag) |
-| Client | S-004 | Yes | No | Yes (`active` flag) |
-| Property | S-004 | Yes | No | Yes (`active` flag) |
-| AuditEvent | S-001 | Yes | No | No (append-only) |
+| Tenant | S-0001 | N/A (is the tenant) | No | No |
+| User | S-0001 | Yes | No | No |
+| BusinessSettings | S-0002 | Yes | Yes (per tenant) | No |
+| ServiceCategory | S-0003 | Yes | No | Yes (`active` flag) |
+| ServiceItem | S-0003 | Yes | No | Yes (`active` flag) |
+| Client | S-0004 | Yes | No | Yes (`active` flag) |
+| Property | S-0004 | Yes | No | Yes (`active` flag) |
+| AuditEvent | S-0001 | Yes | No | No (append-only) |
 
 ### 1.2 Planned entities (future stories)
 
 | Entity | Story | Description |
 |--------|-------|-------------|
-| Request | S-006 | Lead intake from public form or manual entry |
-| Quote | S-009 | Priced proposal sent to client for approval |
-| Job | S-012 | Work order created from an approved quote |
-| Visit | S-012 | Individual scheduled service visit within a job |
-| Invoice | S-017 | Bill generated from completed work |
-| MessageOutbox | S-021 | Durable record for outbound SMS/email |
-| SecureLinkToken | S-010 | Loginless access token for external pages |
+| Request | S-0006 | Lead intake from public form or manual entry |
+| Quote | S-0009 | Priced proposal sent to client for approval |
+| Job | S-0012 | Work order created from an approved quote |
+| Visit | S-0012 | Individual scheduled service visit within a job |
+| Invoice | S-0017 | Bill generated from completed work |
+| MessageOutbox | S-0021 | Durable record for outbound SMS/email |
+| SecureLinkToken | S-0010 | Loginless access token for external pages |
 
 ---
 
@@ -209,7 +209,7 @@ interface Property {
 
 > These definitions are **draft specifications** for upcoming stories. Finalize during story planning.
 
-### Request (S-006)
+### Request (S-0006)
 
 ```
 Request {
@@ -226,10 +226,10 @@ new → reviewed → converted
 
 - `new`: just submitted (public form or manual)
 - `reviewed`: owner has seen and triaged
-- `converted`: linked to a Client + Quote draft (S-008)
+- `converted`: linked to a Client + Quote draft (S-0008)
 - `declined`: owner rejected the request
 
-### Quote (S-009)
+### Quote (S-0009)
 
 ```
 Quote {
@@ -253,7 +253,7 @@ draft → sent → approved
 - `declined`: client explicitly rejected
 - `expired`: token TTL passed without action
 
-### Job (S-012)
+### Job (S-0012)
 
 ```
 Job {
@@ -273,7 +273,7 @@ scheduled → in_progress → completed
 - `completed`: all visits completed
 - `cancelled`: job cancelled by owner
 
-### Visit (S-012)
+### Visit (S-0012)
 
 ```
 Visit {
@@ -295,7 +295,7 @@ scheduled → en_route → started → completed
 - `completed`: work done, notes/photos captured
 - `cancelled`: visit cancelled
 
-### Invoice (S-017)
+### Invoice (S-0017)
 
 ```
 Invoice {
@@ -319,7 +319,7 @@ draft → sent → paid
 - `overdue`: past due date without payment
 - `void`: cancelled by owner
 
-### MessageOutbox (S-021)
+### MessageOutbox (S-0021)
 
 ```
 MessageOutbox {
@@ -335,7 +335,7 @@ MessageOutbox {
 **Status values:** `queued`, `scheduled`, `sent`, `failed`
 **Source of truth:** The outbox table is the durable record for all outbound comms.
 
-### SecureLinkToken (S-010)
+### SecureLinkToken (S-0010)
 
 ```
 SecureLinkToken {
@@ -358,15 +358,15 @@ Tenant
   ├── 1:*  User
   ├── 1:*  ServiceCategory
   │         └── 1:*  ServiceItem
-  ├── 1:*  Client (S-004)
-  │         └── 1:*  Property (S-004)
-  ├── 1:*  Request (S-006)
-  ├── 1:*  Quote (S-009)
-  │         └── 1:1  Job (S-012)
-  │                   └── 1:*  Visit (S-012)
-  ├── 1:*  Invoice (S-017)
-  ├── 1:*  MessageOutbox (S-021)
-  ├── 1:*  SecureLinkToken (S-010)
+  ├── 1:*  Client (S-0004)
+  │         └── 1:*  Property (S-0004)
+  ├── 1:*  Request (S-0006)
+  ├── 1:*  Quote (S-0009)
+  │         └── 1:1  Job (S-0012)
+  │                   └── 1:*  Visit (S-0012)
+  ├── 1:*  Invoice (S-0017)
+  ├── 1:*  MessageOutbox (S-0021)
+  ├── 1:*  SecureLinkToken (S-0010)
   └── 1:*  AuditEvent (append-only)
 ```
 
@@ -374,51 +374,51 @@ Tenant
 
 ## 5) Audit event catalog
 
-### Implemented events (S-001 through S-004)
+### Implemented events (S-0001 through S-0004)
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
-| `tenant.created` | tenant | New tenant signed up | S-001 |
-| `auth.signup` | user | Owner user created during signup | S-001 |
-| `business_settings.created` | business_settings | Settings upserted for first time (createdAt ≈ updatedAt) | S-002 |
-| `business_settings.updated` | business_settings | Settings subsequently updated (updatedAt > createdAt) | S-002 |
-| `service_category.created` | service_category | New category added | S-003 |
-| `service_category.updated` | service_category | Category name/description/sortOrder changed | S-003 |
-| `service_category.deactivated` | service_category | Category soft-deleted | S-003 |
-| `service_item.created` | service_item | New service item added | S-003 |
-| `service_item.updated` | service_item | Service item fields changed | S-003 |
-| `service_item.deactivated` | service_item | Service item soft-deleted | S-003 |
-| `client.created` | client | New client record created | S-004 |
-| `client.updated` | client | Client fields changed | S-004 |
-| `client.deactivated` | client | Client soft-deleted (cascades to properties) | S-004 |
-| `property.created` | property | New property added to client | S-004 |
-| `property.updated` | property | Property fields changed | S-004 |
-| `property.deactivated` | property | Property soft-deleted | S-004 |
+| `tenant.created` | tenant | New tenant signed up | S-0001 |
+| `auth.signup` | user | Owner user created during signup | S-0001 |
+| `business_settings.created` | business_settings | Settings upserted for first time (createdAt ≈ updatedAt) | S-0002 |
+| `business_settings.updated` | business_settings | Settings subsequently updated (updatedAt > createdAt) | S-0002 |
+| `service_category.created` | service_category | New category added | S-0003 |
+| `service_category.updated` | service_category | Category name/description/sortOrder changed | S-0003 |
+| `service_category.deactivated` | service_category | Category soft-deleted | S-0003 |
+| `service_item.created` | service_item | New service item added | S-0003 |
+| `service_item.updated` | service_item | Service item fields changed | S-0003 |
+| `service_item.deactivated` | service_item | Service item soft-deleted | S-0003 |
+| `client.created` | client | New client record created | S-0004 |
+| `client.updated` | client | Client fields changed | S-0004 |
+| `client.deactivated` | client | Client soft-deleted (cascades to properties) | S-0004 |
+| `property.created` | property | New property added to client | S-0004 |
+| `property.updated` | property | Property fields changed | S-0004 |
+| `property.deactivated` | property | Property soft-deleted | S-0004 |
 
 ### Planned events (future stories)
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
-| `request.created` | request | New request submitted | S-006 |
-| `request.converted` | request | Request converted to quote | S-008 |
-| `quote.created` | quote | Quote draft created | S-009 |
-| `quote.sent` | quote | Secure link sent to client | S-010 |
-| `quote.viewed` | quote | Client opens secure link | S-010 |
-| `quote.approved` | quote | Client approves quote | S-011 |
-| `quote.declined` | quote | Client declines quote | S-011 |
-| `job.created` | job | Job created from approved quote | S-012 |
-| `visit.scheduled` | visit | Visit date/time assigned | S-012 |
-| `visit.rescheduled` | visit | Visit date/time changed | S-013 |
-| `visit.completed` | visit | Tech marks visit done | S-015/S-016 |
-| `invoice.created` | invoice | Invoice generated from visit | S-017 |
-| `invoice.sent` | invoice | Secure link sent to client | S-017 |
-| `invoice.viewed` | invoice | Client opens secure link | S-017 |
-| `invoice.paid` | invoice | Payment received via Stripe | S-018 |
-| `message.sent` | message_outbox | Email/SMS sent by worker | S-021 |
-| `hub.viewed` | client_hub | Client opens hub link | S-020 |
-| `reminder.scheduled` | reminder | Reminder scheduled via EventBridge | S-022 |
-| `reminder.sent` | reminder | Reminder delivered | S-022 |
-| `reminder.canceled` | reminder | Reminder canceled (state change) | S-022 |
+| `request.created` | request | New request submitted | S-0006 |
+| `request.converted` | request | Request converted to quote | S-0008 |
+| `quote.created` | quote | Quote draft created | S-0009 |
+| `quote.sent` | quote | Secure link sent to client | S-0010 |
+| `quote.viewed` | quote | Client opens secure link | S-0010 |
+| `quote.approved` | quote | Client approves quote | S-0011 |
+| `quote.declined` | quote | Client declines quote | S-0011 |
+| `job.created` | job | Job created from approved quote | S-0012 |
+| `visit.scheduled` | visit | Visit date/time assigned | S-0012 |
+| `visit.rescheduled` | visit | Visit date/time changed | S-0013 |
+| `visit.completed` | visit | Tech marks visit done | S-0015/S-0016 |
+| `invoice.created` | invoice | Invoice generated from visit | S-0017 |
+| `invoice.sent` | invoice | Secure link sent to client | S-0017 |
+| `invoice.viewed` | invoice | Client opens secure link | S-0017 |
+| `invoice.paid` | invoice | Payment received via Stripe | S-0018 |
+| `message.sent` | message_outbox | Email/SMS sent by worker | S-0021 |
+| `hub.viewed` | client_hub | Client opens hub link | S-0020 |
+| `reminder.scheduled` | reminder | Reminder scheduled via EventBridge | S-0022 |
+| `reminder.sent` | reminder | Reminder delivered | S-0022 |
+| `reminder.canceled` | reminder | Reminder canceled (state change) | S-0022 |
 
 ### Audit event schema
 
@@ -446,9 +446,9 @@ All audit events share this structure:
 |------|----------------|-------|
 | Entity state | Primary tables (`tenants`, `users`, etc.) | Always scoped by `tenant_id` |
 | Audit trail | `audit_events` table | Append-only; never updated or deleted |
-| Outbound comms | `message_outbox` table (S-021) | Durable record; worker is idempotent based on outbox status |
-| External access | `secure_link_tokens` table (S-010) | Token hash only; never store plaintext |
-| Scheduled reminders | EventBridge Scheduler (S-022) | Deterministic schedule keys for reliable cancellation |
+| Outbound comms | `message_outbox` table (S-0021) | Durable record; worker is idempotent based on outbox status |
+| External access | `secure_link_tokens` table (S-0010) | Token hash only; never store plaintext |
+| Scheduled reminders | EventBridge Scheduler (S-0022) | Deterministic schedule keys for reliable cancellation |
 
 ---
 

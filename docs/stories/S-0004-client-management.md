@@ -1,4 +1,4 @@
-# S-004: Client + Property Management
+# S-0004: Client + Property Management
 
 ## Phase 1: Story File + DB Schema
 - [x] Create story file
@@ -78,7 +78,7 @@
 - [x] Deeper dashboard accent colors (sky/blue/teal replacing pastel indigo/violet/emerald)
 - [x] Plain-text welcome header (removed gradient banner), tighter spacing
 - [x] Rename branding to "Seedling HQ" across sidebar, topbar, mobile drawer
-- [x] Updated UI/UX context pack, S-002 story notes, CLAUDE.md design decisions
+- [x] Updated UI/UX context pack, S-0002 story notes, CLAUDE.md design decisions
 
 ## Phase 16: PR Feedback Fixes
 - [x] Add post-trim validation in `UpdateClientUseCase` (reject whitespace-only `firstName`/`lastName`)
@@ -87,7 +87,7 @@
 
 ## Verification
 - [x] Frontend builds cleanly
-- [x] All 59 unit tests pass (41 existing + 15 S-004 + 3 PR feedback)
+- [x] All 59 unit tests pass (41 existing + 15 S-0004 + 3 PR feedback)
 - [x] Integration tests — 61 passing (including 27 new client/property + 4 cross-tenant)
 - [x] E2E tests — 32 passing, 12 skipped (non-desktop-chrome)
 - [x] `db:push` schema applied

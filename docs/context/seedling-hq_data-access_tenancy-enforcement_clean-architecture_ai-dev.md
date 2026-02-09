@@ -164,7 +164,7 @@ Use DB transactions when:
 Do NOT wrap external calls (SMS/SES/Stripe) inside DB transactions:
 - write outbox first, commit, then async worker sends.
 
-### 9.1 UnitOfWork pattern (implemented in S-001)
+### 9.1 UnitOfWork pattern (implemented in S-0001)
 
 Atomic writes use a `UnitOfWork` port (`application/ports/unit-of-work.ts`) backed by `DrizzleUnitOfWork` (`infra/db/drizzle-unit-of-work.ts`).
 
@@ -191,7 +191,7 @@ try {
 
 **Defensive unique-constraint handling:** Pre-checks (e.g. `getBySlug`) stay outside the transaction as a fast path, but concurrent requests can race past them. Always wrap `uow.run()` in a try/catch that maps SQL state `23505` (unique_violation) to the appropriate domain error (e.g. `ConflictError`). Use the `isUniqueViolation()` helper from `shared/errors.ts`.
 
-### 9.2 Singleton upsert pattern (implemented in S-002)
+### 9.2 Singleton upsert pattern (implemented in S-0002)
 
 For singleton-per-tenant entities (e.g., `business_settings`), use `onConflictDoUpdate` on the unique `tenant_id` constraint to create-or-update in one operation. This avoids the need for UnitOfWork — it's a single entity write with best-effort audit.
 

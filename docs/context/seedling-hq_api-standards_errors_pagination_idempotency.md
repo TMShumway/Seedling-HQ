@@ -3,7 +3,7 @@
 _Last updated: 2026-02-09 (America/Chihuahua)_
 
 > Purpose: Define consistent API behavior so agents and humans build endpoints the same way.
-> This doc captures conventions established in S-001 through S-003 and defines standards for future stories.
+> This doc captures conventions established in S-0001 through S-0003 and defines standards for future stories.
 
 ---
 
@@ -145,7 +145,7 @@ All other routes require auth via the `requireAuth` preHandler hook.
 
 ## 5) Pagination
 
-> Implemented in S-004 (Client list). All future list endpoints that need pagination should follow this pattern.
+> Implemented in S-0004 (Client list). All future list endpoints that need pagination should follow this pattern.
 
 ### Cursor-based pagination
 
@@ -163,7 +163,7 @@ GET /v1/clients?limit=50&cursor=<opaque_string>
 }
 ```
 
-### Implementation details (S-004)
+### Implementation details (S-0004)
 
 - **Cursor encoding:** base64url JSON of `{ id, createdAt }` — opaque to clients
 - **Keyset condition:** `WHERE (created_at, id) < (cursor_ca, cursor_id) ORDER BY created_at DESC, id DESC`
@@ -186,7 +186,7 @@ GET /v1/clients?limit=50&cursor=<opaque_string>
 
 ## 6) Filtering conventions
 
-### Established patterns (S-003 through S-004)
+### Established patterns (S-0003 through S-0004)
 
 | Parameter | Type | Description | Example |
 |-----------|------|-------------|---------|
@@ -222,7 +222,7 @@ For POST endpoints with side effects (e.g., invoice payment, SMS send):
 - Server stores the key and returns the cached response on retry
 - Keys expire after 24 hours
 
-This will be implemented when needed (S-018 Stripe payments, S-021 outbox).
+This will be implemented when needed (S-0018 Stripe payments, S-0021 outbox).
 
 ---
 

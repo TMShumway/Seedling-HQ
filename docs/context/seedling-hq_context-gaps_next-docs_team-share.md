@@ -44,7 +44,7 @@ Seedling-HQ currently has ten context packs:
    - Secure-link token storage, outbox data model, S3 keying rules
 
 9) **Domain model + status machines + audit catalog**
-   - Implemented entity definitions (through S-004) and planned entity definitions with status machines
+   - Implemented entity definitions (through S-0004) and planned entity definitions with status machines
    - Audit event catalog (16 implemented + 15 planned), entity relationships
 
 10) **API standards (errors, pagination, idempotency)**
@@ -55,9 +55,9 @@ This foundation is strong. What remains are the "rails" that prevent agents (and
 
 ### Recently resolved decisions
 - **Internal auth mechanism (2026-02-08):** AWS Cognito chosen. Documented in Architecture doc Section 4.1, Security Baseline Section 3.2/3.4, DevEx Section 5.2. Resolves Architecture doc Section 15F open risk.
-- **S-002 implemented (2026-02-08):** Business settings CRUD (singleton upsert pattern), onboarding wizard, settings page. Introduces `BusinessSettings`, `DaySchedule`, `BusinessHours` domain entities. Establishes patterns: singleton upsert via `onConflictDoUpdate`, GET-returns-null-on-empty, wizard `<div>` (not `<form>`), `db:reset` for E2E isolation.
-- **S-003 implemented (2026-02-08):** Service catalog (price book v1). Two-level hierarchy: `ServiceCategory` → `ServiceItem`. Prices stored as integer cents, soft delete via `active` boolean with cascade (deactivating a category also deactivates its items via `deactivateByCategoryId`). Unit types: flat/hourly/per_sqft/per_unit/per_visit. Establishes patterns: read-only routes skip use cases (direct repo calls), DELETE returns 204, dollar↔cents conversion in frontend, E2E scoped locators via `.filter({ hasText })`, defensive unique-constraint catch with `isUniqueViolation()`.
-- **S-004 implemented (2026-02-09):** Client + Property management (CRM layer). Two-level hierarchy: `Client` → `Property`. Soft delete with cascade (deactivating a client also deactivates its properties). Introduces cursor-based pagination (`PaginatedResult<T>` with keyset on `(created_at DESC, id DESC)`), server-side ILIKE search across multiple columns, count endpoint for dashboard metrics, nested+flat URL pattern (properties listed under client, operated individually). Frontend uses `useInfiniteQuery` for "Load More" pagination with debounced search. 56 unit, 61 integration, 32 E2E tests passing.
+- **S-0002 implemented (2026-02-08):** Business settings CRUD (singleton upsert pattern), onboarding wizard, settings page. Introduces `BusinessSettings`, `DaySchedule`, `BusinessHours` domain entities. Establishes patterns: singleton upsert via `onConflictDoUpdate`, GET-returns-null-on-empty, wizard `<div>` (not `<form>`), `db:reset` for E2E isolation.
+- **S-0003 implemented (2026-02-08):** Service catalog (price book v1). Two-level hierarchy: `ServiceCategory` → `ServiceItem`. Prices stored as integer cents, soft delete via `active` boolean with cascade (deactivating a category also deactivates its items via `deactivateByCategoryId`). Unit types: flat/hourly/per_sqft/per_unit/per_visit. Establishes patterns: read-only routes skip use cases (direct repo calls), DELETE returns 204, dollar↔cents conversion in frontend, E2E scoped locators via `.filter({ hasText })`, defensive unique-constraint catch with `isUniqueViolation()`.
+- **S-0004 implemented (2026-02-09):** Client + Property management (CRM layer). Two-level hierarchy: `Client` → `Property`. Soft delete with cascade (deactivating a client also deactivates its properties). Introduces cursor-based pagination (`PaginatedResult<T>` with keyset on `(created_at DESC, id DESC)`), server-side ILIKE search across multiple columns, count endpoint for dashboard metrics, nested+flat URL pattern (properties listed under client, operated individually). Frontend uses `useInfiniteQuery` for "Load More" pagination with debounced search. 56 unit, 61 integration, 32 E2E tests passing.
 
 ---
 
@@ -73,7 +73,7 @@ This foundation is strong. What remains are the "rails" that prevent agents (and
 
 ### ~~3) Data access patterns + tenancy enforcement~~ — DONE
 > Covered by: `seedling-hq_data-access_tenancy-enforcement_clean-architecture_ai-dev.md`
-> ~~Remaining sub-gap: ORM/query builder choice and migration tooling are not yet decided.~~ Resolved in S-001: Drizzle ORM + drizzle-kit.
+> ~~Remaining sub-gap: ORM/query builder choice and migration tooling are not yet decided.~~ Resolved in S-0001: Drizzle ORM + drizzle-kit.
 
 ### ~~4) Security baseline beyond stories~~ — DONE
 > Covered by: `seedling-hq_security-baseline_context_ai-dev.md`
@@ -97,7 +97,7 @@ Document:
 
 ### ~~7) Observability + telemetry specification~~ — DONE
 > Covered by: `seedling-hq_observability-telemetry-spec_context_ai-dev.md`
-> ~~Remaining sub-gaps: concrete logging library choice~~ Resolved in S-001: Pino (structured JSON). Remaining sub-gaps: CloudWatch EMF code patterns, client-side error tracking approach.
+> ~~Remaining sub-gaps: concrete logging library choice~~ Resolved in S-0001: Pino (structured JSON). Remaining sub-gaps: CloudWatch EMF code patterns, client-side error tracking approach.
 
 ### 8) Automation/reminders policy (cadences + cancellation keys)
 MVP requires automation, but exact defaults and cancelation rules aren’t a single source of truth.

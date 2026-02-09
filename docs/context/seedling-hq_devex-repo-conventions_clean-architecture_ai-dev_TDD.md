@@ -285,7 +285,7 @@ Return a consistent JSON error shape (define in your API standards doc when crea
 - Logging tokens, PII, Stripe secrets
 - Worker jobs without idempotency checks
 - Introducing global state patterns without a clear need
-- **Wrapping multi-step wizard steps in `<form>` tags** — native inputs (time, number) can trigger implicit form submission during re-renders. Use `<div>` + explicit `onClick` handlers (learned in S-002).
+- **Wrapping multi-step wizard steps in `<form>` tags** — native inputs (time, number) can trigger implicit form submission during re-renders. Use `<div>` + explicit `onClick` handlers (learned in S-0002).
 
 ---
 

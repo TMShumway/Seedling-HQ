@@ -1,4 +1,4 @@
-# S-003: Service Catalog (Price Book v1)
+# S-0003: Service Catalog (Price Book v1)
 
 ## Status: Complete
 
