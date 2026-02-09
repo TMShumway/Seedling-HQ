@@ -82,8 +82,8 @@ export function BusinessSettingsForm({ initialData, onSubmitSuccess }: BusinessS
         </div>
       )}
       {successMsg && (
-        <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-4 shadow-md" role="status">
-          <CheckCircle2 className="h-6 w-6 shrink-0 text-green-600" />
+        <div className="flex items-center gap-3 rounded-lg border border-green-300 bg-green-50 p-4 shadow-md" role="status">
+          <CheckCircle2 className="h-6 w-6 shrink-0 text-green-700" />
           <span className="text-base font-semibold text-green-800">{successMsg}</span>
         </div>
       )}

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiClient } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
-import { Building2, UserCircle, ClipboardList, Clock } from 'lucide-react';
+import { Building2, UserCircle, ClipboardList, Clock, Users } from 'lucide-react';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 const ORDERED_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
@@ -16,10 +16,10 @@ function getTodayName() {
 
 function DashboardSkeleton() {
   return (
-    <div className="space-y-8">
-      <div className="rounded-xl bg-gradient-to-r from-primary/5 to-primary/10 p-6">
-        <Skeleton className="h-8 w-64 bg-primary/10" />
-        <Skeleton className="mt-2 h-5 w-48 bg-primary/10" />
+    <div className="space-y-5">
+      <div className="rounded-xl bg-gradient-to-r from-primary/8 to-primary/15 p-6">
+        <Skeleton className="h-8 w-64 bg-primary/15" />
+        <Skeleton className="mt-2 h-5 w-48 bg-primary/15" />
       </div>
       <div className="grid gap-5 md:grid-cols-2">
         <Skeleton className="h-44 rounded-xl" />
@@ -51,11 +51,16 @@ export function DashboardPage() {
     queryFn: () => apiClient.getBusinessSettings(),
   });
 
-  if (tenantQuery.isLoading || userQuery.isLoading || settingsQuery.isLoading) {
+  const clientCountQuery = useQuery({
+    queryKey: ['clients', 'count'],
+    queryFn: () => apiClient.countClients(),
+  });
+
+  if (tenantQuery.isLoading || userQuery.isLoading || settingsQuery.isLoading || clientCountQuery.isLoading) {
     return <DashboardSkeleton />;
   }
 
-  if (tenantQuery.error || userQuery.error || settingsQuery.error) {
+  if (tenantQuery.error || userQuery.error || settingsQuery.error || clientCountQuery.error) {
     return (
       <div className="text-destructive">
         Failed to load dashboard data. Please try again.
@@ -69,9 +74,9 @@ export function DashboardPage() {
   const today = getTodayName();
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       {/* Welcome header with gradient background */}
-      <div className="rounded-xl bg-gradient-to-r from-primary/5 via-primary/8 to-transparent p-6">
+      <div>
         <h1 className="text-2xl font-bold">
           Welcome back, {user?.fullName?.split(' ')[0] ?? 'there'}
         </h1>
@@ -101,10 +106,10 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-indigo-400 transition-shadow hover:shadow-md">
+        <Card className="border-l-4 border-l-sky-600 transition-shadow hover:shadow-md">
           <CardHeader className="flex flex-row items-center gap-3 space-y-0">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50">
-              <UserCircle className="h-4 w-4 text-indigo-500" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-50">
+              <UserCircle className="h-4 w-4 text-sky-700" />
             </div>
             <CardTitle className="text-base">Owner Info</CardTitle>
           </CardHeader>
@@ -125,10 +130,29 @@ export function DashboardPage() {
         </Card>
       </div>
 
+      {/* Client count card */}
+      <Card
+        className="cursor-pointer border-l-4 border-l-blue-600 transition-shadow hover:shadow-md"
+        onClick={() => navigate('/clients')}
+      >
+        <CardHeader className="flex flex-row items-center gap-3 space-y-0">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50">
+            <Users className="h-4 w-4 text-blue-700" />
+          </div>
+          <CardTitle className="text-base">Clients</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-3xl font-bold" data-testid="client-count">
+            {clientCountQuery.data?.count ?? 0}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">Active clients</p>
+        </CardContent>
+      </Card>
+
       {/* Settings / Onboarding */}
       {!settings ? (
         <Card data-testid="onboarding-cta" className="overflow-hidden border-dashed">
-          <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5">
+          <div className="bg-gradient-to-r from-primary/8 via-primary/15 to-primary/8">
             <CardContent className="flex flex-col items-center gap-5 py-12 text-center">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 ring-4 ring-primary/5">
                 <ClipboardList className="h-7 w-7 text-primary" />
@@ -147,11 +171,11 @@ export function DashboardPage() {
         </Card>
       ) : (
         <div className="grid gap-5 md:grid-cols-2">
-          <Card data-testid="settings-summary" className="border-l-4 border-l-emerald-400 transition-shadow hover:shadow-md">
+          <Card data-testid="settings-summary" className="border-l-4 border-l-teal-600 transition-shadow hover:shadow-md">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50">
-                  <Building2 className="h-4 w-4 text-emerald-600" />
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-50">
+                  <Building2 className="h-4 w-4 text-teal-700" />
                 </div>
                 <CardTitle className="text-base">Business Profile</CardTitle>
               </div>
@@ -196,7 +220,7 @@ export function DashboardPage() {
               )}
               {settings.description && (
                 <>
-                  <hr className="border-border/50" />
+                  <hr className="border-border" />
                   <div>
                     <span className="text-muted-foreground">Description</span>
                     <p className="mt-1 font-medium">{settings.description}</p>
@@ -207,10 +231,10 @@ export function DashboardPage() {
           </Card>
 
           {settings.businessHours && (
-            <Card className="border-l-4 border-l-amber-400 transition-shadow hover:shadow-md">
+            <Card className="border-l-4 border-l-amber-500 transition-shadow hover:shadow-md">
               <CardHeader className="flex flex-row items-center gap-3 space-y-0">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-50">
-                  <Clock className="h-4 w-4 text-amber-600" />
+                  <Clock className="h-4 w-4 text-amber-700" />
                 </div>
                 <CardTitle className="text-base">Business Hours</CardTitle>
               </CardHeader>
@@ -230,7 +254,7 @@ export function DashboardPage() {
                       >
                         <span className="capitalize">
                           {day}
-                          {isToday && <span className="ml-2 text-xs font-normal text-amber-600">(Today)</span>}
+                          {isToday && <span className="ml-2 text-xs font-normal text-amber-700">(Today)</span>}
                         </span>
                         <span>
                           {schedule.closed ? 'Closed' : `${schedule.open} – ${schedule.close}`}

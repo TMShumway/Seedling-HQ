@@ -47,7 +47,7 @@ export function OnboardingPage() {
       <div className="mx-auto max-w-md space-y-4 text-center" data-testid="already-configured">
         <div className="flex justify-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-            <CheckCircle2 className="h-6 w-6 text-green-600" />
+            <CheckCircle2 className="h-6 w-6 text-green-700" />
           </div>
         </div>
         <h1 className="text-2xl font-bold">Business profile already configured</h1>

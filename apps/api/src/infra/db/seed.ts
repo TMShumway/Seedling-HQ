@@ -1,6 +1,6 @@
 import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { tenants, users, auditEvents, serviceCategories, serviceItems } from './schema.js';
+import { tenants, users, auditEvents, serviceCategories, serviceItems, clients, properties } from './schema.js';
 import { sql } from 'drizzle-orm';
 
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
@@ -86,6 +86,44 @@ async function seed() {
       .onConflictDoUpdate({
         target: serviceItems.id,
         set: { name: svc.name, unitPrice: svc.unitPrice, unitType: svc.unitType, estimatedDurationMinutes: svc.estimatedDurationMinutes, sortOrder: svc.sortOrder },
+      });
+  }
+
+  // Upsert demo clients
+  const DEMO_CLIENT_IDS = {
+    johnSmith: '00000000-0000-0000-0000-000000000400',
+    janeJohnson: '00000000-0000-0000-0000-000000000401',
+    bobWilson: '00000000-0000-0000-0000-000000000402',
+  };
+
+  const clientValues = [
+    { id: DEMO_CLIENT_IDS.johnSmith, tenantId: DEMO_TENANT_ID, firstName: 'John', lastName: 'Smith', email: 'john.smith@example.com', phone: '(555) 100-1001', company: 'Smith Residence', notes: 'Prefers communication via text', tags: ['residential', 'weekly'] },
+    { id: DEMO_CLIENT_IDS.janeJohnson, tenantId: DEMO_TENANT_ID, firstName: 'Jane', lastName: 'Johnson', email: 'jane.johnson@example.com', phone: '(555) 100-1002', company: 'Johnson & Co', notes: null, tags: ['commercial'] },
+    { id: DEMO_CLIENT_IDS.bobWilson, tenantId: DEMO_TENANT_ID, firstName: 'Bob', lastName: 'Wilson', email: 'bob.wilson@example.com', phone: '(555) 100-1003', company: null, notes: 'Has large backyard', tags: ['residential'] },
+  ];
+  for (const c of clientValues) {
+    await db
+      .insert(clients)
+      .values(c)
+      .onConflictDoUpdate({
+        target: clients.id,
+        set: { firstName: c.firstName, lastName: c.lastName, email: c.email, phone: c.phone, company: c.company, notes: c.notes, tags: c.tags },
+      });
+  }
+
+  // Upsert demo properties
+  const propertyValues = [
+    { id: '00000000-0000-0000-0000-000000000500', tenantId: DEMO_TENANT_ID, clientId: DEMO_CLIENT_IDS.johnSmith, addressLine1: '123 Main Street', addressLine2: null, city: 'Springfield', state: 'IL', zip: '62701', notes: 'Corner lot, large yard' },
+    { id: '00000000-0000-0000-0000-000000000501', tenantId: DEMO_TENANT_ID, clientId: DEMO_CLIENT_IDS.janeJohnson, addressLine1: '456 Commerce Blvd', addressLine2: 'Suite 200', city: 'Springfield', state: 'IL', zip: '62702', notes: 'Commercial property — main entrance on Commerce' },
+    { id: '00000000-0000-0000-0000-000000000502', tenantId: DEMO_TENANT_ID, clientId: DEMO_CLIENT_IDS.bobWilson, addressLine1: '789 Oak Avenue', addressLine2: null, city: 'Springfield', state: 'IL', zip: '62703', notes: null },
+  ];
+  for (const p of propertyValues) {
+    await db
+      .insert(properties)
+      .values(p)
+      .onConflictDoUpdate({
+        target: properties.id,
+        set: { addressLine1: p.addressLine1, addressLine2: p.addressLine2, city: p.city, state: p.state, zip: p.zip, notes: p.notes },
       });
   }
 

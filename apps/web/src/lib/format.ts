@@ -21,3 +21,19 @@ const UNIT_TYPE_LABELS: Record<string, string> = {
 export function formatUnitType(unitType: string): string {
   return UNIT_TYPE_LABELS[unitType] ?? unitType;
 }
+
+export function formatClientName(firstName: string, lastName: string): string {
+  return `${firstName} ${lastName}`;
+}
+
+export function formatAddress(parts: {
+  addressLine1: string;
+  addressLine2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
+}): string {
+  return [parts.addressLine1, parts.addressLine2, parts.city, parts.state, parts.zip]
+    .filter(Boolean)
+    .join(', ');
+}

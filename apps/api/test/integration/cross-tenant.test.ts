@@ -385,6 +385,172 @@ describe('Cross-tenant isolation', () => {
     expect(deleteRes.statusCode).toBe(404);
   });
 
+  it('Tenant B cannot list Tenant A clients', async () => {
+    const app = await buildTestApp();
+
+    const resA = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Tenant A Clients', ownerEmail: 'a-cli@test.com', ownerFullName: 'Owner A' },
+    });
+    const tenantA = resA.json();
+
+    const resB = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Tenant B Clients', ownerEmail: 'b-cli@test.com', ownerFullName: 'Owner B' },
+    });
+    const tenantB = resB.json();
+
+    // Tenant A creates a client
+    const appA = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenantA.tenant.id,
+      DEV_AUTH_USER_ID: tenantA.user.id,
+    });
+    await appA.inject({
+      method: 'POST',
+      url: '/v1/clients',
+      payload: { firstName: 'John', lastName: 'Smith' },
+    });
+
+    // Tenant B should see empty list
+    const appB = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenantB.tenant.id,
+      DEV_AUTH_USER_ID: tenantB.user.id,
+    });
+    const listRes = await appB.inject({
+      method: 'GET',
+      url: '/v1/clients',
+    });
+    expect(listRes.statusCode).toBe(200);
+    expect(listRes.json().data).toHaveLength(0);
+  });
+
+  it('Tenant B cannot update Tenant A client', async () => {
+    const app = await buildTestApp();
+
+    const resA = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Tenant A Cli Update', ownerEmail: 'a-cli-u@test.com', ownerFullName: 'Owner A' },
+    });
+    const tenantA = resA.json();
+
+    const resB = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Tenant B Cli Update', ownerEmail: 'b-cli-u@test.com', ownerFullName: 'Owner B' },
+    });
+    const tenantB = resB.json();
+
+    const appA = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenantA.tenant.id,
+      DEV_AUTH_USER_ID: tenantA.user.id,
+    });
+    const clientRes = await appA.inject({
+      method: 'POST',
+      url: '/v1/clients',
+      payload: { firstName: 'John', lastName: 'Smith' },
+    });
+    const clientId = clientRes.json().id;
+
+    const appB = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenantB.tenant.id,
+      DEV_AUTH_USER_ID: tenantB.user.id,
+    });
+    const updateRes = await appB.inject({
+      method: 'PUT',
+      url: `/v1/clients/${clientId}`,
+      payload: { firstName: 'Hacked' },
+    });
+    expect(updateRes.statusCode).toBe(404);
+  });
+
+  it('Tenant B cannot delete Tenant A client', async () => {
+    const app = await buildTestApp();
+
+    const resA = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Tenant A Cli Del', ownerEmail: 'a-cli-d@test.com', ownerFullName: 'Owner A' },
+    });
+    const tenantA = resA.json();
+
+    const resB = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Tenant B Cli Del', ownerEmail: 'b-cli-d@test.com', ownerFullName: 'Owner B' },
+    });
+    const tenantB = resB.json();
+
+    const appA = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenantA.tenant.id,
+      DEV_AUTH_USER_ID: tenantA.user.id,
+    });
+    const clientRes = await appA.inject({
+      method: 'POST',
+      url: '/v1/clients',
+      payload: { firstName: 'John', lastName: 'Smith' },
+    });
+    const clientId = clientRes.json().id;
+
+    const appB = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenantB.tenant.id,
+      DEV_AUTH_USER_ID: tenantB.user.id,
+    });
+    const deleteRes = await appB.inject({
+      method: 'DELETE',
+      url: `/v1/clients/${clientId}`,
+    });
+    expect(deleteRes.statusCode).toBe(404);
+  });
+
+  it('Tenant B cannot list Tenant A client properties', async () => {
+    const app = await buildTestApp();
+
+    const resA = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Tenant A Props', ownerEmail: 'a-prop@test.com', ownerFullName: 'Owner A' },
+    });
+    const tenantA = resA.json();
+
+    const resB = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Tenant B Props', ownerEmail: 'b-prop@test.com', ownerFullName: 'Owner B' },
+    });
+    const tenantB = resB.json();
+
+    const appA = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenantA.tenant.id,
+      DEV_AUTH_USER_ID: tenantA.user.id,
+    });
+    const clientRes = await appA.inject({
+      method: 'POST',
+      url: '/v1/clients',
+      payload: { firstName: 'John', lastName: 'Smith' },
+    });
+    const clientId = clientRes.json().id;
+
+    await appA.inject({
+      method: 'POST',
+      url: `/v1/clients/${clientId}/properties`,
+      payload: { addressLine1: '123 Main St' },
+    });
+
+    const appB = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenantB.tenant.id,
+      DEV_AUTH_USER_ID: tenantB.user.id,
+    });
+    const listRes = await appB.inject({
+      method: 'GET',
+      url: `/v1/clients/${clientId}/properties`,
+    });
+    expect(listRes.statusCode).toBe(200);
+    expect(listRes.json()).toHaveLength(0);
+  });
+
   it('Tenant B context cannot see Tenant A users via GET /v1/users/me', async () => {
     const app = await buildTestApp();
 

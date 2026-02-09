@@ -49,7 +49,7 @@ export function CategorySection({
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
 
   return (
-    <div className="rounded-xl border border-border/60 bg-card shadow-sm" data-testid="category-section">
+    <div className="rounded-xl border border-border bg-card shadow-sm" data-testid="category-section">
       {/* Category header */}
       {editingCategory ? (
         <div className="p-4">
