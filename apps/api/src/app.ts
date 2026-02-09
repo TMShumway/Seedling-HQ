@@ -20,6 +20,7 @@ import { buildServiceCategoryRoutes } from './adapters/http/routes/service-categ
 import { buildServiceItemRoutes } from './adapters/http/routes/service-item-routes.js';
 import { buildClientRoutes } from './adapters/http/routes/client-routes.js';
 import { buildPropertyRoutes } from './adapters/http/routes/property-routes.js';
+import { buildRequestRoutes } from './adapters/http/routes/request-routes.js';
 import { DrizzleTenantRepository } from './infra/db/repositories/drizzle-tenant-repository.js';
 import { DrizzleUserRepository } from './infra/db/repositories/drizzle-user-repository.js';
 import { DrizzleAuditEventRepository } from './infra/db/repositories/drizzle-audit-event-repository.js';
@@ -28,6 +29,7 @@ import { DrizzleServiceCategoryRepository } from './infra/db/repositories/drizzl
 import { DrizzleServiceItemRepository } from './infra/db/repositories/drizzle-service-item-repository.js';
 import { DrizzleClientRepository } from './infra/db/repositories/drizzle-client-repository.js';
 import { DrizzlePropertyRepository } from './infra/db/repositories/drizzle-property-repository.js';
+import { DrizzleRequestRepository } from './infra/db/repositories/drizzle-request-repository.js';
 import { DrizzleUnitOfWork } from './infra/db/drizzle-unit-of-work.js';
 
 export interface CreateAppOptions {
@@ -69,6 +71,7 @@ export async function createApp({ config, db }: CreateAppOptions) {
   const serviceItemRepo = new DrizzleServiceItemRepository(db);
   const clientRepo = new DrizzleClientRepository(db);
   const propertyRepo = new DrizzlePropertyRepository(db);
+  const requestRepo = new DrizzleRequestRepository(db);
   const uow = new DrizzleUnitOfWork(db);
 
   // Routes
@@ -80,6 +83,7 @@ export async function createApp({ config, db }: CreateAppOptions) {
   await app.register(buildServiceItemRoutes({ serviceItemRepo, categoryRepo, auditRepo, config }));
   await app.register(buildClientRoutes({ clientRepo, propertyRepo, auditRepo, config }));
   await app.register(buildPropertyRoutes({ propertyRepo, clientRepo, auditRepo, config }));
+  await app.register(buildRequestRoutes({ requestRepo, tenantRepo, auditRepo, config }));
 
   return app;
 }
