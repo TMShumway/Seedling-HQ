@@ -107,6 +107,15 @@ export class DrizzleRequestRepository implements RequestRepository {
     return toEntity(row);
   }
 
+  async updateStatus(tenantId: string, id: string, status: string): Promise<Request | null> {
+    const rows = await this.db
+      .update(requests)
+      .set({ status, updatedAt: new Date() })
+      .where(and(eq(requests.tenantId, tenantId), eq(requests.id, id)))
+      .returning();
+    return rows[0] ? toEntity(rows[0]) : null;
+  }
+
   async count(tenantId: string): Promise<number> {
     const result = await this.db
       .select({ count: sql<number>`count(*)::int` })

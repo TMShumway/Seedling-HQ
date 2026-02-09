@@ -226,3 +226,35 @@ export const properties = pgTable(
     index('properties_client_id_idx').on(table.clientId),
   ],
 );
+
+export const quotes = pgTable(
+  'quotes',
+  {
+    id: uuid('id').primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id),
+    requestId: uuid('request_id').references(() => requests.id),
+    clientId: uuid('client_id')
+      .notNull()
+      .references(() => clients.id),
+    propertyId: uuid('property_id').references(() => properties.id),
+    title: varchar('title', { length: 500 }).notNull(),
+    lineItems: jsonb('line_items').$type<unknown[]>().notNull().default([]),
+    subtotal: integer('subtotal').notNull().default(0),
+    tax: integer('tax').notNull().default(0),
+    total: integer('total').notNull().default(0),
+    status: varchar('status', { length: 50 }).notNull().default('draft'),
+    sentAt: timestamp('sent_at', { withTimezone: true }),
+    approvedAt: timestamp('approved_at', { withTimezone: true }),
+    declinedAt: timestamp('declined_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('quotes_tenant_id_idx').on(table.tenantId),
+    index('quotes_client_id_idx').on(table.clientId),
+    index('quotes_request_id_idx').on(table.requestId),
+    index('quotes_tenant_status_idx').on(table.tenantId, table.status),
+  ],
+);
