@@ -38,7 +38,7 @@ export interface CreateAppOptions {
 }
 
 export async function createApp({ config, db }: CreateAppOptions) {
-  const app = Fastify({ logger: loggerConfig });
+  const app = Fastify({ logger: loggerConfig, trustProxy: true });
 
   // Zod type provider
   app.setValidatorCompiler(validatorCompiler);
