@@ -9,7 +9,7 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 
 ## 1) Entity overview
 
-### 1.1 Implemented entities (S-0001 through S-0006)
+### 1.1 Implemented entities (S-0001 through S-0007)
 
 | Entity | Story | Tenant-scoped | Singleton | Soft delete |
 |--------|-------|---------------|-----------|-------------|
@@ -22,6 +22,7 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 | Property | S-0004 | Yes | No | Yes (`active` flag) |
 | AuditEvent | S-0001 | Yes | No | No (append-only) |
 | Request | S-0006 | Yes | No | No |
+| MessageOutbox | S-0007 | Yes | No | No (append-only) |
 
 ### 1.2 Planned entities (future stories)
 
@@ -31,7 +32,6 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 | Job | S-0012 | Work order created from an approved quote |
 | Visit | S-0012 | Individual scheduled service visit within a job |
 | Invoice | S-0017 | Bill generated from completed work |
-| MessageOutbox | S-0021 | Durable record for outbound SMS/email |
 | SecureLinkToken | S-0010 | Loginless access token for external pages |
 
 ---
@@ -240,6 +240,40 @@ new → reviewed → converted
 **Authenticated endpoints:** `GET /v1/requests` (paginated), `GET /v1/requests/:id`, `GET /v1/requests/count`
 **Audit event:** `request.created` with `principalType: 'system'`, `principalId: 'public_form'`
 
+### MessageOutbox
+
+```typescript
+type MessageOutboxStatus = 'queued' | 'scheduled' | 'sent' | 'failed';
+type MessageChannel = 'email' | 'sms';
+
+interface MessageOutbox {
+  id: string;                          // UUID
+  tenantId: string;                    // FK → tenants.id
+  type: string;                        // e.g., 'request_notification'
+  recipientId: string | null;          // FK → users.id (or null)
+  recipientType: string | null;        // 'user' | 'client' | null
+  channel: MessageChannel;             // 'email' | 'sms'
+  subject: string | null;              // email subject (null for SMS)
+  body: string;                        // message content (HTML for email, text for SMS)
+  status: MessageOutboxStatus;
+  provider: string | null;             // 'smtp' | 'ses' | 'sns' etc.
+  providerMessageId: string | null;
+  attemptCount: number;                // default 0, incremented on each send attempt
+  lastErrorCode: string | null;
+  lastErrorMessage: string | null;
+  correlationId: string;
+  scheduledFor: Date | null;           // for delayed sends
+  createdAt: Date;
+  sentAt: Date | null;
+}
+```
+
+**Indexes:** `(tenant_id, created_at)`, `(status, created_at)`
+**Status values:** `queued` (initial), `scheduled` (future send), `sent` (delivered), `failed` (error)
+**Email flow (S-0007):** Record created as `queued` → Nodemailer send attempted → updated to `sent` or `failed`. Best-effort, never throws.
+**SMS flow (S-0007):** Record created as `queued` only. Actual sending deferred to S-0021 worker.
+**Source of truth:** The outbox table is the durable record for all outbound comms.
+
 ---
 
 ## 3) Planned entity definitions and status machines
@@ -336,22 +370,6 @@ draft → sent → paid
 - `overdue`: past due date without payment
 - `void`: cancelled by owner
 
-### MessageOutbox (S-0021)
-
-```
-MessageOutbox {
-  id, tenantId, type, recipientId, recipientType,
-  channel, subject, body, status,
-  provider, providerMessageId,
-  attemptCount, lastErrorCode, lastErrorMessage,
-  correlationId, scheduledFor,
-  createdAt, sentAt
-}
-```
-
-**Status values:** `queued`, `scheduled`, `sent`, `failed`
-**Source of truth:** The outbox table is the durable record for all outbound comms.
-
 ### SecureLinkToken (S-0010)
 
 ```
@@ -382,7 +400,7 @@ Tenant
   │         └── 1:1  Job (S-0012)
   │                   └── 1:*  Visit (S-0012)
   ├── 1:*  Invoice (S-0017)
-  ├── 1:*  MessageOutbox (S-0021)
+  ├── 1:*  MessageOutbox (S-0007)
   ├── 1:*  SecureLinkToken (S-0010)
   └── 1:*  AuditEvent (append-only)
 ```
@@ -391,7 +409,7 @@ Tenant
 
 ## 5) Audit event catalog
 
-### Implemented events (S-0001 through S-0006)
+### Implemented events (S-0001 through S-0007)
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
@@ -412,6 +430,8 @@ Tenant
 | `property.updated` | property | Property fields changed | S-0004 |
 | `property.deactivated` | property | Property soft-deleted | S-0004 |
 | `request.created` | request | New request submitted (public form) | S-0006 |
+
+> **Note (S-0007):** New request notifications are tracked via `message_outbox` records (not audit events). The `message.sent` audit event is planned for S-0021 when the SMS worker is implemented.
 
 ### Planned events (future stories)
 
@@ -463,7 +483,7 @@ All audit events share this structure:
 |------|----------------|-------|
 | Entity state | Primary tables (`tenants`, `users`, etc.) | Always scoped by `tenant_id` |
 | Audit trail | `audit_events` table | Append-only; never updated or deleted |
-| Outbound comms | `message_outbox` table (S-0021) | Durable record; worker is idempotent based on outbox status |
+| Outbound comms | `message_outbox` table (S-0007) | Durable record; email sent immediately (best-effort), SMS queued for S-0021 worker |
 | External access | `secure_link_tokens` table (S-0010) | Token hash only; never store plaintext |
 | Scheduled reminders | EventBridge Scheduler (S-0022) | Deterministic schedule keys for reliable cancellation |
 

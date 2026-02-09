@@ -44,8 +44,8 @@ Seedling-HQ currently has ten context packs:
    - Secure-link token storage, outbox data model, S3 keying rules
 
 9) **Domain model + status machines + audit catalog**
-   - Implemented entity definitions (through S-0004) and planned entity definitions with status machines
-   - Audit event catalog (16 implemented + 15 planned), entity relationships
+   - Implemented entity definitions (through S-0007) and planned entity definitions with status machines
+   - Audit event catalog (17 implemented + 15 planned), entity relationships
 
 10) **API standards (errors, pagination, idempotency)**
     - Error shape and codes, response conventions, auth context contract
@@ -57,7 +57,10 @@ This foundation is strong. What remains are the "rails" that prevent agents (and
 - **Internal auth mechanism (2026-02-08):** AWS Cognito chosen. Documented in Architecture doc Section 4.1, Security Baseline Section 3.2/3.4, DevEx Section 5.2. Resolves Architecture doc Section 15F open risk.
 - **S-0002 implemented (2026-02-08):** Business settings CRUD (singleton upsert pattern), onboarding wizard, settings page. Introduces `BusinessSettings`, `DaySchedule`, `BusinessHours` domain entities. Establishes patterns: singleton upsert via `onConflictDoUpdate`, GET-returns-null-on-empty, wizard `<div>` (not `<form>`), `db:reset` for E2E isolation.
 - **S-0003 implemented (2026-02-08):** Service catalog (price book v1). Two-level hierarchy: `ServiceCategory` → `ServiceItem`. Prices stored as integer cents, soft delete via `active` boolean with cascade (deactivating a category also deactivates its items via `deactivateByCategoryId`). Unit types: flat/hourly/per_sqft/per_unit/per_visit. Establishes patterns: read-only routes skip use cases (direct repo calls), DELETE returns 204, dollar↔cents conversion in frontend, E2E scoped locators via `.filter({ hasText })`, defensive unique-constraint catch with `isUniqueViolation()`.
-- **S-0004 implemented (2026-02-09):** Client + Property management (CRM layer). Two-level hierarchy: `Client` → `Property`. Soft delete with cascade (deactivating a client also deactivates its properties). Introduces cursor-based pagination (`PaginatedResult<T>` with keyset on `(created_at DESC, id DESC)`), server-side ILIKE search across multiple columns, count endpoint for dashboard metrics, nested+flat URL pattern (properties listed under client, operated individually). Frontend uses `useInfiniteQuery` for "Load More" pagination with debounced search. 56 unit, 61 integration, 32 E2E tests passing.
+- **S-0004 implemented (2026-02-09):** Client + Property management (CRM layer). Two-level hierarchy: `Client` → `Property`. Soft delete with cascade (deactivating a client also deactivates its properties). Introduces cursor-based pagination (`PaginatedResult<T>` with keyset on `(created_at DESC, id DESC)`), server-side ILIKE search across multiple columns, count endpoint for dashboard metrics, nested+flat URL pattern (properties listed under client, operated individually). Frontend uses `useInfiniteQuery` for "Load More" pagination with debounced search.
+- **S-0005 implemented (2026-02-09):** Client timeline with tab layout. Reuses `audit_events` table with composite index `(tenant_id, subject_type, subject_id, created_at)`. Tab layout with ARIA roles on client detail page (Info / Properties / Activity). `getEventLabel()` maps event names to human-readable labels.
+- **S-0006 implemented (2026-02-09):** Public request form. `POST /v1/public/requests/:tenantSlug` with honeypot spam protection and in-memory sliding-window rate limiter. Request status machine: `new` → `reviewed` → `converted` / `declined`. Tenant resolution via slug. System audit principal for public actions.
+- **S-0007 implemented (2026-02-09):** New request notifications. First outbound comms story. Introduces `message_outbox` table and `MessageOutbox` entity. Email sent immediately via Nodemailer (Mailpit locally), SMS records queued for S-0021 worker. `SendRequestNotificationUseCase` is best-effort (wraps all logic in try/catch, never throws). Config toggle: `NOTIFICATION_ENABLED`. 86 unit, 84 integration, 39 E2E tests passing.
 
 ---
 
@@ -111,11 +114,13 @@ Document:
   - so cancelation is reliable and testable
 
 ### 9) Comms + payments operational setup notes (dev/staging hygiene)
-You reference Stripe, SES, SMS v2, but don’t define operational expectations.
+You reference Stripe, SES, SMS v2, but don't define operational expectations.
 
-Document:
+> **Partially resolved by S-0007:** Local email sending via Nodemailer → Mailpit is implemented. `NOTIFICATION_ENABLED` toggle, `SMTP_*` config vars, and `SendRequestNotificationUseCase` pattern established. SMS outbox records are created (queued) but not sent yet (S-0021).
+
+Remaining items to document:
 - SMS v2 origination identity setup and safe-guards to prevent accidental sending in dev
-- SES identity/domain setup expectations
+- SES identity/domain setup for prod email (replacing local Nodemailer)
 - Stripe webhook verification + idempotency strategy (event IDs storage)
 
 ---

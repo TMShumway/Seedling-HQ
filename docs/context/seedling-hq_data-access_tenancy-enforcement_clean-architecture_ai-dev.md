@@ -23,14 +23,18 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 Define interfaces in:
 - `apps/api/src/application/ports/`
 
-Examples:
+Examples (implemented):
 - `BusinessSettingsRepository` (singleton per tenant — `getByTenantId`, `upsert`)
 - `ServiceCategoryRepository`, `ServiceItemRepository`
 - `ClientRepository`, `PropertyRepository`
 - `RequestRepository`
+- `MessageOutboxRepository` (S-0007 — `create`, `updateStatus`)
+- `UserRepository` (includes `getOwnerByTenantId` for notification recipient lookup)
+- `EmailSender` (port for SMTP — implemented by `NodemailerEmailSender`)
+
+Examples (planned):
 - `QuoteRepository`
 - `InvoiceRepository`
-- `OutboxRepository`
 - `SecureLinkTokenRepository`
 
 Rules:
@@ -124,17 +128,27 @@ Rules:
 
 ---
 
-## 7) Outbox data model (durable comms)
+## 7) Outbox data model (durable comms) — Implemented in S-0007
 
-`message_outbox` should include:
-- `tenant_id`
-- `type` (sms/email)
-- `status` (queued/scheduled/sent/failed)
-- `provider`
-- `attempt_count`
+`message_outbox` columns:
+- `id` (UUID PK)
+- `tenant_id` (FK → tenants)
+- `type` (e.g., `request_notification`)
+- `recipient_id` (FK → users, nullable), `recipient_type` (`user` | `client`)
+- `channel` (`email` | `sms`)
+- `subject` (email subject, nullable), `body` (message content)
+- `status` (`queued` | `scheduled` | `sent` | `failed`)
+- `provider` (e.g., `smtp`), `provider_message_id`
+- `attempt_count` (default 0, incremented on each send attempt)
+- `last_error_code`, `last_error_message`
 - `correlation_id`
-- timestamps: `created_at`, `sent_at`
-- `last_error_code`, `last_error_message` (redacted)
+- `scheduled_for` (for delayed sends, nullable)
+- `created_at`, `sent_at`
+
+Indexes: `(tenant_id, created_at)`, `(status, created_at)`
+
+**Email flow (S-0007):** `queued` → send via Nodemailer → `sent` or `failed` (synchronous, best-effort).
+**SMS flow (S-0007):** `queued` only. Worker in S-0021 will process and update to `sent`/`failed`.
 
 Worker idempotency rule:
 - If outbox row is already `sent` (or has `sent_at`), do not send again.

@@ -112,6 +112,10 @@ Seedling-HQ/
 | GET | `/v1/properties/:id` | Required | Get property |
 | PUT | `/v1/properties/:id` | Required | Update property |
 | DELETE | `/v1/properties/:id` | Required | Deactivate property (soft delete) |
+| POST | `/v1/public/requests/:tenantSlug` | None | Submit public service request (rate-limited, honeypot) |
+| GET | `/v1/requests` | Required | List requests (paginated, searchable, `?status=`) |
+| GET | `/v1/requests/count` | Required | Count requests (`?status=new`) |
+| GET | `/v1/requests/:id` | Required | Get request |
 
 ## Architecture
 
@@ -121,7 +125,7 @@ The API follows **Clean Architecture** with clear layer boundaries:
 domain/          Entities and value types (no dependencies)
 application/     Use cases, ports (repository interfaces), DTOs
 adapters/http/   Route handlers, middleware (depends on application)
-infra/           Drizzle repositories, auth providers (implements ports)
+infra/           Drizzle repositories, auth providers, email sender (implements ports)
 ```
 
 ### Multi-Tenancy
@@ -143,7 +147,7 @@ The demo seed creates:
 
 PostgreSQL 17 via Docker Compose. Schema managed by Drizzle ORM with `db:push` for local dev.
 
-**Tables (S-0001 through S-0005):**
+**Tables (S-0001 through S-0007):**
 - `tenants` — id, slug (unique), name, status, timestamps
 - `users` — id, tenant_id (FK), email, full_name, role, status, timestamps
 - `audit_events` — id, tenant_id (FK), event_name, principal/subject info, correlation_id, created_at; indexes on `(tenant_id, created_at)` and `(tenant_id, subject_type, subject_id, created_at)`
@@ -152,13 +156,15 @@ PostgreSQL 17 via Docker Compose. Schema managed by Drizzle ORM with `db:push` f
 - `service_items` — id, tenant_id (FK), category_id (FK), name, description, unit_price (cents), unit_type, estimated_duration_minutes, active, sort_order, timestamps; unique (tenant_id, category_id, name)
 - `clients` — id, tenant_id (FK), first_name, last_name, email, phone, company, notes, tags (JSONB), active, timestamps; unique (tenant_id, email)
 - `properties` — id, tenant_id (FK), client_id (FK), address fields, notes, active, timestamps; unique (tenant_id, client_id, address_line1)
+- `requests` — id, tenant_id (FK), source, client_name, client_email, client_phone, description, status, assigned_user_id, timestamps; indexes on `(tenant_id, created_at)` and `(tenant_id, status)`
+- `message_outbox` — id, tenant_id (FK), type, recipient_id, recipient_type, channel, subject, body, status, provider, provider_message_id, attempt_count, last_error_code, last_error_message, correlation_id, scheduled_for, created_at, sent_at; indexes on `(tenant_id, created_at)` and `(status, created_at)`
 
 ## Testing
 
 ```bash
-pnpm test                # 67 unit tests
-pnpm test:integration    # 68 integration tests (needs Postgres)
-pnpm test:e2e            # 50 E2E tests, 35 run + 15 skipped (starts API + Web automatically)
+pnpm test                # 86 unit tests
+pnpm test:integration    # 84 integration tests (needs Postgres)
+pnpm test:e2e            # 56 E2E tests, 39 run + 17 skipped (starts API + Web automatically)
 ```
 
 Integration tests truncate tables between runs. E2E tests re-seed the database via `globalSetup` before each run.
@@ -194,6 +200,10 @@ cp .env.example .env
 | `DEV_AUTH_TENANT_ID` | _(demo UUID)_ | Tenant ID injected in local auth mode |
 | `DEV_AUTH_USER_ID` | _(demo UUID)_ | User ID injected in local auth mode |
 | `DEV_AUTH_ROLE` | `owner` | Role injected in local auth mode |
+| `NOTIFICATION_ENABLED` | `true` | Enable/disable email notifications on new requests |
+| `SMTP_HOST` | `localhost` | SMTP server host (Mailpit locally) |
+| `SMTP_PORT` | `1025` | SMTP server port (Mailpit locally) |
+| `SMTP_FROM` | `noreply@seedling.local` | Sender email address for notifications |
 
 ## AI Context
 

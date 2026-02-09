@@ -270,16 +270,19 @@ Always include:
 
 ## 10) Async flows observability (SQS, outbox, scheduler)
 
-### 10.1 Outbox observability (required)
-Outbox table should include:
-- `id`, `tenant_id`
-- `type` (sms/email)
+### 10.1 Outbox observability (implemented S-0007)
+Outbox table (`message_outbox`) includes:
+- `id`, `tenant_id`, `type`, `recipient_id`, `recipient_type`
+- `channel` (email/sms), `subject`, `body`
 - `status` (queued/scheduled/sent/failed)
-- `provider`
+- `provider`, `provider_message_id`
 - `attempt_count`
-- `last_error_code`, `last_error_message` (redacted)
+- `last_error_code`, `last_error_message` (redacted in logs)
 - `created_at`, `sent_at`
-- `correlation_id`
+- `correlation_id`, `scheduled_for`
+
+**Email (S-0007):** Status transitions `queued` → `sent`/`failed` synchronously at request time. Best-effort — errors logged but never block the API response.
+**SMS (S-0007):** Records created as `queued` only. Worker processing deferred to S-0021.
 
 ### 10.2 Worker observability (required)
 For each job:
