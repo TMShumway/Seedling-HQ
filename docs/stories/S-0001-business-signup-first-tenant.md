@@ -28,7 +28,7 @@
 
 ## Deferred (not in S-0001)
 - Cognito JWT validation (`AUTH_MODE=cognito`)
-- `message_outbox` table (S-0021)
+- `message_outbox` table (implemented in S-0007)
 - `secure_link_tokens` table (S-0010)
 - LocalStack / SQS / EventBridge (S-0007+)
 - CI/CD pipeline
