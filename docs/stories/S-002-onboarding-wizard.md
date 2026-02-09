@@ -91,6 +91,22 @@
 | E2E | 18 (15 run, 3 skipped) | 4 signup + 5 onboarding, x2 projects; 3 stateful tests skip on mobile-chrome |
 | **Total** | **60** (57 run) | |
 
+### Phase 10: UI Polish
+- [x] Add loading skeletons to DashboardPage, SettingsPage, OnboardingPage
+- [x] Add sidebar current-page highlighting with `aria-current`
+- [x] Add gradient welcome header and onboarding CTA to DashboardPage
+- [x] Display all business settings fields on dashboard (phone, address, timezone, duration, service area, description, hours)
+- [x] Separate Business Hours into its own card with today highlighting
+- [x] Add colored left-border accents and icon badges to dashboard cards
+- [x] Change background to warm off-white (`#f8f9fb`), soften card borders/shadows
+- [x] Add seedling emoji branding to Sidebar, TopBar, MobileDrawer
+- [x] Hide TopBar on desktop (`lg:hidden`) — Sidebar handles branding
+- [x] Scroll to top of `<main>` on successful settings save
+- [x] Improve success alert visibility (icon + border + shadow)
+- [x] Rename "Slug" to "Seedling Business ID" on dashboard
+- [x] Create `Skeleton` UI component
+- [x] Commit & push
+
 ---
 
 ## Design Decisions

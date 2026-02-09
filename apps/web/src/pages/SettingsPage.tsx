@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { BusinessSettingsForm } from '@/components/business-settings/BusinessSettingsForm';
+import { Skeleton } from '@/components/ui/skeleton';
 import { apiClient } from '@/lib/api-client';
 
 export function SettingsPage() {
@@ -9,7 +10,15 @@ export function SettingsPage() {
   });
 
   if (settingsQuery.isLoading) {
-    return <div className="text-muted-foreground">Loading...</div>;
+    return (
+      <div className="mx-auto max-w-2xl space-y-4">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-5 w-72" />
+        </div>
+        <Skeleton className="h-96 rounded-xl" />
+      </div>
+    );
   }
 
   if (settingsQuery.error) {
@@ -20,7 +29,12 @@ export function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
-      <h1 className="text-2xl font-bold">Business Settings</h1>
+      <div>
+        <h1 className="text-2xl font-bold">Business Settings</h1>
+        <p className="mt-1 text-muted-foreground">
+          Manage your contact info, business hours, and service defaults.
+        </p>
+      </div>
       <BusinessSettingsForm initialData={settingsQuery.data} />
     </div>
   );

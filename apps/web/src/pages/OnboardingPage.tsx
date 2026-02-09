@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { BusinessSettingsForm } from '@/components/business-settings/BusinessSettingsForm';
 import { OnboardingWizard } from '@/components/business-settings/OnboardingWizard';
 import { apiClient } from '@/lib/api-client';
+import { Zap, BookOpen, CheckCircle2 } from 'lucide-react';
 
 type SetupMode = 'choose' | 'quick' | 'guided';
 
@@ -19,7 +21,18 @@ export function OnboardingPage() {
   });
 
   if (settingsQuery.isLoading) {
-    return <div className="text-muted-foreground">Loading...</div>;
+    return (
+      <div className="mx-auto max-w-2xl space-y-6">
+        <div className="space-y-2 text-center">
+          <Skeleton className="mx-auto h-8 w-64" />
+          <Skeleton className="mx-auto h-5 w-80" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Skeleton className="h-44 rounded-xl" />
+          <Skeleton className="h-44 rounded-xl" />
+        </div>
+      </div>
+    );
   }
 
   if (settingsQuery.error) {
@@ -32,6 +45,11 @@ export function OnboardingPage() {
   if (settingsQuery.data) {
     return (
       <div className="mx-auto max-w-md space-y-4 text-center" data-testid="already-configured">
+        <div className="flex justify-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+            <CheckCircle2 className="h-6 w-6 text-green-600" />
+          </div>
+        </div>
         <h1 className="text-2xl font-bold">Business profile already configured</h1>
         <p className="text-muted-foreground">
           You can update your settings from the Settings page.
@@ -53,7 +71,10 @@ export function OnboardingPage() {
     return (
       <div className="mx-auto max-w-2xl space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Quick Setup</h1>
+          <div>
+            <h1 className="text-2xl font-bold">Quick Setup</h1>
+            <p className="mt-1 text-muted-foreground">Fill in your details all at once.</p>
+          </div>
           <Button variant="ghost" onClick={() => setMode('choose')}>
             Back
           </Button>
@@ -68,7 +89,10 @@ export function OnboardingPage() {
     return (
       <div className="mx-auto max-w-2xl space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Guided Setup</h1>
+          <div>
+            <h1 className="text-2xl font-bold">Guided Setup</h1>
+            <p className="mt-1 text-muted-foreground">We'll walk you through each section.</p>
+          </div>
           <Button variant="ghost" onClick={() => setMode('choose')}>
             Back
           </Button>
@@ -90,7 +114,7 @@ export function OnboardingPage() {
 
       <div className="grid gap-4 sm:grid-cols-2" data-testid="setup-choice">
         <Card
-          className="cursor-pointer transition-shadow hover:shadow-md"
+          className="cursor-pointer border-2 border-transparent transition-all hover:border-primary/30 hover:shadow-md"
           onClick={() => setMode('quick')}
           role="button"
           tabIndex={0}
@@ -98,6 +122,9 @@ export function OnboardingPage() {
           data-testid="quick-setup-card"
         >
           <CardHeader>
+            <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <Zap className="h-5 w-5 text-primary" />
+            </div>
             <CardTitle>Quick Setup</CardTitle>
             <CardDescription>Fill out everything on one page</CardDescription>
           </CardHeader>
@@ -109,7 +136,7 @@ export function OnboardingPage() {
         </Card>
 
         <Card
-          className="cursor-pointer transition-shadow hover:shadow-md"
+          className="cursor-pointer border-2 border-transparent transition-all hover:border-primary/30 hover:shadow-md"
           onClick={() => setMode('guided')}
           role="button"
           tabIndex={0}
@@ -117,6 +144,9 @@ export function OnboardingPage() {
           data-testid="guided-setup-card"
         >
           <CardHeader>
+            <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <BookOpen className="h-5 w-5 text-primary" />
+            </div>
             <CardTitle>Guided Setup</CardTitle>
             <CardDescription>Step-by-step wizard</CardDescription>
           </CardHeader>

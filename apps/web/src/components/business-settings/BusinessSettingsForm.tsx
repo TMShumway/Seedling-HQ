@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { CheckCircle2 } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -62,6 +63,7 @@ export function BusinessSettingsForm({ initialData, onSubmitSuccess }: BusinessS
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['business-settings'] });
       setSuccessMsg('Settings saved successfully.');
+      document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' });
       onSubmitSuccess?.();
     },
   });
@@ -80,8 +82,9 @@ export function BusinessSettingsForm({ initialData, onSubmitSuccess }: BusinessS
         </div>
       )}
       {successMsg && (
-        <div className="rounded-md bg-green-50 p-3 text-sm text-green-800" role="status">
-          {successMsg}
+        <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-4 shadow-md" role="status">
+          <CheckCircle2 className="h-6 w-6 shrink-0 text-green-600" />
+          <span className="text-base font-semibold text-green-800">{successMsg}</span>
         </div>
       )}
 

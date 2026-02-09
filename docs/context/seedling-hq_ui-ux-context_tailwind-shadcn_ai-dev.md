@@ -102,6 +102,16 @@ USWDS inspiration:
 - Clear error/success messaging
 - Obvious focus states
 
+> **Established in S-002 UI polish:**
+> - **Background:** warm off-white (`#f8f9fb`) so cards lift visually
+> - **Cards:** softened borders (`border-border/60`), subtle shadows (`shadow-sm`), `hover:shadow-md` transitions
+> - **Card accents:** colored left border (`border-l-4 border-l-{color}`) to differentiate card types (blue=business, indigo=owner, emerald=settings, amber=hours)
+> - **Icon badges:** small rounded-lg background + icon in card headers for visual anchoring
+> - **Gradient banners:** `bg-gradient-to-r from-primary/5` for welcome headers and CTA sections
+> - **TopBar:** hidden on desktop (`lg:hidden`) since Sidebar provides branding; only shows on mobile for hamburger menu
+> - **Sidebar:** current-page highlighting with `bg-primary text-primary-foreground` + `aria-current="page"`
+> - **Scroll on save:** use `document.querySelector('main')?.scrollTo()` — AppShell `<main>` is the scroll container, not `window`
+
 ### 5.3 Theme requirements
 - Support light theme for MVP; dark theme optional later.
 - Ensure AA contrast for text and key UI elements.
@@ -137,9 +147,12 @@ Use these shadcn/ui components (or equivalents) consistently:
 
 ### Feedback
 - Toasts (success/error)
-- Inline banners (info/warn/error)
+- Inline banners (info/warn/error) — success banners use `CheckCircle2` icon + green border + `shadow-md` for visibility
 - Empty states (with a CTA)
-- Loading states (skeletons; disable submit buttons)
+- Loading states (Skeleton component in `components/ui/skeleton.tsx`; disable submit buttons)
+
+> **Implemented in S-002:** `Skeleton` component (`animate-pulse rounded-md bg-muted`). Used in DashboardPage, SettingsPage, and OnboardingPage loading states.
+> Success alert pattern: icon + bordered card + shadow for at-a-glance visibility. Scroll-to-top on save via `document.querySelector('main')?.scrollTo()` (AppShell `<main>` is the scroll container, not `window`).
 
 ### Data presentation
 - **Desktop**: table for lists (clients, invoices), but keep it simple

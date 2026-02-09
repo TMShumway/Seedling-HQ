@@ -7,7 +7,7 @@ interface TopBarProps {
 
 export function TopBar({ onMenuClick }: TopBarProps) {
   return (
-    <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:px-6">
+    <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:hidden">
       <Button
         variant="ghost"
         size="icon"
@@ -17,7 +17,9 @@ export function TopBar({ onMenuClick }: TopBarProps) {
       >
         <Menu className="h-5 w-5" />
       </Button>
-      <span className="text-lg font-bold text-primary lg:hidden">Seedling</span>
+      <span className="text-lg font-bold tracking-tight text-primary lg:hidden">
+        <span className="mr-1">🌱</span> Seedling
+      </span>
       <div className="flex-1" />
     </header>
   );
