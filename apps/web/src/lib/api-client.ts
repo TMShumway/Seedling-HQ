@@ -187,6 +187,80 @@ export interface UpdateServiceItemRequest {
   sortOrder?: number;
 }
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  cursor: string | null;
+  hasMore: boolean;
+}
+
+export interface ClientResponse {
+  id: string;
+  tenantId: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phone: string | null;
+  company: string | null;
+  notes: string | null;
+  tags: string[];
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateClientRequest {
+  firstName: string;
+  lastName: string;
+  email?: string | null;
+  phone?: string | null;
+  company?: string | null;
+  notes?: string | null;
+  tags?: string[];
+}
+
+export interface UpdateClientRequest {
+  firstName?: string;
+  lastName?: string;
+  email?: string | null;
+  phone?: string | null;
+  company?: string | null;
+  notes?: string | null;
+  tags?: string[];
+}
+
+export interface PropertyResponse {
+  id: string;
+  tenantId: string;
+  clientId: string;
+  addressLine1: string;
+  addressLine2: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  notes: string | null;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreatePropertyRequest {
+  addressLine1: string;
+  addressLine2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
+  notes?: string | null;
+}
+
+export interface UpdatePropertyRequest {
+  addressLine1?: string;
+  addressLine2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
+  notes?: string | null;
+}
+
 export const apiClient = {
   createTenant: (input: CreateTenantRequest) =>
     request<CreateTenantResponse>('POST', '/v1/tenants', input),
@@ -231,6 +305,45 @@ export const apiClient = {
 
   deactivateServiceItem: (id: string) =>
     request<void>('DELETE', `/v1/services/${id}`),
+
+  // Clients
+  listClients: (params?: { limit?: number; cursor?: string; search?: string; includeInactive?: boolean }) => {
+    const qs = new URLSearchParams();
+    if (params?.limit) qs.set('limit', String(params.limit));
+    if (params?.cursor) qs.set('cursor', params.cursor);
+    if (params?.search) qs.set('search', params.search);
+    if (params?.includeInactive) qs.set('includeInactive', 'true');
+    const q = qs.toString();
+    return request<PaginatedResponse<ClientResponse>>('GET', `/v1/clients${q ? `?${q}` : ''}`);
+  },
+
+  getClient: (id: string) =>
+    request<ClientResponse>('GET', `/v1/clients/${id}`),
+
+  createClient: (input: CreateClientRequest) =>
+    request<ClientResponse>('POST', '/v1/clients', input),
+
+  updateClient: (id: string, input: UpdateClientRequest) =>
+    request<ClientResponse>('PUT', `/v1/clients/${id}`, input),
+
+  deactivateClient: (id: string) =>
+    request<void>('DELETE', `/v1/clients/${id}`),
+
+  countClients: () =>
+    request<{ count: number }>('GET', '/v1/clients/count'),
+
+  // Properties
+  listProperties: (clientId: string, includeInactive?: boolean) =>
+    request<PropertyResponse[]>('GET', `/v1/clients/${clientId}/properties${includeInactive ? '?includeInactive=true' : ''}`),
+
+  createProperty: (clientId: string, input: CreatePropertyRequest) =>
+    request<PropertyResponse>('POST', `/v1/clients/${clientId}/properties`, input),
+
+  updateProperty: (id: string, input: UpdatePropertyRequest) =>
+    request<PropertyResponse>('PUT', `/v1/properties/${id}`, input),
+
+  deactivateProperty: (id: string) =>
+    request<void>('DELETE', `/v1/properties/${id}`),
 };
 
 export { ApiClientError };

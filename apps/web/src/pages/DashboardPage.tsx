@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiClient } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
-import { Building2, UserCircle, ClipboardList, Clock } from 'lucide-react';
+import { Building2, UserCircle, ClipboardList, Clock, Users } from 'lucide-react';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 const ORDERED_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
@@ -51,11 +51,16 @@ export function DashboardPage() {
     queryFn: () => apiClient.getBusinessSettings(),
   });
 
-  if (tenantQuery.isLoading || userQuery.isLoading || settingsQuery.isLoading) {
+  const clientCountQuery = useQuery({
+    queryKey: ['clients', 'count'],
+    queryFn: () => apiClient.countClients(),
+  });
+
+  if (tenantQuery.isLoading || userQuery.isLoading || settingsQuery.isLoading || clientCountQuery.isLoading) {
     return <DashboardSkeleton />;
   }
 
-  if (tenantQuery.error || userQuery.error || settingsQuery.error) {
+  if (tenantQuery.error || userQuery.error || settingsQuery.error || clientCountQuery.error) {
     return (
       <div className="text-destructive">
         Failed to load dashboard data. Please try again.
@@ -124,6 +129,25 @@ export function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Client count card */}
+      <Card
+        className="cursor-pointer border-l-4 border-l-violet-400 transition-shadow hover:shadow-md"
+        onClick={() => navigate('/clients')}
+      >
+        <CardHeader className="flex flex-row items-center gap-3 space-y-0">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-50">
+            <Users className="h-4 w-4 text-violet-500" />
+          </div>
+          <CardTitle className="text-base">Clients</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-3xl font-bold" data-testid="client-count">
+            {clientCountQuery.data?.count ?? 0}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">Active clients</p>
+        </CardContent>
+      </Card>
 
       {/* Settings / Onboarding */}
       {!settings ? (

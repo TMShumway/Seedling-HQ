@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, index, unique, jsonb, integer, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, timestamp, index, unique, jsonb, integer, boolean } from 'drizzle-orm/pg-core';
 
 export const tenants = pgTable('tenants', {
   id: uuid('id').primaryKey(),
@@ -116,5 +116,57 @@ export const serviceItems = pgTable(
     unique('service_items_tenant_category_name_unique').on(table.tenantId, table.categoryId, table.name),
     index('service_items_tenant_id_idx').on(table.tenantId),
     index('service_items_category_id_idx').on(table.categoryId),
+  ],
+);
+
+export const clients = pgTable(
+  'clients',
+  {
+    id: uuid('id').primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id),
+    firstName: varchar('first_name', { length: 255 }).notNull(),
+    lastName: varchar('last_name', { length: 255 }).notNull(),
+    email: varchar('email', { length: 255 }),
+    phone: varchar('phone', { length: 50 }),
+    company: varchar('company', { length: 255 }),
+    notes: text('notes'),
+    tags: jsonb('tags').$type<string[]>().notNull().default([]),
+    active: boolean('active').notNull().default(true),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique('clients_tenant_email_unique').on(table.tenantId, table.email),
+    index('clients_tenant_id_idx').on(table.tenantId),
+    index('clients_tenant_created_at_idx').on(table.tenantId, table.createdAt),
+  ],
+);
+
+export const properties = pgTable(
+  'properties',
+  {
+    id: uuid('id').primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id),
+    clientId: uuid('client_id')
+      .notNull()
+      .references(() => clients.id),
+    addressLine1: varchar('address_line1', { length: 255 }).notNull(),
+    addressLine2: varchar('address_line2', { length: 255 }),
+    city: varchar('city', { length: 255 }),
+    state: varchar('state', { length: 50 }),
+    zip: varchar('zip', { length: 20 }),
+    notes: text('notes'),
+    active: boolean('active').notNull().default(true),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique('properties_tenant_client_address_unique').on(table.tenantId, table.clientId, table.addressLine1),
+    index('properties_tenant_id_idx').on(table.tenantId),
+    index('properties_client_id_idx').on(table.clientId),
   ],
 );

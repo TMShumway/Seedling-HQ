@@ -61,7 +61,10 @@
 | Testing | Vitest + Playwright + axe-core | S-001 | |
 | DB schema management | `db:push` (local), `db:generate` + `db:migrate` (prod) | S-001 | Migrations introduced as schema evolves |
 | Service catalog | Two-level: categories → items | S-003 | Soft delete via `active` flag; prices in integer cents |
-| Nav order | Dashboard, Services, then remaining items | S-003 | Services is a setup-phase item owners configure early |
+| Nav order | Dashboard, Services, Clients, then remaining items | S-004 | Services + Clients are setup-phase items owners configure early |
+| Client/Property model | Two-level: clients → properties | S-004 | Soft delete with cascade; nullable email (phone-only clients OK) |
+| Pagination | Cursor-based keyset pagination | S-004 | `PaginatedResult<T>` with `(created_at DESC, id DESC)`, fetch limit+1 |
+| Server-side search | ILIKE across multiple columns | S-004 | `?search=term` on `GET /v1/clients` |
 
 ---
 
@@ -80,6 +83,10 @@
 | Soft delete via active flag | S-003 | Set `active = false`, return 204; parent deactivation cascades to children |
 | Price in integer cents | S-003 | Store cents in DB, dollars in UI; `dollarsToCents()` / `centsToDollars()` |
 | DELETE returns 204 | S-003 | Frontend `request()` handles 204 by returning `undefined` |
+| Cursor-based pagination | S-004 | `encodeCursor`/`decodeCursor` (base64url JSON); fetch limit+1 to detect `hasMore` |
+| Server-side search (ILIKE) | S-004 | `OR(ILIKE(col, %term%))` across name/email/phone/company columns |
+| Count endpoint | S-004 | `GET /v1/clients/count` for dashboard metrics |
+| Nested + flat URLs | S-004 | Properties listed at `/v1/clients/:clientId/properties`, operated at `/v1/properties/:id` |
 
 ### Frontend
 
@@ -91,6 +98,8 @@
 | Loading skeletons | S-002 | `Skeleton` component for async data loading states |
 | Dollar/cents conversion | S-003 | Convert before API calls and after responses |
 | E2E scoped locators | S-003 | Use `.filter({ hasText: ... })` when seed/test data coexist |
+| `useInfiniteQuery` for pagination | S-004 | React Query hook for "Load More" cursor-based pagination |
+| Debounced search input | S-004 | 300ms `setTimeout` in `useEffect` for search-as-you-type |
 
 ### Testing
 
@@ -106,7 +115,7 @@
 
 | Item | Deferred to | Reason |
 |------|-------------|--------|
-| Cognito JWT validation (`AUTH_MODE=cognito`) | S-004+ | S-001–S-003 use `AUTH_MODE=local` |
+| Cognito JWT validation (`AUTH_MODE=cognito`) | S-005+ | S-001–S-004 use `AUTH_MODE=local` |
 | `message_outbox` table | S-021 | Not needed until comms stories |
 | `secure_link_tokens` table | S-010 | Not needed until external access stories |
 | LocalStack in docker-compose | S-007+ | Not needed until async/queue stories |
