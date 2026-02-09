@@ -156,7 +156,7 @@
 
 | Item | Deferred to | Reason |
 |------|-------------|--------|
-| Cognito JWT validation (`AUTH_MODE=cognito`) | S-0007+ | S-0001–S-0007 use `AUTH_MODE=local` |
+| Cognito JWT validation (`AUTH_MODE=cognito`) | S-0007+ | S-0001–S-0008 use `AUTH_MODE=local` |
 | SMS worker (send from outbox) | S-0021 | `message_outbox` table exists; SMS records queued but not sent |
 | `secure_link_tokens` table | S-0010 | Not needed until external access stories |
 | LocalStack in docker-compose | S-0007+ | Not needed until async/queue stories |
