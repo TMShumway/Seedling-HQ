@@ -9,7 +9,7 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 
 ## 1) Entity overview
 
-### 1.1 Implemented entities (S-0001 through S-0007)
+### 1.1 Implemented entities (S-0001 through S-0008)
 
 | Entity | Story | Tenant-scoped | Singleton | Soft delete |
 |--------|-------|---------------|-----------|-------------|
@@ -23,12 +23,12 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 | AuditEvent | S-0001 | Yes | No | No (append-only) |
 | Request | S-0006 | Yes | No | No |
 | MessageOutbox | S-0007 | Yes | No | No (append-only) |
+| Quote | S-0008 | Yes | No | No |
 
 ### 1.2 Planned entities (future stories)
 
 | Entity | Story | Description |
 |--------|-------|-------------|
-| Quote | S-0009 | Priced proposal sent to client for approval |
 | Job | S-0012 | Work order created from an approved quote |
 | Visit | S-0012 | Individual scheduled service visit within a job |
 | Invoice | S-0017 | Bill generated from completed work |
@@ -239,8 +239,8 @@ new → reviewed → converted
 - `declined`: owner rejected the request
 
 **Public endpoint:** `POST /v1/public/requests/:tenantSlug` (no auth, rate-limited, honeypot)
-**Authenticated endpoints:** `GET /v1/requests` (paginated), `GET /v1/requests/:id`, `GET /v1/requests/count`
-**Audit event:** `request.created` with `principalType: 'system'`, `principalId: 'public_form'`
+**Authenticated endpoints:** `GET /v1/requests` (paginated), `GET /v1/requests/:id`, `GET /v1/requests/count`, `POST /v1/requests/:id/convert` (S-0008)
+**Audit events:** `request.created` with `principalType: 'system'`, `principalId: 'public_form'`; `request.converted` with `principalType: 'internal_user'` (S-0008)
 
 ### MessageOutbox
 
@@ -276,35 +276,61 @@ interface MessageOutbox {
 **SMS flow (S-0007):** Record created as `queued` only. Actual sending deferred to S-0021 worker.
 **Source of truth:** The outbox table is the durable record for all outbound comms.
 
+### Quote
+
+```typescript
+type QuoteStatus = 'draft' | 'sent' | 'approved' | 'declined' | 'expired';
+
+interface QuoteLineItem {
+  serviceItemId: string | null;
+  description: string;
+  quantity: number;
+  unitPrice: number;  // Integer cents
+  total: number;      // Integer cents
+}
+
+interface Quote {
+  id: string;                    // UUID
+  tenantId: string;              // FK → tenants.id
+  requestId: string | null;      // FK → requests.id (nullable — quotes created later may not have a request)
+  clientId: string;              // FK → clients.id
+  propertyId: string | null;     // FK → properties.id (nullable — future quotes may not require a property)
+  title: string;
+  lineItems: QuoteLineItem[];   // JSONB, default []
+  subtotal: number;              // Integer cents, default 0
+  tax: number;                   // Integer cents, default 0
+  total: number;                 // Integer cents, default 0
+  status: QuoteStatus;           // default 'draft'
+  sentAt: Date | null;
+  approvedAt: Date | null;
+  declinedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
+
+**Indexes:** `(tenant_id)`, `(client_id)`, `(request_id)`, `(tenant_id, status)`
+**Status machine:**
+```
+draft → sent → approved
+             → declined
+             → expired
+```
+
+- `draft`: being built, not visible to client (S-0008 creates quotes in this state)
+- `sent`: secure link delivered to client (S-0010)
+- `approved`: client accepted (S-0011)
+- `declined`: client explicitly rejected (S-0011)
+- `expired`: token TTL passed without action (S-0010)
+
+**Creation via conversion (S-0008):** `POST /v1/requests/:id/convert` atomically creates client + property + quote draft + updates request status to `converted`. The quote is created with empty `lineItems`, zero totals, and `draft` status.
+**Authenticated endpoints (S-0009+):** `GET /v1/quotes` (paginated), `GET /v1/quotes/:id`, `PUT /v1/quotes/:id`, `GET /v1/quotes/count`
+
 ---
 
 ## 3) Planned entity definitions and status machines
 
 > These definitions are **draft specifications** for upcoming stories. Finalize during story planning.
-
-### Quote (S-0009)
-
-```
-Quote {
-  id, tenantId, clientId, propertyId, title,
-  lineItems (JSONB), subtotal, tax, total,
-  status, sentAt, approvedAt, declinedAt,
-  createdAt, updatedAt
-}
-```
-
-**Status machine:**
-```
-draft → sent → approved
-            → declined
-            → expired
-```
-
-- `draft`: being built, not visible to client
-- `sent`: secure link delivered to client
-- `approved`: client accepted (captures name + timestamp)
-- `declined`: client explicitly rejected
-- `expired`: token TTL passed without action
 
 ### Job (S-0012)
 
@@ -436,7 +462,7 @@ Tenant
   ├── 1:*  Client (S-0004)
   │         └── 1:*  Property (S-0004)
   ├── 1:*  Request (S-0006)
-  ├── 1:*  Quote (S-0009)
+  ├── 1:*  Quote (S-0008)
   │         └── 1:1  Job (S-0012)
   │                   └── 1:*  Visit (S-0012)
   ├── 1:*  Invoice (S-0017)
@@ -452,7 +478,7 @@ Tenant
 
 ## 5) Audit event catalog
 
-### Implemented events (S-0001 through S-0007)
+### Implemented events (S-0001 through S-0008)
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
@@ -473,6 +499,8 @@ Tenant
 | `property.updated` | property | Property fields changed | S-0004 |
 | `property.deactivated` | property | Property soft-deleted | S-0004 |
 | `request.created` | request | New request submitted (public form) | S-0006 |
+| `request.converted` | request | Request converted to client + quote draft | S-0008 |
+| `quote.created` | quote | Quote draft created (via conversion or manually) | S-0008 |
 
 > **Note (S-0007):** New request notifications are tracked via `message_outbox` records (not audit events). The `message.sent` audit event is planned for S-0021 when the SMS worker is implemented.
 
@@ -480,8 +508,7 @@ Tenant
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
-| `request.converted` | request | Request converted to quote | S-0008 |
-| `quote.created` | quote | Quote draft created | S-0009 |
+| `quote.updated` | quote | Quote fields changed | S-0009 |
 | `quote.sent` | quote | Secure link sent to client | S-0010 |
 | `quote.viewed` | quote | Client opens secure link | S-0010 |
 | `quote.approved` | quote | Client approves quote | S-0011 |
@@ -563,12 +590,12 @@ All audit events share this structure:
 | S-0005 | Client timeline (activity feed v1) | crm | E-0002 |
 | S-0006 | Public "Request Service" form | intake | E-0003 |
 | S-0007 | New request notifications (Email + outbound SMS) | intake | E-0003 |
+| S-0008 | Convert request to client + quote draft | intake | E-0003 |
 
 ### Planned (MVP — Release R1)
 
 | Story | Title | Area | Epic | Priority |
 |-------|-------|------|------|----------|
-| S-0008 | Convert request to client + quote draft | intake | E-0003 | P0 |
 | S-0009 | Quote builder v1 | quotes | E-0004 | P0 |
 | S-0010 | Send quote link to customer (secure link) | quotes | E-0004 | P0 |
 | S-0011 | Customer approves quote | quotes | E-0004 | P0 |

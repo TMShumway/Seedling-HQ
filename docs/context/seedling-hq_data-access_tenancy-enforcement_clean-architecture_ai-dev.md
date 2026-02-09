@@ -27,13 +27,13 @@ Examples (implemented):
 - `BusinessSettingsRepository` (singleton per tenant — `getByTenantId`, `upsert`)
 - `ServiceCategoryRepository`, `ServiceItemRepository`
 - `ClientRepository`, `PropertyRepository`
-- `RequestRepository`
+- `RequestRepository` (includes `updateStatus` for status transitions, S-0008)
+- `QuoteRepository` (S-0008 — `create`, `getById`, `count`, `countByStatus`)
 - `MessageOutboxRepository` (S-0007 — `create`, `updateStatus`)
 - `UserRepository` (includes `getOwnerByTenantId` for notification recipient lookup)
 - `EmailSender` (port for SMTP — implemented by `NodemailerEmailSender`)
 
 Examples (planned):
-- `QuoteRepository`
 - `InvoiceRepository`
 - `SecureLinkTokenRepository`
 
@@ -187,6 +187,7 @@ Atomic writes use a `UnitOfWork` port (`application/ports/unit-of-work.ts`) back
 - `UnitOfWork.run(fn)` provides transaction-scoped repo instances to the callback.
 - Use cases take `(readRepo, uow)` — reads stay outside the transaction, writes go inside `uow.run()`.
 - Drizzle's `PgTransaction extends PgDatabase`, so repos that accept `Database` work with `tx` directly — no casts needed.
+- **TransactionRepos (S-0008):** `{ tenantRepo, userRepo, auditRepo, clientRepo, propertyRepo, requestRepo, quoteRepo }` — all available inside `uow.run()` callback.
 
 Example:
 ```ts
