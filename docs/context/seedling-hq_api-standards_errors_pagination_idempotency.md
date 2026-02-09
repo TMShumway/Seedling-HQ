@@ -3,7 +3,7 @@
 _Last updated: 2026-02-09 (America/Chihuahua)_
 
 > Purpose: Define consistent API behavior so agents and humans build endpoints the same way.
-> This doc captures conventions established in S-0001 through S-0003 and defines standards for future stories.
+> This doc captures conventions established in S-0001 through S-0006 and defines standards for future stories.
 
 ---
 
@@ -30,6 +30,7 @@ All API errors return a consistent JSON structure:
 | 401 | `UNAUTHORIZED` | `UnauthorizedError` | Missing or invalid auth credentials |
 | 404 | `NOT_FOUND` | `NotFoundError` | Entity not found within the tenant scope |
 | 409 | `CONFLICT` | `ConflictError` | Unique constraint violation (e.g., duplicate slug or name) |
+| 429 | `RATE_LIMITED` | _(middleware)_ | Per-IP rate limit exceeded on public endpoints (S-0006) |
 | 500 | `INTERNAL_ERROR` | _(unhandled)_ | Unexpected server error; message is always generic |
 
 **Error class hierarchy:** `apps/api/src/shared/errors.ts`
@@ -97,15 +98,17 @@ interface AuthContext {
 
 ### Unauthenticated endpoints
 
-Only these endpoints skip auth:
+These endpoints skip auth:
 - `GET /health`
 - `POST /v1/tenants` (signup)
+- `POST /v1/public/requests/:tenantSlug` (public request form, S-0006) — rate-limited + honeypot
 
 All other routes require auth via the `requireAuth` preHandler hook.
 
 ### Tenant scoping
 
 - Internal routes derive `tenantId` from `authContext` (never from request params)
+- Public routes (e.g., `/v1/public/*`) derive `tenantId` from URL param (e.g., `:tenantSlug` → `tenantRepo.getBySlug()`)
 - External secure-link routes (future) derive `tenantId` from the token record
 - Every database query is scoped by `tenantId`
 
@@ -186,7 +189,7 @@ GET /v1/clients?limit=50&cursor=<opaque_string>
 
 ## 6) Filtering conventions
 
-### Established patterns (S-0003 through S-0004)
+### Established patterns (S-0003 through S-0006)
 
 | Parameter | Type | Description | Example |
 |-----------|------|-------------|---------|

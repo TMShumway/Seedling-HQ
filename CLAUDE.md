@@ -61,7 +61,7 @@
 | Testing | Vitest + Playwright + axe-core | S-0001 | |
 | DB schema management | `db:push` (local), `db:generate` + `db:migrate` (prod) | S-0001 | Migrations introduced as schema evolves |
 | Service catalog | Two-level: categories → items | S-0003 | Soft delete via `active` flag; prices in integer cents |
-| Nav order | Dashboard, Services, Clients, then remaining items | S-0004 | Services + Clients are setup-phase items owners configure early |
+| Nav order | Dashboard, Services, Requests, Clients, then remaining items | S-0004 | Services + Clients are setup-phase items; Requests inserted in S-0006 |
 | Client/Property model | Two-level: clients → properties | S-0004 | Soft delete with cascade; nullable email (phone-only clients OK) |
 | Pagination | Cursor-based keyset pagination | S-0004 | `PaginatedResult<T>` with `(created_at DESC, id DESC)`, fetch limit+1 |
 | Server-side search | ILIKE across multiple columns | S-0004 | `?search=term` on `GET /v1/clients` |

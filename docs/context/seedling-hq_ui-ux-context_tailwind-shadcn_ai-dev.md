@@ -334,10 +334,10 @@ When an AI agent adds UI:
 
 1) App shell (sidebar + mobile drawer) with placeholder pages — **DONE** (S-0001): Sidebar, TopBar, MobileDrawer in `apps/web/src/app-shell/`
 2) Page header component pattern (title + actions) — **DONE** (S-0001/S-0002): consistent pattern in DashboardPage, SettingsPage, ServicesPage
-3) Badge/status system — **PARTIAL**: not yet needed beyond nav active/inactive states; define when Quote/Job/Invoice statuses are implemented (S-0009+)
+3) Badge/status system — **PARTIAL** (S-0006): `StatusBadge` implemented in RequestsPage (new=amber, reviewed=blue, converted=green, declined=gray); extend for Quote/Job/Invoice statuses (S-0009+)
 4) Form components + validation approach + error summary — **DONE** (S-0002): Input, Select, Textarea, Checkbox in `apps/web/src/components/ui/`; validation via controlled state + Zod schemas
-5) List patterns (desktop table + mobile cards) — **PARTIAL** (S-0003): ServicesPage has category accordion + item rows; full table/card responsive split not yet needed
-   - Remaining: Requests, Clients, Quotes, Invoices (S-0004+)
+5) List patterns (desktop table + mobile cards) — **PARTIAL** (S-0003+): ServicesPage has category accordion + item rows (S-0003); ClientsPage has card list + search + cursor pagination (S-0004); RequestsPage has card list + search + status badges (S-0006)
+   - Remaining: Quotes, Invoices (S-0009+)
 6) External page templates — **NOT STARTED** (S-0010+):
    - Quote view/approve
    - Invoice view/pay

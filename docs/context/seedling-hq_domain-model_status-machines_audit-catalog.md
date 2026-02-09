@@ -450,7 +450,7 @@ All audit events share this structure:
   eventName: string;         // e.g., 'quote.approved'
   subjectType: string;       // e.g., 'quote'
   subjectId: string;         // UUID of the affected entity
-  correlationId: string | null;
+  correlationId: string;
   createdAt: Date;           // append-only, never updated
 }
 ```

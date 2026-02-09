@@ -1,6 +1,6 @@
 # Seedling-HQ — Comprehensive Testing Context Pack (Vitest + Playwright) for AI-Driven Development
 
-_Last updated: 2026-02-08 (America/Chihuahua)_
+_Last updated: 2026-02-09 (America/Chihuahua)_
 
 > Purpose: Paste this into a new LLM/agent so it can implement **consistent, comprehensive testing** for Seedling-HQ.
 > This pattern specifically targets known risk areas: **multi-tenancy**, **secure-link external access**, **async workers**, **scheduler/reminders**, and **mobile-first UX**.
@@ -199,7 +199,30 @@ EventBridge Scheduler is hard to run locally. For MVP tests:
 
 Implement cancelation keys deterministically (e.g., `reminder:<tenant_id>:<type>:<entity_id>:<sequence>`).
 
-## 5.5 External secure-link pages test pattern (Playwright)
+## 5.5 Public endpoint + rate limit test pattern (S-0006)
+
+Public endpoints (e.g., `POST /v1/public/requests/:tenantSlug`) have no auth but need spam protection tests.
+
+**Rate limit tests (integration):**
+- Requests below threshold pass (e.g., 5 within 60s window)
+- Request exceeding threshold returns 429 with `{ error: { code: 'RATE_LIMITED', message: '...' } }`
+- Call `resetRateLimitStore()` between test suites to avoid cross-test pollution
+
+**Honeypot tests (integration):**
+- Honeypot field filled → returns 201 with fake UUID (silent rejection, no data persisted)
+- Honeypot field empty → normal processing, request persisted
+- Verify no audit event is recorded for honeypot rejections
+
+**Public form E2E (Playwright):**
+- Submit form at `/request/:tenantSlug`, verify confirmation page
+- Navigate to authenticated list, verify submitted request appears
+- Accessibility check (axe-core) on public form page
+
+**Implementation:** `apps/api/src/adapters/http/middleware/rate-limit.ts` exports `resetRateLimitStore()` for test cleanup.
+
+---
+
+## 5.6 External secure-link pages test pattern (Playwright)
 External pages are:
 - loginless
 - scope-limited

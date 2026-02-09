@@ -1,6 +1,6 @@
 # Seedling-HQ — Data Access + Tenancy Enforcement (Clean Architecture Ports) for AI-Driven Development
 
-_Last updated: 2026-02-08 (America/Chihuahua)_
+_Last updated: 2026-02-09 (America/Chihuahua)_
 
 > Purpose: Define **how data access works** and exactly **how tenancy is enforced** so agents don’t invent patterns.
 > This doc complements the Architecture, Security, Testing, and Observability context packs.
@@ -25,7 +25,9 @@ Define interfaces in:
 
 Examples:
 - `BusinessSettingsRepository` (singleton per tenant — `getByTenantId`, `upsert`)
-- `ClientRepository`
+- `ServiceCategoryRepository`, `ServiceItemRepository`
+- `ClientRepository`, `PropertyRepository`
+- `RequestRepository`
 - `QuoteRepository`
 - `InvoiceRepository`
 - `OutboxRepository`
