@@ -68,8 +68,8 @@ Use these principles everywhere:
 Primary navigation (internal users), in sidebar order:
 1) **Dashboard** — active (S-0001)
 2) **Services** — active (S-0003): service catalog management
-3) **Requests** — stubbed (S-0006+)
-4) **Clients** — stubbed (S-0004+)
+3) **Requests** — active (S-0006): public request form + authenticated list
+4) **Clients** — active (S-0004): client/property management
 5) **Quotes** — stubbed (S-0009+)
 6) **Schedule** — stubbed (S-0012+)
 7) **Jobs** — stubbed (S-0012+)

@@ -9,7 +9,7 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 
 ## 1) Entity overview
 
-### 1.1 Implemented entities (S-0001 through S-0004)
+### 1.1 Implemented entities (S-0001 through S-0006)
 
 | Entity | Story | Tenant-scoped | Singleton | Soft delete |
 |--------|-------|---------------|-----------|-------------|
@@ -21,12 +21,12 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 | Client | S-0004 | Yes | No | Yes (`active` flag) |
 | Property | S-0004 | Yes | No | Yes (`active` flag) |
 | AuditEvent | S-0001 | Yes | No | No (append-only) |
+| Request | S-0006 | Yes | No | No |
 
 ### 1.2 Planned entities (future stories)
 
 | Entity | Story | Description |
 |--------|-------|-------------|
-| Request | S-0006 | Lead intake from public form or manual entry |
 | Quote | S-0009 | Priced proposal sent to client for approval |
 | Job | S-0012 | Work order created from an approved quote |
 | Visit | S-0012 | Individual scheduled service visit within a job |
@@ -203,21 +203,28 @@ interface Property {
 **Uniqueness:** `(tenantId, clientId, addressLine1)`
 **URL pattern:** Listed at `/v1/clients/:clientId/properties` (nested), operated at `/v1/properties/:id` (flat).
 
----
+### Request
 
-## 3) Planned entity definitions and status machines
+```typescript
+type RequestStatus = 'new' | 'reviewed' | 'converted' | 'declined';
+type RequestSource = 'public_form' | 'manual';
 
-> These definitions are **draft specifications** for upcoming stories. Finalize during story planning.
-
-### Request (S-0006)
-
-```
-Request {
-  id, tenantId, source, clientName, clientEmail, clientPhone,
-  description, status, assignedUserId, createdAt, updatedAt
+interface Request {
+  id: string;
+  tenantId: string;
+  source: RequestSource;
+  clientName: string;
+  clientEmail: string;
+  clientPhone: string | null;
+  description: string;
+  status: RequestStatus;
+  assignedUserId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 ```
 
+**Indexes:** `(tenant_id, created_at)`, `(tenant_id, status)`
 **Status machine:**
 ```
 new → reviewed → converted
@@ -228,6 +235,16 @@ new → reviewed → converted
 - `reviewed`: owner has seen and triaged
 - `converted`: linked to a Client + Quote draft (S-0008)
 - `declined`: owner rejected the request
+
+**Public endpoint:** `POST /v1/public/requests/:tenantSlug` (no auth, rate-limited, honeypot)
+**Authenticated endpoints:** `GET /v1/requests` (paginated), `GET /v1/requests/:id`, `GET /v1/requests/count`
+**Audit event:** `request.created` with `principalType: 'system'`, `principalId: 'public_form'`
+
+---
+
+## 3) Planned entity definitions and status machines
+
+> These definitions are **draft specifications** for upcoming stories. Finalize during story planning.
 
 ### Quote (S-0009)
 
@@ -374,7 +391,7 @@ Tenant
 
 ## 5) Audit event catalog
 
-### Implemented events (S-0001 through S-0004)
+### Implemented events (S-0001 through S-0006)
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
@@ -394,12 +411,12 @@ Tenant
 | `property.created` | property | New property added to client | S-0004 |
 | `property.updated` | property | Property fields changed | S-0004 |
 | `property.deactivated` | property | Property soft-deleted | S-0004 |
+| `request.created` | request | New request submitted (public form) | S-0006 |
 
 ### Planned events (future stories)
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
-| `request.created` | request | New request submitted | S-0006 |
 | `request.converted` | request | Request converted to quote | S-0008 |
 | `quote.created` | quote | Quote draft created | S-0009 |
 | `quote.sent` | quote | Secure link sent to client | S-0010 |
