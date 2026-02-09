@@ -3,8 +3,7 @@ import { z } from 'zod';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { CreateTenantUseCase } from '../../../application/usecases/create-tenant.js';
 import type { TenantRepository } from '../../../application/ports/tenant-repository.js';
-import type { UserRepository } from '../../../application/ports/user-repository.js';
-import type { AuditEventRepository } from '../../../application/ports/audit-event-repository.js';
+import type { UnitOfWork } from '../../../application/ports/unit-of-work.js';
 import { NotFoundError } from '../../../shared/errors.js';
 import { buildAuthMiddleware } from '../middleware/auth-middleware.js';
 import type { AppConfig } from '../../../shared/config.js';
@@ -17,11 +16,10 @@ const createTenantBodySchema = z.object({
 
 export function buildTenantRoutes(deps: {
   tenantRepo: TenantRepository;
-  userRepo: UserRepository;
-  auditRepo: AuditEventRepository;
+  uow: UnitOfWork;
   config: AppConfig;
 }) {
-  const useCase = new CreateTenantUseCase(deps.tenantRepo, deps.userRepo, deps.auditRepo);
+  const useCase = new CreateTenantUseCase(deps.tenantRepo, deps.uow);
   const authMiddleware = buildAuthMiddleware(deps.config);
 
   return async function tenantRoutes(app: FastifyInstance) {

@@ -6,6 +6,7 @@ import type {
   AuditEventRepository,
   AuditEvent,
 } from '../../src/application/ports/audit-event-repository.js';
+import type { UnitOfWork } from '../../src/application/ports/unit-of-work.js';
 import { ConflictError, ValidationError } from '../../src/shared/errors.js';
 
 function makeTenantRepo(overrides: Partial<TenantRepository> = {}): TenantRepository {
@@ -35,6 +36,16 @@ function makeAuditRepo(): AuditEventRepository & { recorded: AuditEvent[] } {
       recorded.push(event);
       return event;
     }),
+  };
+}
+
+function makeUnitOfWork(
+  tenantRepo: TenantRepository,
+  userRepo: UserRepository,
+  auditRepo: AuditEventRepository,
+): UnitOfWork {
+  return {
+    run: async (fn) => fn({ tenantRepo, userRepo, auditRepo }),
   };
 }
 
@@ -72,6 +83,7 @@ describe('CreateTenantUseCase', () => {
   let tenantRepo: TenantRepository;
   let userRepo: UserRepository;
   let auditRepo: ReturnType<typeof makeAuditRepo>;
+  let uow: UnitOfWork;
   let useCase: CreateTenantUseCase;
 
   const validInput = {
@@ -86,7 +98,8 @@ describe('CreateTenantUseCase', () => {
     tenantRepo = makeTenantRepo();
     userRepo = makeUserRepo();
     auditRepo = makeAuditRepo();
-    useCase = new CreateTenantUseCase(tenantRepo, userRepo, auditRepo);
+    uow = makeUnitOfWork(tenantRepo, userRepo, auditRepo);
+    useCase = new CreateTenantUseCase(tenantRepo, uow);
   });
 
   it('creates tenant and owner user on happy path', async () => {
@@ -126,7 +139,7 @@ describe('CreateTenantUseCase', () => {
         updatedAt: new Date(),
       })),
     });
-    useCase = new CreateTenantUseCase(tenantRepo, userRepo, auditRepo);
+    useCase = new CreateTenantUseCase(tenantRepo, uow);
 
     await expect(useCase.execute(validInput, correlationId)).rejects.toThrow(ConflictError);
   });
