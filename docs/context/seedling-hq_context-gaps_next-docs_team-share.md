@@ -48,6 +48,7 @@ This foundation is strong. What remains are the "rails" that prevent agents (and
 ### Recently resolved decisions
 - **Internal auth mechanism (2026-02-08):** AWS Cognito chosen. Documented in Architecture doc Section 4.1, Security Baseline Section 3.2/3.4, DevEx Section 5.2. Resolves Architecture doc Section 15F open risk.
 - **S-002 implemented (2026-02-08):** Business settings CRUD (singleton upsert pattern), onboarding wizard, settings page. Introduces `BusinessSettings`, `DaySchedule`, `BusinessHours` domain entities. Establishes patterns: singleton upsert via `onConflictDoUpdate`, GET-returns-null-on-empty, wizard `<div>` (not `<form>`), `db:reset` for E2E isolation.
+- **S-003 implemented (2026-02-08):** Service catalog (price book v1). Two-level hierarchy: `ServiceCategory` → `ServiceItem`. Prices stored as integer cents, soft delete via `active` boolean. Unit types: flat/hourly/per_sqft/per_unit/per_visit. Establishes patterns: read-only routes skip use cases (direct repo calls), DELETE returns 204, dollar↔cents conversion in frontend, E2E scoped locators via `.filter({ hasText })`, defensive unique-constraint catch with `isUniqueViolation()`.
 
 ---
 
@@ -56,12 +57,12 @@ This foundation is strong. What remains are the "rails" that prevent agents (and
 ### 1) Domain model + canonical status/state machines
 Agents know the flows and screens, but not the canonical shapes and transitions.
 
-> **Partial progress:** S-001 defined Tenant + User entities. S-002 added BusinessSettings, DaySchedule, BusinessHours.
+> **Partial progress:** S-001 defined Tenant + User entities. S-002 added BusinessSettings, DaySchedule, BusinessHours. S-003 added ServiceCategory, ServiceItem, UnitType.
 > Remaining: full status machines for Request, Quote, Job, Visit, Invoice and audit event catalog.
 
 Add a context file that defines:
 - Core entities and minimal fields:
-  - ~~Tenant, User~~ (S-001), ~~BusinessSettings~~ (S-002), Client, Property, Request, Quote, Job, Visit, Invoice, MessageOutbox, SecureLinkToken
+  - ~~Tenant, User~~ (S-001), ~~BusinessSettings~~ (S-002), ~~ServiceCategory, ServiceItem~~ (S-003), Client, Property, Request, Quote, Job, Visit, Invoice, MessageOutbox, SecureLinkToken
 - Status enums + allowed transitions:
   - Example: Quote `Draft → Sent → Approved/Declined`
   - Example: Invoice `Draft → Sent → Paid/Overdue`

@@ -263,7 +263,7 @@ Suggested table (name is up to you, e.g., `secure_link_tokens`):
 **Epic A — Multi-tenant setup + onboarding**
 - S-001 Business signup + first tenant (tenant enforcement, owner role, demo seed) **— DONE**
 - S-002 Onboarding wizard (business profile/settings) **— DONE**: singleton `business_settings` table (JSONB hours), GET/PUT `/v1/tenants/me/settings`, 4-step wizard + quick-setup form, settings edit page
-- S-003 Service catalog (price book v1)
+- S-003 Service catalog (price book v1) **— DONE**: two-level catalog (categories → items), soft delete via `active` flag, prices in integer cents, unit types (flat/hourly/per_sqft/per_unit/per_visit), CRUD routes at `/v1/services/categories` and `/v1/services`
 
 **Epic B — CRM (clients + properties)**
 - S-004 Client + property creation (search + notes)
