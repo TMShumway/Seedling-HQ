@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, index, unique, jsonb, integer } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, timestamp, index, unique, jsonb, integer, boolean } from 'drizzle-orm/pg-core';
 
 export const tenants = pgTable('tenants', {
   id: uuid('id').primaryKey(),
@@ -70,4 +70,51 @@ export const businessSettings = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index('business_settings_tenant_id_idx').on(table.tenantId)],
+);
+
+export const serviceCategories = pgTable(
+  'service_categories',
+  {
+    id: uuid('id').primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id),
+    name: varchar('name', { length: 255 }).notNull(),
+    description: varchar('description', { length: 1000 }),
+    sortOrder: integer('sort_order').notNull().default(0),
+    active: boolean('active').notNull().default(true),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique('service_categories_tenant_name_unique').on(table.tenantId, table.name),
+    index('service_categories_tenant_id_idx').on(table.tenantId),
+  ],
+);
+
+export const serviceItems = pgTable(
+  'service_items',
+  {
+    id: uuid('id').primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id),
+    categoryId: uuid('category_id')
+      .notNull()
+      .references(() => serviceCategories.id),
+    name: varchar('name', { length: 255 }).notNull(),
+    description: varchar('description', { length: 1000 }),
+    unitPrice: integer('unit_price').notNull(),
+    unitType: varchar('unit_type', { length: 50 }).notNull(),
+    estimatedDurationMinutes: integer('estimated_duration_minutes'),
+    active: boolean('active').notNull().default(true),
+    sortOrder: integer('sort_order').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique('service_items_tenant_category_name_unique').on(table.tenantId, table.categoryId, table.name),
+    index('service_items_tenant_id_idx').on(table.tenantId),
+    index('service_items_category_id_idx').on(table.categoryId),
+  ],
 );
