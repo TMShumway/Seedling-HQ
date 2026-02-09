@@ -6,7 +6,7 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 
 ## Current context files (what’s already strong)
 
-Seedling-HQ currently has eight context packs:
+Seedling-HQ currently has ten context packs:
 
 1) **Architecture + naming + dev sandbox**
    - Infra patterns (AWS-first), local-first dev contract, comms/automation flows
@@ -43,6 +43,14 @@ Seedling-HQ currently has eight context packs:
    - Repository port patterns (tenantId-first signatures), index strategy
    - Secure-link token storage, outbox data model, S3 keying rules
 
+9) **Domain model + status machines + audit catalog**
+   - Implemented and planned entity definitions, status machines
+   - Audit event catalog (10 implemented + 21 planned), entity relationships
+
+10) **API standards (errors, pagination, idempotency)**
+    - Error shape and codes, response conventions, auth context contract
+    - Pagination strategy, filtering patterns, idempotency rules
+
 This foundation is strong. What remains are the "rails" that prevent agents (and humans) from inventing inconsistent patterns.
 
 ### Recently resolved decisions
@@ -58,19 +66,9 @@ This foundation is strong. What remains are the "rails" that prevent agents (and
 > Covered by: `seedling-hq_domain-model_status-machines_audit-catalog.md`
 > Defines all implemented entities (Tenant, User, BusinessSettings, ServiceCategory, ServiceItem) with full field lists, planned entities with status machines (Request, Quote, Job, Visit, Invoice), audit event catalog (10 implemented + 21 planned), entity relationships, and source-of-truth rules.
 
-### 2) API standards and conventions (behavioral contract)
-You’re OpenAPI-driven, but conventions aren’t spelled out yet.
-
-Add definitions for:
-- Standard error shape (e.g., problem+json style), error codes, field errors
-- Pagination pattern (cursor vs page), default limits, sorting/filtering conventions
-- Idempotency rules: where required and how to implement (keys/headers)
-- Auth context contract (internal vs external principal), how it is represented on requests
-  > **Partial resolution (2026-02-08):** Auth mechanism decided — AWS Cognito for internal users.
-  > Auth context contract for internal principals is now documented in Architecture doc (Section 4.1) and DevEx doc (Section 5.2).
-  > S-002 establishes precedents: idempotent `PUT` for singleton upsert, `GET` returns `null` (200) when entity doesn't exist.
-  > Remaining sub-gap: full API standards doc (errors, pagination, idempotency) still needed.
-- Tenant resolution rules for internal vs external endpoints
+### ~~2) API standards and conventions (behavioral contract)~~ — DONE
+> Covered by: `seedling-hq_api-standards_errors_pagination_idempotency.md`
+> Defines standard error shape (`{ error: { code, message } }`), error codes (VALIDATION_ERROR, UNAUTHORIZED, NOT_FOUND, CONFLICT, INTERNAL_ERROR), response conventions (200/201/204/null), auth context contract, cursor-based pagination strategy, filtering patterns, idempotency rules, and URL/naming conventions.
 
 ### ~~3) Data access patterns + tenancy enforcement~~ — DONE
 > Covered by: `seedling-hq_data-access_tenancy-enforcement_clean-architecture_ai-dev.md`
@@ -135,7 +133,7 @@ Document:
 ## Recommended "next context files" (priority order)
 
 1) ~~Domain Model + Status/Transitions + Audit/Event Catalog~~ — DONE
-2) **API Standards (errors, pagination, auth context, idempotency)**
+2) ~~API Standards (errors, pagination, auth context, idempotency)~~ — DONE
 3) ~~Data Access + Tenancy Enforcement~~ — DONE
 4) ~~Security Baseline~~ — DONE
 5) ~~DevEx/Repo Conventions for Agents~~ — DONE
@@ -144,7 +142,7 @@ Document:
 8) **Automation Policy (cadences + cancellation keys + schedules)**
 9) **Comms + Payments Ops Notes (Stripe/SES/SMS setup)**
 
-**Remaining (4 of 9):** items 2, 6, 8, 9 above.
+**Remaining (3 of 9):** items 6, 8, 9 above.
 
 ---
 

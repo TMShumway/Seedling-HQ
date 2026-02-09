@@ -77,6 +77,13 @@
 **File:** `seedling-hq_domain-model_status-machines_audit-catalog.md`
 **What it covers:** canonical entity definitions (implemented and planned), status machines for Quote/Job/Visit/Invoice, audit event catalog (10 implemented + 21 planned), entity relationships, and source-of-truth rules.
 
+---
+
+## 10) API standards (errors, pagination, idempotency)
+
+**File:** `seedling-hq_api-standards_errors_pagination_idempotency.md`
+**What it covers:** standard error shape and codes, response conventions (200/201/204/null), auth context contract, URL/naming conventions, pagination strategy, filtering patterns, idempotency rules, and request validation approach.
+
 ## How to apply these docs when building
 
 ### When adding/altering an API endpoint
@@ -114,6 +121,7 @@ docs/context/
   seedling-hq_devex-repo-conventions_clean-architecture_ai-dev_TDD.md
   seedling-hq_data-access_tenancy-enforcement_clean-architecture_ai-dev.md
   seedling-hq_domain-model_status-machines_audit-catalog.md
+  seedling-hq_api-standards_errors_pagination_idempotency.md
   seedling-hq_context-gaps_next-docs_team-share.md
 docs/stories/
   S-001-business-signup-first-tenant.md
