@@ -44,6 +44,10 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     throw new ApiClientError(res.status, err.error.code, err.error.message);
   }
 
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
   return res.json() as Promise<T>;
 }
 
@@ -126,6 +130,63 @@ export interface UpsertBusinessSettingsRequest {
   description: string | null;
 }
 
+export interface ServiceCategoryResponse {
+  id: string;
+  tenantId: string;
+  name: string;
+  description: string | null;
+  sortOrder: number;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateServiceCategoryRequest {
+  name: string;
+  description?: string | null;
+  sortOrder?: number;
+}
+
+export interface UpdateServiceCategoryRequest {
+  name?: string;
+  description?: string | null;
+  sortOrder?: number;
+}
+
+export interface ServiceItemResponse {
+  id: string;
+  tenantId: string;
+  categoryId: string;
+  name: string;
+  description: string | null;
+  unitPrice: number;
+  unitType: string;
+  estimatedDurationMinutes: number | null;
+  active: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateServiceItemRequest {
+  categoryId: string;
+  name: string;
+  description?: string | null;
+  unitPrice: number;
+  unitType: string;
+  estimatedDurationMinutes?: number | null;
+  sortOrder?: number;
+}
+
+export interface UpdateServiceItemRequest {
+  name?: string;
+  description?: string | null;
+  unitPrice?: number;
+  unitType?: string;
+  estimatedDurationMinutes?: number | null;
+  sortOrder?: number;
+}
+
 export const apiClient = {
   createTenant: (input: CreateTenantRequest) =>
     request<CreateTenantResponse>('POST', '/v1/tenants', input),
@@ -139,6 +200,37 @@ export const apiClient = {
 
   upsertBusinessSettings: (input: UpsertBusinessSettingsRequest) =>
     request<BusinessSettingsResponse>('PUT', '/v1/tenants/me/settings', input),
+
+  // Service Categories
+  listServiceCategories: (includeInactive?: boolean) =>
+    request<ServiceCategoryResponse[]>('GET', `/v1/services/categories${includeInactive ? '?includeInactive=true' : ''}`),
+
+  createServiceCategory: (input: CreateServiceCategoryRequest) =>
+    request<ServiceCategoryResponse>('POST', '/v1/services/categories', input),
+
+  updateServiceCategory: (id: string, input: UpdateServiceCategoryRequest) =>
+    request<ServiceCategoryResponse>('PUT', `/v1/services/categories/${id}`, input),
+
+  deactivateServiceCategory: (id: string) =>
+    request<void>('DELETE', `/v1/services/categories/${id}`),
+
+  // Service Items
+  listServiceItems: (categoryId?: string, includeInactive?: boolean) => {
+    const params = new URLSearchParams();
+    if (categoryId) params.set('categoryId', categoryId);
+    if (includeInactive) params.set('includeInactive', 'true');
+    const qs = params.toString();
+    return request<ServiceItemResponse[]>('GET', `/v1/services${qs ? `?${qs}` : ''}`);
+  },
+
+  createServiceItem: (input: CreateServiceItemRequest) =>
+    request<ServiceItemResponse>('POST', '/v1/services', input),
+
+  updateServiceItem: (id: string, input: UpdateServiceItemRequest) =>
+    request<ServiceItemResponse>('PUT', `/v1/services/${id}`, input),
+
+  deactivateServiceItem: (id: string) =>
+    request<void>('DELETE', `/v1/services/${id}`),
 };
 
 export { ApiClientError };
