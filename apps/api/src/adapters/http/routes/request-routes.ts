@@ -5,7 +5,11 @@ import type { Request } from '../../../domain/entities/request.js';
 import type { RequestRepository } from '../../../application/ports/request-repository.js';
 import type { TenantRepository } from '../../../application/ports/tenant-repository.js';
 import type { AuditEventRepository } from '../../../application/ports/audit-event-repository.js';
+import type { UserRepository } from '../../../application/ports/user-repository.js';
+import type { MessageOutboxRepository } from '../../../application/ports/message-outbox-repository.js';
+import type { EmailSender } from '../../../application/ports/email-sender.js';
 import { CreatePublicRequestUseCase } from '../../../application/usecases/create-public-request.js';
+import { SendRequestNotificationUseCase } from '../../../application/usecases/send-request-notification.js';
 import { NotFoundError } from '../../../shared/errors.js';
 import { buildAuthMiddleware } from '../middleware/auth-middleware.js';
 import { buildRateLimiter } from '../middleware/rate-limit.js';
@@ -65,9 +69,13 @@ export function buildRequestRoutes(deps: {
   requestRepo: RequestRepository;
   tenantRepo: TenantRepository;
   auditRepo: AuditEventRepository;
+  userRepo: UserRepository;
+  outboxRepo: MessageOutboxRepository;
+  emailSender: EmailSender;
   config: AppConfig;
 }) {
   const createUseCase = new CreatePublicRequestUseCase(deps.tenantRepo, deps.requestRepo, deps.auditRepo);
+  const notificationUseCase = new SendRequestNotificationUseCase(deps.userRepo, deps.outboxRepo, deps.emailSender, deps.config);
   const authMiddleware = buildAuthMiddleware(deps.config);
   const rateLimiter = buildRateLimiter({ windowMs: 60_000, maxRequests: 5 });
 
@@ -87,6 +95,7 @@ export function buildRequestRoutes(deps: {
         },
       },
       async (request, reply) => {
+        const isHoneypot = !!(request.body.website);
         const result = await createUseCase.execute(
           {
             tenantSlug: request.params.tenantSlug,
@@ -98,6 +107,20 @@ export function buildRequestRoutes(deps: {
           },
           request.correlationId,
         );
+
+        // Send notification for real requests (not honeypot)
+        if (!isHoneypot && result.request.tenantId) {
+          const tenant = await deps.tenantRepo.getBySlug(request.params.tenantSlug);
+          if (tenant) {
+            await notificationUseCase.execute(
+              tenant.id,
+              tenant.name,
+              result.request,
+              request.correlationId,
+            );
+          }
+        }
+
         return reply.status(201).send({
           id: result.request.id,
           status: result.request.status,
