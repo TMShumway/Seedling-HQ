@@ -107,6 +107,10 @@
 - [x] Create `Skeleton` UI component
 - [x] Commit & push
 
+> **Note:** Phase 10 styling was later overhauled by the USWDS-inspired reskin on `experiment` branch:
+> dark navy sidebar, deeper color palette (`#1e3a5f` primary, `#f1f5f9` background), tighter radii (2/4/6/8px),
+> stronger focus indicators (`ring-2`), plain-text welcome header, and "Seedling HQ" branding.
+
 ### Phase 11: Local Auth Override
 - [x] Backend: accept `X-Dev-Tenant-Id` / `X-Dev-User-Id` headers in `AUTH_MODE=local` to override env var defaults
 - [x] Frontend: store signup response tenant/user IDs in `localStorage`, send as headers on all API requests

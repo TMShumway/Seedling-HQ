@@ -65,6 +65,8 @@
 | Client/Property model | Two-level: clients → properties | S-004 | Soft delete with cascade; nullable email (phone-only clients OK) |
 | Pagination | Cursor-based keyset pagination | S-004 | `PaginatedResult<T>` with `(created_at DESC, id DESC)`, fetch limit+1 |
 | Server-side search | ILIKE across multiple columns | S-004 | `?search=term` on `GET /v1/clients` |
+| UI theme | USWDS-inspired dark navy reskin | Post-S-004 | Deep navy primary (`#1e3a5f`), dark sidebar (`#0f172a`), tight radii (2/4/6/8px), `ring-2` focus indicators |
+| Branding | "Seedling HQ" with 🌱 emoji | Post-S-004 | Displayed in sidebar, topbar, and mobile drawer |
 
 ---
 

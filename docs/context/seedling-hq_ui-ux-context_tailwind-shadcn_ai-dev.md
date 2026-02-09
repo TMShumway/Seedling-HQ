@@ -106,14 +106,22 @@ USWDS inspiration:
 - Clear error/success messaging
 - Obvious focus states
 
-> **Established in S-002 UI polish:**
-> - **Background:** warm off-white (`#f8f9fb`) so cards lift visually
-> - **Cards:** softened borders (`border-border/60`), subtle shadows (`shadow-sm`), `hover:shadow-md` transitions
-> - **Card accents:** colored left border (`border-l-4 border-l-{color}`) to differentiate card types (blue=business, indigo=owner, emerald=settings, amber=hours)
+> **Established in S-002 UI polish, updated with USWDS-inspired reskin:**
+> - **Color palette:** deep navy primary (`#1e3a5f`), cooler slate background (`#f1f5f9`), stronger borders (`#cbd5e1`), deeper destructive red (`#b91c1c`)
+> - **Dark sidebar:** slate-900 background (`#0f172a`), slate-400 text, blue-400 active highlight (`#60a5fa`)
+> - **Border radii:** tight/crisp — sm=2px, md=4px, lg=6px, xl=8px
+> - **Cards:** full-opacity borders (`border-border`), subtle shadows (`shadow-sm`), `hover:shadow-md` transitions
+> - **Card accents:** colored left border (`border-l-4 border-l-{color}`) to differentiate card types (primary=business, sky-600=owner, blue-600=clients, teal-600=settings, amber-500=hours)
 > - **Icon badges:** small rounded-lg background + icon in card headers for visual anchoring
-> - **Gradient banners:** `bg-gradient-to-r from-primary/5` for welcome headers and CTA sections
+> - **Welcome header:** plain text (no banner/gradient), tighter `space-y-5` spacing
+> - **Onboarding CTA gradient:** `bg-gradient-to-r from-primary/8 via-primary/15 to-primary/8`
 > - **TopBar:** hidden on desktop (`lg:hidden`) since Sidebar provides branding; only shows on mobile for hamburger menu
-> - **Sidebar:** current-page highlighting with `bg-primary text-primary-foreground` + `aria-current="page"`
+> - **Sidebar:** active nav uses `border-l-[3px] border-l-sidebar-primary bg-sidebar-accent text-white font-semibold` + `aria-current="page"`; disabled items use `text-sidebar-foreground/30`
+> - **Mobile drawer:** dark background matching sidebar (`bg-sidebar-background`), same nav styling
+> - **Focus indicators:** `ring-2` + `ring-offset-2` on buttons; `ring-2` on inputs/selects/textareas/checkboxes
+> - **Button text:** `font-semibold` for stronger visual weight
+> - **Success messages:** `border-green-300`, `text-green-800`, `font-medium`
+> - **Branding:** "Seedling HQ" with seedling emoji (🌱) in sidebar, topbar, and mobile drawer
 > - **Scroll on save:** use `document.querySelector('main')?.scrollTo()` — AppShell `<main>` is the scroll container, not `window`
 
 ### 5.3 Theme requirements
