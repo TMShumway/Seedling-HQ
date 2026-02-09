@@ -30,7 +30,7 @@ Seedling-HQ/
   apps/api/              # @seedling/api — Fastify 5 backend
   apps/web/              # @seedling/web — React 19 + Vite frontend
   e2e/                   # @seedling/e2e — Playwright E2E tests
-  docs/context/          # Architecture & design context packs (8 files)
+  docs/context/          # Architecture & design context packs (10 files)
   docs/stories/          # Story implementation checklists
 ```
 
@@ -77,7 +77,7 @@ Seedling-HQ/
 | `test` | Run unit tests |
 | `test:integration` | Run integration tests against real Postgres |
 | `db:push` | Push Drizzle schema to database |
-| `db:seed` | Seed demo tenant and owner user |
+| `db:seed` | Seed demo tenant, user, services, clients, properties, and audit events |
 | `gen` | Generate OpenAPI spec to `openapi.json` |
 
 ## API Endpoints
@@ -100,6 +100,18 @@ Seedling-HQ/
 | GET | `/v1/services/:id` | Required | Get service item |
 | PUT | `/v1/services/:id` | Required | Update service item |
 | DELETE | `/v1/services/:id` | Required | Deactivate service item (soft delete) |
+| GET | `/v1/clients` | Required | List clients (paginated, searchable) |
+| POST | `/v1/clients` | Required | Create client |
+| GET | `/v1/clients/count` | Required | Count active clients |
+| GET | `/v1/clients/:id` | Required | Get client |
+| PUT | `/v1/clients/:id` | Required | Update client |
+| DELETE | `/v1/clients/:id` | Required | Deactivate client (soft delete, cascades to properties) |
+| GET | `/v1/clients/:clientId/properties` | Required | List client's properties |
+| POST | `/v1/clients/:clientId/properties` | Required | Add property to client |
+| GET | `/v1/clients/:clientId/timeline` | Required | Client activity timeline (paginated, `?exclude=deactivated`) |
+| GET | `/v1/properties/:id` | Required | Get property |
+| PUT | `/v1/properties/:id` | Required | Update property |
+| DELETE | `/v1/properties/:id` | Required | Deactivate property (soft delete) |
 
 ## Architecture
 
@@ -123,28 +135,47 @@ Every data query is scoped by `tenant_id`. The `users` table has a composite uni
 The demo seed creates:
 - **Tenant:** `00000000-0000-0000-0000-000000000001` (slug: `demo`)
 - **User:** `00000000-0000-0000-0000-000000000010` (email: `owner@demo.local`, role: `owner`)
+- **Service categories:** Lawn Care, Tree Service, Landscaping (with 8 service items)
+- **Clients:** John Smith, Jane Johnson, Bob Wilson (with 3 properties)
+- **Audit events:** tenant/user signup + client/property creation events (for timeline)
 
 ## Database
 
 PostgreSQL 17 via Docker Compose. Schema managed by Drizzle ORM with `db:push` for local dev.
 
-**Tables (S-001 through S-003):**
+**Tables (S-001 through S-005):**
 - `tenants` — id, slug (unique), name, status, timestamps
 - `users` — id, tenant_id (FK), email, full_name, role, status, timestamps
-- `audit_events` — id, tenant_id (FK), event_name, principal/subject info, correlation_id, created_at
+- `audit_events` — id, tenant_id (FK), event_name, principal/subject info, correlation_id, created_at; indexes on `(tenant_id, created_at)` and `(tenant_id, subject_type, subject_id, created_at)`
 - `business_settings` — id, tenant_id (FK, unique), phone, address fields, timezone, business_hours (JSONB), service_area, default_duration_minutes, description, timestamps
 - `service_categories` — id, tenant_id (FK), name, description, sort_order, active, timestamps; unique (tenant_id, name)
 - `service_items` — id, tenant_id (FK), category_id (FK), name, description, unit_price (cents), unit_type, estimated_duration_minutes, active, sort_order, timestamps; unique (tenant_id, category_id, name)
+- `clients` — id, tenant_id (FK), first_name, last_name, email, phone, company, notes, tags (JSONB), active, timestamps; unique (tenant_id, email)
+- `properties` — id, tenant_id (FK), client_id (FK), address fields, notes, active, timestamps; unique (tenant_id, client_id, address_line1)
 
 ## Testing
 
 ```bash
-pnpm test                # 41 unit tests
-pnpm test:integration    # 37 integration tests (needs Postgres)
-pnpm test:e2e            # 30 E2E tests, 23 run + 7 skipped (starts API + Web automatically)
+pnpm test                # 67 unit tests
+pnpm test:integration    # 68 integration tests (needs Postgres)
+pnpm test:e2e            # 50 E2E tests, 35 run + 15 skipped (starts API + Web automatically)
 ```
 
 Integration tests truncate tables between runs. E2E tests re-seed the database via `globalSetup` before each run.
+
+**Tip:** After running E2E tests, the database will contain test-created data. To restore clean state for manual testing:
+
+```bash
+pnpm --filter @seedling/api run db:reset && pnpm --filter @seedling/api run db:push && pnpm --filter @seedling/api run db:seed
+```
+
+Run a single test file:
+
+```bash
+pnpm --filter @seedling/api exec vitest run test/unit/timeline.test.ts          # unit
+pnpm --filter @seedling/api exec vitest run --config vitest.integration.config.ts test/integration/timeline-routes.test.ts  # integration
+pnpm exec playwright test e2e/tests/client-timeline.spec.ts --project=desktop-chrome  # E2E
+```
 
 ## Environment Variables
 

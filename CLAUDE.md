@@ -67,6 +67,8 @@
 | Server-side search | ILIKE across multiple columns | S-004 | `?search=term` on `GET /v1/clients` |
 | UI theme | USWDS-inspired dark navy reskin | Post-S-004 | Deep navy primary (`#1e3a5f`), dark sidebar (`#0f172a`), tight radii (2/4/6/8px), `ring-2` focus indicators |
 | Branding | "Seedling HQ" with 🌱 emoji | Post-S-004 | Displayed in sidebar, topbar, and mobile drawer |
+| Client detail tabs | Info / Properties / Activity | S-005 | Tab layout with ARIA roles; Activity tab shows audit event timeline |
+| Timeline data source | audit_events table query | S-005 | No new table; composite index `(tenant_id, subject_type, subject_id, created_at)` |
 
 ---
 
@@ -90,6 +92,9 @@
 | Count endpoint | S-004 | `GET /v1/clients/count` for dashboard metrics |
 | Nested + flat URLs | S-004 | Properties listed at `/v1/clients/:clientId/properties`, operated at `/v1/properties/:id` |
 | Post-trim validation on updates | S-004 | Update use cases must validate required fields after trimming; create and update paths should have matching validation |
+| Timeline via audit_events query | S-005 | `listBySubjects(tenantId, subjectIds[], filters)` — no new table, reuse audit_events with composite index; always pass `subjectTypes` filter to match the `(tenant_id, subject_type, subject_id, created_at)` index |
+| Event label mapping | S-005 | `getEventLabel()` maps `client.created` → "Client created" etc.; titlecase fallback for unknown events |
+| Timeline exclude filter | S-005 | `?exclude=deactivated` filters out `*.deactivated` event names server-side |
 
 ### Frontend
 
@@ -103,6 +108,8 @@
 | E2E scoped locators | S-003 | Use `.filter({ hasText: ... })` when seed/test data coexist |
 | `useInfiniteQuery` for pagination | S-004 | React Query hook for "Load More" cursor-based pagination |
 | Debounced search input | S-004 | 300ms `setTimeout` in `useEffect` for search-as-you-type |
+| Tab layout on detail pages | S-005 | `useState<Tab>` + tab bar with `role="tablist"` + `role="tab"` + `role="tabpanel"` |
+| Timeline component | S-005 | `TimelineSection` with `useInfiniteQuery`, event icons, relative timestamps, "Hide removals" toggle |
 
 ### Testing
 
@@ -118,7 +125,7 @@
 
 | Item | Deferred to | Reason |
 |------|-------------|--------|
-| Cognito JWT validation (`AUTH_MODE=cognito`) | S-005+ | S-001–S-004 use `AUTH_MODE=local` |
+| Cognito JWT validation (`AUTH_MODE=cognito`) | S-006+ | S-001–S-005 use `AUTH_MODE=local` |
 | `message_outbox` table | S-021 | Not needed until comms stories |
 | `secure_link_tokens` table | S-010 | Not needed until external access stories |
 | LocalStack in docker-compose | S-007+ | Not needed until async/queue stories |

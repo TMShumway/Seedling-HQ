@@ -44,7 +44,10 @@ export const auditEvents = pgTable(
     correlationId: varchar('correlation_id', { length: 255 }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index('audit_events_tenant_created_idx').on(table.tenantId, table.createdAt)],
+  (table) => [
+    index('audit_events_tenant_created_idx').on(table.tenantId, table.createdAt),
+    index('audit_events_subject_idx').on(table.tenantId, table.subjectType, table.subjectId, table.createdAt),
+  ],
 );
 
 export const businessSettings = pgTable(
