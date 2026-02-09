@@ -12,6 +12,10 @@ function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     DEV_AUTH_TENANT_ID: 'tenant-1',
     DEV_AUTH_USER_ID: 'user-1',
     DEV_AUTH_ROLE: 'owner',
+    NOTIFICATION_ENABLED: false,
+    SMTP_HOST: 'localhost',
+    SMTP_PORT: 1025,
+    SMTP_FROM: 'test@seedling.local',
     ...overrides,
   };
 }

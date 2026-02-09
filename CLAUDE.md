@@ -72,6 +72,10 @@
 | Public request form | Public endpoint + honeypot + rate limit | S-0006 | `/v1/public/requests/:tenantSlug`, in-memory sliding window rate limiter |
 | Request status machine | `new` → `reviewed` → `converted` / `declined` | S-0006 | Initial status always `new`; source: `public_form` or `manual` |
 | Spam protection | Honeypot + per-IP rate limit | S-0006 | Honeypot: silent fake success; rate limit: 5 req/min per IP (in-memory, prod uses API Gateway) |
+| Email notifications | Nodemailer → Mailpit (local SMTP) | S-0007 | `NOTIFICATION_ENABLED` config toggle; best-effort (never throws) |
+| Message outbox | Durable log for email + SMS | S-0007 | `message_outbox` table; email sent immediately, SMS queued for S-0021 worker |
+| Email template | Plain HTML string builder | S-0007 | `buildRequestNotificationEmail()` with XSS-safe `escapeHtml()`; no template engine |
+| Owner lookup | `getOwnerByTenantId` on UserRepository | S-0007 | Query users WHERE role='owner' for notification recipient |
 
 ---
 
@@ -104,6 +108,10 @@
 | Tenant resolution via slug | S-0006 | Public routes use `:tenantSlug` param → `tenantRepo.getBySlug()` to resolve tenant |
 | System audit principal | S-0006 | Public/automated actions use `principalType: 'system'`, `principalId: 'public_form'` |
 | Count by status endpoint | S-0006 | `GET /v1/requests/count?status=new` for dashboard metrics with status filter |
+| Message outbox pattern | S-0007 | `MessageOutboxRepository.create()` → SMTP send → `updateStatus(sent/failed)`; outbox IS the durable record |
+| Best-effort notification | S-0007 | `SendRequestNotificationUseCase` wraps all logic in try/catch — never throws; route handler awaits but failures are silent |
+| Notification wiring in routes | S-0007 | Route handler calls notification use case after `CreatePublicRequestUseCase`; keeps create use case unchanged |
+| SMS outbox as queued | S-0007 | SMS outbox records created with `status: 'queued'`; actual sending deferred to S-0021 worker |
 
 ### Frontend
 
@@ -137,8 +145,8 @@
 
 | Item | Deferred to | Reason |
 |------|-------------|--------|
-| Cognito JWT validation (`AUTH_MODE=cognito`) | S-0007+ | S-0001–S-0006 use `AUTH_MODE=local` |
-| `message_outbox` table | S-0021 | Not needed until comms stories |
+| Cognito JWT validation (`AUTH_MODE=cognito`) | S-0007+ | S-0001–S-0007 use `AUTH_MODE=local` |
+| SMS worker (send from outbox) | S-0021 | `message_outbox` table exists; SMS records queued but not sent |
 | `secure_link_tokens` table | S-0010 | Not needed until external access stories |
 | LocalStack in docker-compose | S-0007+ | Not needed until async/queue stories |
 | EventBridge bus + Scheduler | S-0022+ | Not needed until automation stories |

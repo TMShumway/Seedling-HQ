@@ -309,13 +309,15 @@ Suggested table (name is up to you, e.g., `secure_link_tokens`):
 
 ---
 
-## 9) Communications (Outbound-only SMS) — MVP design
+## 9) Communications (Outbound SMS + Email) — MVP design
 
-### Pattern (durable + async)
-- `message_outbox` table is the source of truth for all outbound comms.
+### Pattern (durable + async for SMS; sync for email)
+- `message_outbox` table is the source of truth for all outbound comms (implemented S-0007).
+- **Email (S-0007):** Sent immediately via Nodemailer (Mailpit locally, SES in prod). Outbox record created as `queued`, then updated to `sent` or `failed` synchronously. Best-effort — errors are caught and logged, never block the request.
+- **SMS (S-0021, queued only in S-0007):** Outbox record created as `queued`. Actual sending via SQS worker in S-0021.
 - SQS `message-jobs` carries jobs like:
   - `{ type: "sms.send", tenant_id, message_id }`
-- Worker:
+- Worker (S-0021):
   - loads outbox row
   - checks recipient preferences/opt-in
   - sends via provider
@@ -323,11 +325,13 @@ Suggested table (name is up to you, e.g., `secure_link_tokens`):
 
 ### Delayed sends (reminders)
 - EventBridge Scheduler targets SQS `SendMessage` at a future time.
-- Same worker path handles “send now” and “send later”.
+- Same worker path handles "send now" and "send later".
 
 ### Local vs prod
-- Local: `SMS_PROVIDER=outbox` (no real sending; update outbox for demos)
-- Prod: `SMS_PROVIDER=aws` using AWS End User Messaging SMS v2
+- Local email: Nodemailer → Mailpit (port 1025, web UI at port 8025)
+- Local SMS: `SMS_PROVIDER=outbox` (no real sending; update outbox for demos)
+- Prod email: Nodemailer → SES (or direct SES SDK)
+- Prod SMS: `SMS_PROVIDER=aws` using AWS End User Messaging SMS v2
 
 ---
 
@@ -406,9 +410,11 @@ API:
 Web:
 - `VITE_API_BASE_URL=http://localhost:4000`
 
-Email (local sink):
+Email / notifications (local sink via Mailpit):
+- `NOTIFICATION_ENABLED=true` (feature toggle; set to `false` to disable all notifications)
 - `SMTP_HOST=localhost`
 - `SMTP_PORT=1025`
+- `SMTP_FROM=noreply@seedling.local` (sender address for notification emails)
 
 ### Cognito (internal user auth)
 - `AUTH_MODE=local` (local dev default — mock middleware, no Cognito dependency)

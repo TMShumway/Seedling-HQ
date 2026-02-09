@@ -9,7 +9,7 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 
 ## 1) Entity overview
 
-### 1.1 Implemented entities (S-0001 through S-0006)
+### 1.1 Implemented entities (S-0001 through S-0007)
 
 | Entity | Story | Tenant-scoped | Singleton | Soft delete |
 |--------|-------|---------------|-----------|-------------|
@@ -22,6 +22,7 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 | Property | S-0004 | Yes | No | Yes (`active` flag) |
 | AuditEvent | S-0001 | Yes | No | No (append-only) |
 | Request | S-0006 | Yes | No | No |
+| MessageOutbox | S-0007 | Yes | No | No (append-only) |
 
 ### 1.2 Planned entities (future stories)
 
@@ -31,8 +32,9 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 | Job | S-0012 | Work order created from an approved quote |
 | Visit | S-0012 | Individual scheduled service visit within a job |
 | Invoice | S-0017 | Bill generated from completed work |
-| MessageOutbox | S-0021 | Durable record for outbound SMS/email |
 | SecureLinkToken | S-0010 | Loginless access token for external pages |
+| QuoteFollowUp | S-0023 | Automated follow-up schedule for unapproved quotes (24h/72h cadence) |
+| InvoiceReminder | S-0024 | Automated reminder schedule for unpaid invoices (tenant-configurable cadence) |
 
 ---
 
@@ -240,6 +242,40 @@ new → reviewed → converted
 **Authenticated endpoints:** `GET /v1/requests` (paginated), `GET /v1/requests/:id`, `GET /v1/requests/count`
 **Audit event:** `request.created` with `principalType: 'system'`, `principalId: 'public_form'`
 
+### MessageOutbox
+
+```typescript
+type MessageOutboxStatus = 'queued' | 'scheduled' | 'sent' | 'failed';
+type MessageChannel = 'email' | 'sms';
+
+interface MessageOutbox {
+  id: string;                          // UUID
+  tenantId: string;                    // FK → tenants.id
+  type: string;                        // e.g., 'request_notification'
+  recipientId: string | null;          // FK → users.id (or null)
+  recipientType: string | null;        // 'user' | 'client' | null
+  channel: MessageChannel;             // 'email' | 'sms'
+  subject: string | null;              // email subject (null for SMS)
+  body: string;                        // message content (HTML for email, text for SMS)
+  status: MessageOutboxStatus;
+  provider: string | null;             // 'smtp' | 'ses' | 'sns' etc.
+  providerMessageId: string | null;
+  attemptCount: number;                // default 0, incremented on each send attempt
+  lastErrorCode: string | null;
+  lastErrorMessage: string | null;
+  correlationId: string;
+  scheduledFor: Date | null;           // for delayed sends
+  createdAt: Date;
+  sentAt: Date | null;
+}
+```
+
+**Indexes:** `(tenant_id, created_at)`, `(status, created_at)`
+**Status values:** `queued` (initial), `scheduled` (future send), `sent` (delivered), `failed` (error)
+**Email flow (S-0007):** Record created as `queued` → Nodemailer send attempted → updated to `sent` or `failed`. Best-effort, never throws.
+**SMS flow (S-0007):** Record created as `queued` only. Actual sending deferred to S-0021 worker.
+**Source of truth:** The outbox table is the durable record for all outbound comms.
+
 ---
 
 ## 3) Planned entity definitions and status machines
@@ -336,22 +372,6 @@ draft → sent → paid
 - `overdue`: past due date without payment
 - `void`: cancelled by owner
 
-### MessageOutbox (S-0021)
-
-```
-MessageOutbox {
-  id, tenantId, type, recipientId, recipientType,
-  channel, subject, body, status,
-  provider, providerMessageId,
-  attemptCount, lastErrorCode, lastErrorMessage,
-  correlationId, scheduledFor,
-  createdAt, sentAt
-}
-```
-
-**Status values:** `queued`, `scheduled`, `sent`, `failed`
-**Source of truth:** The outbox table is the durable record for all outbound comms.
-
 ### SecureLinkToken (S-0010)
 
 ```
@@ -364,6 +384,44 @@ SecureLinkToken {
 ```
 
 **Notes:** Never store plaintext tokens. Lookup by hashing the presented token and matching `tokenHash`.
+
+### QuoteFollowUp (S-0023)
+
+```
+QuoteFollowUp {
+  id, tenantId, quoteId,
+  cadenceSteps (JSONB — e.g., [24h, 72h]),
+  currentStep, nextSendAt,
+  status, createdAt, canceledAt
+}
+```
+
+**Status values:** `active`, `completed` (all steps sent), `canceled` (quote approved/declined)
+**Cancellation:** On `quote.approved` or `quote.declined`, cancel pending follow-ups.
+**Infra:** EventBridge Scheduler → SQS → Worker Lambda
+
+### InvoiceReminder (S-0024)
+
+```
+InvoiceReminder {
+  id, tenantId, invoiceId,
+  cadenceConfig (tenant-configurable),
+  nextSendAt, status,
+  createdAt, canceledAt
+}
+```
+
+**Status values:** `active`, `completed`, `canceled` (invoice paid)
+**Cancellation:** On `invoice.paid`, cancel all pending reminders for that invoice.
+**Infra:** EventBridge Scheduler → SQS → Worker Lambda
+
+### S-0025 — Public form abuse protection
+
+No new entity. Enhances existing public request form with:
+- Server-side rate limiting per IP (Dynamo/Redis in prod; in-memory locally — partially implemented in S-0006)
+- Honeypot field (implemented in S-0006)
+- Logging of rejected attempts
+- AWS: API Gateway throttles (prod), WAF (future)
 
 ---
 
@@ -382,16 +440,19 @@ Tenant
   │         └── 1:1  Job (S-0012)
   │                   └── 1:*  Visit (S-0012)
   ├── 1:*  Invoice (S-0017)
-  ├── 1:*  MessageOutbox (S-0021)
+  ├── 1:*  MessageOutbox (S-0007)
   ├── 1:*  SecureLinkToken (S-0010)
-  └── 1:*  AuditEvent (append-only)
+  ├── 1:*  AuditEvent (append-only)
+  │
+  Quote ──1:*── QuoteFollowUp (S-0023)
+  Invoice ──1:*── InvoiceReminder (S-0024)
 ```
 
 ---
 
 ## 5) Audit event catalog
 
-### Implemented events (S-0001 through S-0006)
+### Implemented events (S-0001 through S-0007)
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
@@ -412,6 +473,8 @@ Tenant
 | `property.updated` | property | Property fields changed | S-0004 |
 | `property.deactivated` | property | Property soft-deleted | S-0004 |
 | `request.created` | request | New request submitted (public form) | S-0006 |
+
+> **Note (S-0007):** New request notifications are tracked via `message_outbox` records (not audit events). The `message.sent` audit event is planned for S-0021 when the SMS worker is implemented.
 
 ### Planned events (future stories)
 
@@ -436,6 +499,10 @@ Tenant
 | `reminder.scheduled` | reminder | Reminder scheduled via EventBridge | S-0022 |
 | `reminder.sent` | reminder | Reminder delivered | S-0022 |
 | `reminder.canceled` | reminder | Reminder canceled (state change) | S-0022 |
+| `quote.follow_up.sent` | quote | Automated quote follow-up sent (24h/72h) | S-0023 |
+| `quote.follow_up.canceled` | quote | Quote follow-up canceled (approved/declined) | S-0023 |
+| `invoice.reminder.sent` | invoice | Automated invoice payment reminder sent | S-0024 |
+| `invoice.reminder.canceled` | invoice | Invoice reminder canceled (paid) | S-0024 |
 
 ### Audit event schema
 
@@ -463,9 +530,11 @@ All audit events share this structure:
 |------|----------------|-------|
 | Entity state | Primary tables (`tenants`, `users`, etc.) | Always scoped by `tenant_id` |
 | Audit trail | `audit_events` table | Append-only; never updated or deleted |
-| Outbound comms | `message_outbox` table (S-0021) | Durable record; worker is idempotent based on outbox status |
+| Outbound comms | `message_outbox` table (S-0007) | Durable record; email sent immediately (best-effort), SMS queued for S-0021 worker |
 | External access | `secure_link_tokens` table (S-0010) | Token hash only; never store plaintext |
 | Scheduled reminders | EventBridge Scheduler (S-0022) | Deterministic schedule keys for reliable cancellation |
+| Quote follow-ups | `quote_follow_ups` table + EventBridge (S-0023) | Auto-canceled on approve/decline |
+| Invoice reminders | `invoice_reminders` table + EventBridge (S-0024) | Auto-canceled on payment |
 
 ---
 
@@ -478,3 +547,48 @@ All audit events share this structure:
 - **Status transitions are enforced in domain/use case layer**, not in DB constraints
 - **Entity interfaces live in `apps/api/src/domain/entities/`**
 - **Type enums live in `apps/api/src/domain/types/`**
+
+---
+
+## 8) Full story backlog (GitHub source of truth)
+
+### Implemented (merged to main)
+
+| Story | Title | Area | Epic |
+|-------|-------|------|------|
+| S-0001 | Business signup + first tenant | platform | E-0001 |
+| S-0002 | Onboarding wizard (business profile) | platform | E-0001 |
+| S-0003 | Service catalog (price book v1) | platform | E-0001 |
+| S-0004 | Client + property creation | crm | E-0002 |
+| S-0005 | Client timeline (activity feed v1) | crm | E-0002 |
+| S-0006 | Public "Request Service" form | intake | E-0003 |
+| S-0007 | New request notifications (Email + outbound SMS) | intake | E-0003 |
+
+### Planned (MVP — Release R1)
+
+| Story | Title | Area | Epic | Priority |
+|-------|-------|------|------|----------|
+| S-0008 | Convert request to client + quote draft | intake | E-0003 | P0 |
+| S-0009 | Quote builder v1 | quotes | E-0004 | P0 |
+| S-0010 | Send quote link to customer (secure link) | quotes | E-0004 | P0 |
+| S-0011 | Customer approves quote | quotes | E-0004 | P0 |
+| S-0012 | Create job + first visit from approved quote | scheduling | E-0005 | P0 |
+| S-0013 | Calendar view (week/day) + schedule/reschedule | scheduling | E-0005 | P0 |
+| S-0014 | Assign technician to visit | scheduling | E-0005 | P0 |
+| S-0015 | Tech "Today" view (mobile web) | field | E-0006 | P0 |
+| S-0016 | Job completion with notes + photos | field | E-0006 | P0 |
+| S-0017 | Generate invoice from completed visit | billing | E-0007 | P0 |
+| S-0018 | Customer pays invoice online (Stripe) | billing | E-0007 | P0 |
+| S-0019 | Basic AR dashboard | billing | E-0007 | P1 |
+| S-0020 | Client Hub (loginless secure link) | portal | E-0008 | P0 |
+| S-0021 | Outbound comms outbox + worker (email+SMS) | comms | E-0009 | P0 |
+| S-0022 | Appointment reminders (Scheduler → SQS → worker) | automation | E-0010 | P0 |
+| S-0023 | Quote follow-up automation | automation | E-0010 | P1 |
+| S-0024 | Invoice reminder automation | automation | E-0010 | P1 |
+| S-0025 | Public form abuse protection (MVP) | security | E-0011 | P1 |
+
+### Post-MVP
+
+| Story | Title | Notes |
+|-------|-------|-------|
+| S-0026 | In-app notification center | Revisit when 3+ notification types exist |

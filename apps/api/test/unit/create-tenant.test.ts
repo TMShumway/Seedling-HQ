@@ -23,6 +23,7 @@ function makeUserRepo(overrides: Partial<UserRepository> = {}): UserRepository {
     create: vi.fn(async (u) => ({ ...u, createdAt: new Date(), updatedAt: new Date() })),
     getById: vi.fn(async () => null),
     getByEmail: vi.fn(async () => null),
+    getOwnerByTenantId: vi.fn(async () => null),
     ...overrides,
   };
 }
@@ -36,6 +37,7 @@ function makeAuditRepo(): AuditEventRepository & { recorded: AuditEvent[] } {
       recorded.push(event);
       return event;
     }),
+    listBySubjects: vi.fn(async () => ({ data: [], cursor: null, hasMore: false })),
   };
 }
 

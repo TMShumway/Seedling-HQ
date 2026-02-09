@@ -52,4 +52,13 @@ export class DrizzleUserRepository implements UserRepository {
       .where(and(eq(users.tenantId, tenantId), eq(users.email, email)));
     return rows[0] ? toEntity(rows[0]) : null;
   }
+
+  async getOwnerByTenantId(tenantId: string): Promise<User | null> {
+    const rows = await this.db
+      .select()
+      .from(users)
+      .where(and(eq(users.tenantId, tenantId), eq(users.role, 'owner')))
+      .limit(1);
+    return rows[0] ? toEntity(rows[0]) : null;
+  }
 }

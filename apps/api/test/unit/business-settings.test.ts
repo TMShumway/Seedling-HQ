@@ -41,6 +41,7 @@ function makeAuditRepo(): AuditEventRepository & { recorded: AuditEvent[] } {
       recorded.push(event);
       return event;
     }),
+    listBySubjects: vi.fn(async () => ({ data: [], cursor: null, hasMore: false })),
   };
 }
 

@@ -30,7 +30,9 @@ import { DrizzleServiceItemRepository } from './infra/db/repositories/drizzle-se
 import { DrizzleClientRepository } from './infra/db/repositories/drizzle-client-repository.js';
 import { DrizzlePropertyRepository } from './infra/db/repositories/drizzle-property-repository.js';
 import { DrizzleRequestRepository } from './infra/db/repositories/drizzle-request-repository.js';
+import { DrizzleMessageOutboxRepository } from './infra/db/repositories/drizzle-message-outbox-repository.js';
 import { DrizzleUnitOfWork } from './infra/db/drizzle-unit-of-work.js';
+import { NodemailerEmailSender } from './infra/email/nodemailer-email-sender.js';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -72,7 +74,9 @@ export async function createApp({ config, db }: CreateAppOptions) {
   const clientRepo = new DrizzleClientRepository(db);
   const propertyRepo = new DrizzlePropertyRepository(db);
   const requestRepo = new DrizzleRequestRepository(db);
+  const outboxRepo = new DrizzleMessageOutboxRepository(db);
   const uow = new DrizzleUnitOfWork(db);
+  const emailSender = new NodemailerEmailSender(config.SMTP_HOST, config.SMTP_PORT);
 
   // Routes
   await app.register(healthRoutes);
@@ -83,7 +87,7 @@ export async function createApp({ config, db }: CreateAppOptions) {
   await app.register(buildServiceItemRoutes({ serviceItemRepo, categoryRepo, auditRepo, config }));
   await app.register(buildClientRoutes({ clientRepo, propertyRepo, auditRepo, config }));
   await app.register(buildPropertyRoutes({ propertyRepo, clientRepo, auditRepo, config }));
-  await app.register(buildRequestRoutes({ requestRepo, tenantRepo, auditRepo, config }));
+  await app.register(buildRequestRoutes({ requestRepo, tenantRepo, auditRepo, userRepo, outboxRepo, emailSender, config }));
 
   return app;
 }
