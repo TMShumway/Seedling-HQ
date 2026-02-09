@@ -86,10 +86,10 @@
 
 | Suite | Count | Notes |
 |-------|-------|-------|
-| Unit | 26 | 19 from S-001 + 7 new business-settings |
+| Unit | 27 | 19 from S-001 + 7 business-settings + 1 auth-override |
 | Integration | 16 | 7 tenant + 7 business-settings + 2 cross-tenant (settings) |
 | E2E | 18 (15 run, 3 skipped) | 4 signup + 5 onboarding, x2 projects; 3 stateful tests skip on mobile-chrome |
-| **Total** | **60** (57 run) | |
+| **Total** | **61** (58 run) | |
 
 ### Phase 10: UI Polish
 - [x] Add loading skeletons to DashboardPage, SettingsPage, OnboardingPage
@@ -107,6 +107,12 @@
 - [x] Create `Skeleton` UI component
 - [x] Commit & push
 
+### Phase 11: Local Auth Override
+- [x] Backend: accept `X-Dev-Tenant-Id` / `X-Dev-User-Id` headers in `AUTH_MODE=local` to override env var defaults
+- [x] Frontend: store signup response tenant/user IDs in `localStorage`, send as headers on all API requests
+- [x] Add unit test for header override behavior
+- [x] Commit & push
+
 ---
 
 ## Design Decisions
@@ -121,6 +127,7 @@
 | Timezone | IANA string, validated on frontend | Common US timezones in dropdown; API accepts any string for flexibility |
 | Seed data | Business settings NOT seeded | Onboarding flow should prompt user to configure; E2E tests verify this path |
 | Wizard layout | `<div>` not `<form>` | `<form>` caused auto-submit when navigating between wizard steps with native inputs |
+| Local auth override | `X-Dev-Tenant-Id` / `X-Dev-User-Id` headers | After signup, frontend stores new IDs in localStorage and sends them as headers so the new tenant sees its own data |
 
 ---
 

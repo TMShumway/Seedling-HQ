@@ -96,7 +96,7 @@ API middleware must validate Cognito Access tokens with the following checks:
 - Admin actions like "disable user" in Cognito take effect on the next token validation (after current token expires).
 
 **Local dev (`AUTH_MODE=local`):**
-- Skip all JWT validation. Mock middleware produces a static `authContext` from env vars.
+- Skip all JWT validation. Mock middleware produces an `authContext` from env vars (defaults) or `X-Dev-Tenant-Id` / `X-Dev-User-Id` request headers (overrides, stored in localStorage after signup).
 - This is acceptable only for `NODE_ENV=development`. The mock middleware must refuse to activate if `NODE_ENV=production`.
 
 ---
