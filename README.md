@@ -88,6 +88,18 @@ Seedling-HQ/
 | POST | `/v1/tenants` | None | Signup: create tenant + owner user |
 | GET | `/v1/tenants/me` | Required | Get current tenant |
 | GET | `/v1/users/me` | Required | Get current user |
+| GET | `/v1/tenants/me/settings` | Required | Get business settings (or null) |
+| PUT | `/v1/tenants/me/settings` | Required | Upsert business settings |
+| GET | `/v1/services/categories` | Required | List service categories |
+| POST | `/v1/services/categories` | Required | Create service category |
+| GET | `/v1/services/categories/:id` | Required | Get service category |
+| PUT | `/v1/services/categories/:id` | Required | Update service category |
+| DELETE | `/v1/services/categories/:id` | Required | Deactivate service category (soft delete) |
+| GET | `/v1/services` | Required | List service items |
+| POST | `/v1/services` | Required | Create service item |
+| GET | `/v1/services/:id` | Required | Get service item |
+| PUT | `/v1/services/:id` | Required | Update service item |
+| DELETE | `/v1/services/:id` | Required | Deactivate service item (soft delete) |
 
 ## Architecture
 
@@ -116,17 +128,20 @@ The demo seed creates:
 
 PostgreSQL 17 via Docker Compose. Schema managed by Drizzle ORM with `db:push` for local dev.
 
-**Tables (S-001):**
+**Tables (S-001 through S-003):**
 - `tenants` — id, slug (unique), name, status, timestamps
 - `users` — id, tenant_id (FK), email, full_name, role, status, timestamps
 - `audit_events` — id, tenant_id (FK), event_name, principal/subject info, correlation_id, created_at
+- `business_settings` — id, tenant_id (FK, unique), phone, address fields, timezone, business_hours (JSONB), service_area, default_duration_minutes, description, timestamps
+- `service_categories` — id, tenant_id (FK), name, description, sort_order, active, timestamps; unique (tenant_id, name)
+- `service_items` — id, tenant_id (FK), category_id (FK), name, description, unit_price (cents), unit_type, estimated_duration_minutes, active, sort_order, timestamps; unique (tenant_id, category_id, name)
 
 ## Testing
 
 ```bash
-pnpm test                # 13 unit tests
-pnpm test:integration    # 7 integration tests (needs Postgres)
-pnpm test:e2e            # 8 E2E tests (starts API + Web automatically)
+pnpm test                # 41 unit tests
+pnpm test:integration    # 37 integration tests (needs Postgres)
+pnpm test:e2e            # 30 E2E tests, 23 run + 7 skipped (starts API + Web automatically)
 ```
 
 Integration tests truncate tables between runs. E2E tests re-seed the database via `globalSetup` before each run.
@@ -151,4 +166,4 @@ cp .env.example .env
 
 ## AI Context
 
-This repo uses `CLAUDE.md` as an AI context index. It points to 8 context packs in `docs/context/` covering architecture, UI/UX, testing, security, observability, DevEx conventions, and data access patterns. Read `CLAUDE.md` first before making design or implementation decisions.
+This repo uses `CLAUDE.md` as an AI context index. It points to 10 context packs in `docs/context/` covering architecture, UI/UX, testing, security, observability, DevEx conventions, data access patterns, domain model, and API standards. Read `CLAUDE.md` first before making design or implementation decisions.
