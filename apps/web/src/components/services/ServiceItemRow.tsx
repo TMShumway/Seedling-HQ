@@ -12,7 +12,7 @@ interface ServiceItemRowProps {
 export function ServiceItemRow({ item, onEdit, onDelete }: ServiceItemRowProps) {
   return (
     <div
-      className="flex items-center justify-between rounded-md border border-border/40 bg-muted/20 px-4 py-3"
+      className="flex items-center justify-between rounded-md border border-border/60 bg-muted/20 px-4 py-3"
       data-testid="service-item-row"
     >
       <div className="min-w-0 flex-1">
