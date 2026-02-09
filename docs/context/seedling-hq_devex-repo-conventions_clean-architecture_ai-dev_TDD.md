@@ -1,6 +1,6 @@
 # Seedling-HQ — DevEx + Repo Conventions (Clean Architecture Rails) for AI-Driven Development
 
-_Last updated: 2026-02-08 (America/Chihuahua)_
+_Last updated: 2026-02-09 (America/Chihuahua)_
 
 > Purpose: Give humans + AI agents a **single, consistent way** to add features without drifting architecture.
 > This document establishes **Clean Architecture-inspired boundaries** for Seedling-HQ while staying pragmatic for MVP.
@@ -168,8 +168,9 @@ Prefer:
 ## 5) Routing conventions (API)
 
 ### 5.1 Route grouping
-- Internal app routes: `/v1/...`
-- External secure link routes: `/public/...` (or `/ext/...`) – keep clearly separated
+- Internal authenticated routes: `/v1/<resource>` — require auth middleware
+- Public unauthenticated routes: `/v1/public/<resource>/:tenantSlug` — no auth, rate-limited, tenant resolved via URL slug (S-0006)
+- External secure-link routes: `/v1/ext/<resource>/:token` (future, S-0010+) — token-authenticated, tenant derived from token record
 
 ### 5.2 Auth middleware
 
@@ -202,6 +203,14 @@ Prefer:
   }
   ```
 - Reject request with generic error if token is invalid, expired, or revoked.
+
+**Public routes (`/v1/public/...`) — no auth, rate-limited (S-0006):**
+- No auth middleware; request has no `authContext`.
+- Rate limit middleware (in-memory sliding window) applied as `preHandler`.
+- `trustProxy: true` in Fastify ensures `request.ip` is the real client IP behind proxies.
+- Tenant is resolved from URL param (e.g., `:tenantSlug` → `tenantRepo.getBySlug()`).
+- Audit events use `principalType: 'system'`, `principalId: 'public_form'`.
+- Honeypot field for spam protection: if filled, return fake success without persisting.
 
 **Critical rule:** Use cases and domain logic receive `authContext` and never know which mechanism produced it. The auth mechanism is an infrastructure concern.
 

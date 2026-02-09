@@ -8,6 +8,9 @@ import { SettingsPage } from '@/pages/SettingsPage';
 import { ServicesPage } from '@/pages/ServicesPage';
 import { ClientsPage } from '@/pages/ClientsPage';
 import { ClientDetailPage } from '@/pages/ClientDetailPage';
+import { RequestsPage } from '@/pages/RequestsPage';
+import { PublicRequestPage } from '@/pages/PublicRequestPage';
+import { RequestSuccessPage } from '@/pages/RequestSuccessPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,12 +24,15 @@ export function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/request/:tenantSlug" element={<PublicRequestPage />} />
+          <Route path="/request/:tenantSlug/success" element={<RequestSuccessPage />} />
           <Route element={<AppShell />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/services" element={<ServicesPage />} />
             <Route path="/clients" element={<ClientsPage />} />
             <Route path="/clients/:id" element={<ClientDetailPage />} />
+            <Route path="/requests" element={<RequestsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

@@ -55,13 +55,13 @@
 | Auth provider | AWS Cognito (User Pools, JWT) | Pre-S-0001 | `AUTH_MODE=local` mock for dev; see Architecture doc 4.1 |
 | DB query layer | Drizzle ORM + drizzle-kit | S-0001 | Type-safe, SQL-like API, built-in migrations |
 | Logging | Pino (structured JSON) | S-0001 | Config object, not instance (Fastify 5 requirement) |
-| API framework | Fastify 5 + Zod schemas | S-0001 | `fastify-type-provider-zod` (NOT `@fastify/` scoped) |
+| API framework | Fastify 5 + Zod schemas | S-0001 | `fastify-type-provider-zod` (NOT `@fastify/` scoped); `trustProxy: true` for correct `request.ip` behind proxies |
 | Frontend | React 19 + Vite + Tailwind CSS v4 + shadcn/ui | S-0001 | `@tailwindcss/vite` plugin; hand-written components |
 | Monorepo | pnpm workspaces, Node 24 | S-0001 | `--env-file=../../.env` for tsx scripts (no dotenv) |
 | Testing | Vitest + Playwright + axe-core | S-0001 | |
 | DB schema management | `db:push` (local), `db:generate` + `db:migrate` (prod) | S-0001 | Migrations introduced as schema evolves |
 | Service catalog | Two-level: categories → items | S-0003 | Soft delete via `active` flag; prices in integer cents |
-| Nav order | Dashboard, Services, Clients, then remaining items | S-0004 | Services + Clients are setup-phase items owners configure early |
+| Nav order | Dashboard, Services, Requests, Clients, then remaining items | S-0004 | Services + Clients are setup-phase items; Requests inserted in S-0006 |
 | Client/Property model | Two-level: clients → properties | S-0004 | Soft delete with cascade; nullable email (phone-only clients OK) |
 | Pagination | Cursor-based keyset pagination | S-0004 | `PaginatedResult<T>` with `(created_at DESC, id DESC)`, fetch limit+1 |
 | Server-side search | ILIKE across multiple columns | S-0004 | `?search=term` on `GET /v1/clients` |
@@ -69,6 +69,9 @@
 | Branding | "Seedling HQ" with 🌱 emoji | Post-S-0004 | Displayed in sidebar, topbar, and mobile drawer |
 | Client detail tabs | Info / Properties / Activity | S-0005 | Tab layout with ARIA roles; Activity tab shows audit event timeline |
 | Timeline data source | audit_events table query | S-0005 | No new table; composite index `(tenant_id, subject_type, subject_id, created_at)` |
+| Public request form | Public endpoint + honeypot + rate limit | S-0006 | `/v1/public/requests/:tenantSlug`, in-memory sliding window rate limiter |
+| Request status machine | `new` → `reviewed` → `converted` / `declined` | S-0006 | Initial status always `new`; source: `public_form` or `manual` |
+| Spam protection | Honeypot + per-IP rate limit | S-0006 | Honeypot: silent fake success; rate limit: 5 req/min per IP (in-memory, prod uses API Gateway) |
 
 ---
 
@@ -95,6 +98,12 @@
 | Timeline via audit_events query | S-0005 | `listBySubjects(tenantId, subjectIds[], filters)` — no new table, reuse audit_events with composite index; always pass `subjectTypes` filter to match the `(tenant_id, subject_type, subject_id, created_at)` index |
 | Event label mapping | S-0005 | `getEventLabel()` maps `client.created` → "Client created" etc.; titlecase fallback for unknown events |
 | Timeline exclude filter | S-0005 | `?exclude=deactivated` filters out `*.deactivated` event names server-side |
+| Public endpoint (no auth) | S-0006 | `/v1/public/*` routes skip auth middleware; use `publicRequest()` on frontend (no dev auth headers) |
+| Honeypot spam protection | S-0006 | Hidden `website` field; if filled, return fake 201 with random UUID, don't persist |
+| In-memory rate limiter | S-0006 | Sliding window `Map<ip, {count, windowStart}>`, configurable window/max, periodic cleanup; `resetRateLimitStore()` for tests; `trustProxy: true` in Fastify for correct client IP behind ALB/API Gateway |
+| Tenant resolution via slug | S-0006 | Public routes use `:tenantSlug` param → `tenantRepo.getBySlug()` to resolve tenant |
+| System audit principal | S-0006 | Public/automated actions use `principalType: 'system'`, `principalId: 'public_form'` |
+| Count by status endpoint | S-0006 | `GET /v1/requests/count?status=new` for dashboard metrics with status filter |
 
 ### Frontend
 
@@ -110,6 +119,9 @@
 | Debounced search input | S-0004 | 300ms `setTimeout` in `useEffect` for search-as-you-type |
 | Tab layout on detail pages | S-0005 | `useState<Tab>` + tab bar with `role="tablist"` + `role="tab"` + `role="tabpanel"` |
 | Timeline component | S-0005 | `TimelineSection` with `useInfiniteQuery`, event icons, relative timestamps, "Hide removals" toggle |
+| Public page (no AppShell) | S-0006 | Public pages like `/request/:tenantSlug` render outside `<AppShell>` (like SignupPage) |
+| `publicRequest()` API function | S-0006 | Separate fetch wrapper that skips dev auth headers for public endpoints |
+| Status badge component | S-0006 | Inline `StatusBadge` with color map for request statuses (new=amber, reviewed=blue, etc.) |
 
 ### Testing
 
@@ -125,7 +137,7 @@
 
 | Item | Deferred to | Reason |
 |------|-------------|--------|
-| Cognito JWT validation (`AUTH_MODE=cognito`) | S-0006+ | S-0001–S-0005 use `AUTH_MODE=local` |
+| Cognito JWT validation (`AUTH_MODE=cognito`) | S-0007+ | S-0001–S-0006 use `AUTH_MODE=local` |
 | `message_outbox` table | S-0021 | Not needed until comms stories |
 | `secure_link_tokens` table | S-0010 | Not needed until external access stories |
 | LocalStack in docker-compose | S-0007+ | Not needed until async/queue stories |

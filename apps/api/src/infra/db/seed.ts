@@ -1,6 +1,6 @@
 import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { tenants, users, auditEvents, serviceCategories, serviceItems, clients, properties } from './schema.js';
+import { tenants, users, auditEvents, serviceCategories, serviceItems, clients, properties, requests } from './schema.js';
 import { sql } from 'drizzle-orm';
 
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
@@ -127,6 +127,28 @@ async function seed() {
       });
   }
 
+  // Upsert demo requests
+  const DEMO_REQUEST_IDS = {
+    lawnRequest: '00000000-0000-0000-0000-000000000600',
+    treeRequest: '00000000-0000-0000-0000-000000000601',
+    landscapeRequest: '00000000-0000-0000-0000-000000000602',
+  };
+
+  const requestValues = [
+    { id: DEMO_REQUEST_IDS.lawnRequest, tenantId: DEMO_TENANT_ID, source: 'public_form', clientName: 'Sarah Davis', clientEmail: 'sarah.davis@example.com', clientPhone: '(555) 200-3001', description: 'Looking for weekly lawn mowing service for my 1/4 acre lot. Front and back yard.', status: 'new' },
+    { id: DEMO_REQUEST_IDS.treeRequest, tenantId: DEMO_TENANT_ID, source: 'public_form', clientName: 'Mike Chen', clientEmail: 'mike.chen@example.com', clientPhone: '(555) 200-3002', description: 'Have a large oak tree that needs trimming before storm season. Branches hanging over the house.', status: 'new' },
+    { id: DEMO_REQUEST_IDS.landscapeRequest, tenantId: DEMO_TENANT_ID, source: 'public_form', clientName: 'Emily Rodriguez', clientEmail: 'emily.r@example.com', clientPhone: null, description: 'Interested in a landscape design consultation for our new home. Backyard is about 2000 sq ft.', status: 'new' },
+  ];
+  for (const r of requestValues) {
+    await db
+      .insert(requests)
+      .values(r)
+      .onConflictDoUpdate({
+        target: requests.id,
+        set: { clientName: r.clientName, clientEmail: r.clientEmail, clientPhone: r.clientPhone, description: r.description, status: r.status },
+      });
+  }
+
   // Insert audit events (idempotent: check first)
   const existing = await db
     .select({ count: sql<number>`count(*)::int` })
@@ -215,6 +237,37 @@ async function seed() {
         eventName: 'property.created',
         subjectType: 'property',
         subjectId: '00000000-0000-0000-0000-000000000502',
+        correlationId: 'seed',
+      },
+      // Request created events
+      {
+        id: '00000000-0000-0000-0000-000000000130',
+        tenantId: DEMO_TENANT_ID,
+        principalType: 'system',
+        principalId: 'public_form',
+        eventName: 'request.created',
+        subjectType: 'request',
+        subjectId: DEMO_REQUEST_IDS.lawnRequest,
+        correlationId: 'seed',
+      },
+      {
+        id: '00000000-0000-0000-0000-000000000131',
+        tenantId: DEMO_TENANT_ID,
+        principalType: 'system',
+        principalId: 'public_form',
+        eventName: 'request.created',
+        subjectType: 'request',
+        subjectId: DEMO_REQUEST_IDS.treeRequest,
+        correlationId: 'seed',
+      },
+      {
+        id: '00000000-0000-0000-0000-000000000132',
+        tenantId: DEMO_TENANT_ID,
+        principalType: 'system',
+        principalId: 'public_form',
+        eventName: 'request.created',
+        subjectType: 'request',
+        subjectId: DEMO_REQUEST_IDS.landscapeRequest,
         correlationId: 'seed',
       },
     ]);

@@ -147,6 +147,29 @@ export const clients = pgTable(
   ],
 );
 
+export const requests = pgTable(
+  'requests',
+  {
+    id: uuid('id').primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id),
+    source: varchar('source', { length: 50 }).notNull(),
+    clientName: varchar('client_name', { length: 255 }).notNull(),
+    clientEmail: varchar('client_email', { length: 255 }).notNull(),
+    clientPhone: varchar('client_phone', { length: 50 }),
+    description: text('description').notNull(),
+    status: varchar('status', { length: 50 }).notNull().default('new'),
+    assignedUserId: uuid('assigned_user_id'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('requests_tenant_created_idx').on(table.tenantId, table.createdAt),
+    index('requests_tenant_status_idx').on(table.tenantId, table.status),
+  ],
+);
+
 export const properties = pgTable(
   'properties',
   {

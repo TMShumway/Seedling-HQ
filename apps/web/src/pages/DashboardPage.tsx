@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiClient } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
-import { Building2, UserCircle, ClipboardList, Clock, Users } from 'lucide-react';
+import { Building2, UserCircle, ClipboardList, Clock, Users, FileText } from 'lucide-react';
 
 const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 const ORDERED_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
@@ -56,11 +56,16 @@ export function DashboardPage() {
     queryFn: () => apiClient.countClients(),
   });
 
-  if (tenantQuery.isLoading || userQuery.isLoading || settingsQuery.isLoading || clientCountQuery.isLoading) {
+  const requestCountQuery = useQuery({
+    queryKey: ['requests', 'count', 'new'],
+    queryFn: () => apiClient.countRequests('new'),
+  });
+
+  if (tenantQuery.isLoading || userQuery.isLoading || settingsQuery.isLoading || clientCountQuery.isLoading || requestCountQuery.isLoading) {
     return <DashboardSkeleton />;
   }
 
-  if (tenantQuery.error || userQuery.error || settingsQuery.error || clientCountQuery.error) {
+  if (tenantQuery.error || userQuery.error || settingsQuery.error || clientCountQuery.error || requestCountQuery.error) {
     return (
       <div className="text-destructive">
         Failed to load dashboard data. Please try again.
@@ -130,24 +135,44 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      {/* Client count card */}
-      <Card
-        className="cursor-pointer border-l-4 border-l-blue-600 transition-shadow hover:shadow-md"
-        onClick={() => navigate('/clients')}
-      >
-        <CardHeader className="flex flex-row items-center gap-3 space-y-0">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50">
-            <Users className="h-4 w-4 text-blue-700" />
-          </div>
-          <CardTitle className="text-base">Clients</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-3xl font-bold" data-testid="client-count">
-            {clientCountQuery.data?.count ?? 0}
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">Active clients</p>
-        </CardContent>
-      </Card>
+      {/* Metric cards */}
+      <div className="grid gap-5 md:grid-cols-2">
+        <Card
+          className="cursor-pointer border-l-4 border-l-blue-600 transition-shadow hover:shadow-md"
+          onClick={() => navigate('/clients')}
+        >
+          <CardHeader className="flex flex-row items-center gap-3 space-y-0">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50">
+              <Users className="h-4 w-4 text-blue-700" />
+            </div>
+            <CardTitle className="text-base">Clients</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold" data-testid="client-count">
+              {clientCountQuery.data?.count ?? 0}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">Active clients</p>
+          </CardContent>
+        </Card>
+
+        <Card
+          className="cursor-pointer border-l-4 border-l-amber-500 transition-shadow hover:shadow-md"
+          onClick={() => navigate('/requests')}
+        >
+          <CardHeader className="flex flex-row items-center gap-3 space-y-0">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-50">
+              <FileText className="h-4 w-4 text-amber-700" />
+            </div>
+            <CardTitle className="text-base">New Requests</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold" data-testid="request-count">
+              {requestCountQuery.data?.count ?? 0}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">Awaiting review</p>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Settings / Onboarding */}
       {!settings ? (
