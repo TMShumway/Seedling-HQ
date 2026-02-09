@@ -116,7 +116,8 @@ Target:
 - S3 keys are tenant-prefixed (and never accept tenant prefix from untrusted input).
 
 **Required tests:**
-- “Cross-tenant denial” tests for each core resource type:
+- "Cross-tenant denial" tests for each core resource type:
+  - business_settings (S-002: GET isolation + PUT isolation — implemented)
   - clients, properties, requests, quotes, jobs, visits, invoices, messages/outbox
 
 ### 4.2 Secure link invariants (external customers)

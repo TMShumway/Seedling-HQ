@@ -43,6 +43,9 @@ async function seed() {
       set: { email: 'owner@demo.local', fullName: 'Demo Owner', role: 'owner', status: 'active' },
     });
 
+  // Note: business_settings intentionally NOT seeded — onboarding flow
+  // should prompt the user to configure their business profile.
+
   // Insert audit events (idempotent: check first)
   const existing = await db
     .select({ count: sql<number>`count(*)::int` })

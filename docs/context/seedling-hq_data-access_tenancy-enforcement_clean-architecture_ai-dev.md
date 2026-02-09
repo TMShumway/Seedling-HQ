@@ -24,6 +24,7 @@ Define interfaces in:
 - `apps/api/src/application/ports/`
 
 Examples:
+- `BusinessSettingsRepository` (singleton per tenant — `getByTenantId`, `upsert`)
 - `ClientRepository`
 - `QuoteRepository`
 - `InvoiceRepository`
@@ -33,6 +34,7 @@ Examples:
 Rules:
 - Ports use **domain/application types**, not DB row types.
 - Ports accept `tenantId` as a first-class parameter for tenant-owned entities.
+- For **singleton-per-tenant entities** (e.g., settings): use `getByTenantId(tenantId)` and `upsert(settings)` — no `list()` needed.
 
 ### 2.2 Infra implementations live in Infrastructure layer
 Implement interfaces in:
@@ -81,6 +83,7 @@ Optional but common:
 Allowed:
 - `UNIQUE(tenant_id, public_id)`
 - `UNIQUE(tenant_id, name)` (only if business rules require)
+- `UNIQUE(tenant_id)` for singleton-per-tenant entities (e.g., `business_settings`)
 Avoid:
 - `UNIQUE(email)` globally for external customers (clients)
 
@@ -187,6 +190,19 @@ try {
 ```
 
 **Defensive unique-constraint handling:** Pre-checks (e.g. `getBySlug`) stay outside the transaction as a fast path, but concurrent requests can race past them. Always wrap `uow.run()` in a try/catch that maps SQL state `23505` (unique_violation) to the appropriate domain error (e.g. `ConflictError`). Use the `isUniqueViolation()` helper from `shared/errors.ts`.
+
+### 9.2 Singleton upsert pattern (implemented in S-002)
+
+For singleton-per-tenant entities (e.g., `business_settings`), use `onConflictDoUpdate` on the unique `tenant_id` constraint to create-or-update in one operation. This avoids the need for UnitOfWork — it's a single entity write with best-effort audit.
+
+```ts
+await db.insert(businessSettings).values({ ...data }).onConflictDoUpdate({
+  target: businessSettings.tenantId,
+  set: { ...data, updatedAt: new Date() },
+});
+```
+
+Use cases check existing state to determine audit event name (`business_settings.created` vs `business_settings.updated`).
 
 ---
 

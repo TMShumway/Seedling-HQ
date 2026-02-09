@@ -140,10 +140,14 @@ sequenceDiagram
 #### AUTH_MODE switch (local dev)
 - `AUTH_MODE=cognito` — dev-sandbox, staging, prod: real JWT validation via JWKS.
 - `AUTH_MODE=local` — local dev: mock middleware produces the identical `authContext` shape without requiring a real Cognito pool.
-  - Reads identity from env vars:
+  - **Default identity** from env vars:
     - `DEV_AUTH_TENANT_ID` (default: a seeded dev tenant UUID)
     - `DEV_AUTH_USER_ID` (default: a seeded dev user UUID)
     - `DEV_AUTH_ROLE` (default: `owner`)
+  - **Per-request override** via headers (added in S-002):
+    - `X-Dev-Tenant-Id` — overrides `DEV_AUTH_TENANT_ID` for this request
+    - `X-Dev-User-Id` — overrides `DEV_AUTH_USER_ID` for this request
+    - The frontend stores newly created tenant/user IDs in `localStorage` after signup and sends them on all subsequent requests. This allows testing the full signup → onboarding flow as the actual new tenant.
   - The `AuthContext` interface is **identical** in both modes — use cases and domain logic never know which mode produced it.
   - The mock middleware must refuse to activate if `NODE_ENV=production`.
 
@@ -257,8 +261,8 @@ Suggested table (name is up to you, e.g., `secure_link_tokens`):
 ## 8) MVP epics & stories (R1 snapshot + secure-link AC updates)
 
 **Epic A — Multi-tenant setup + onboarding**
-- S-001 Business signup + first tenant (tenant enforcement, owner role, demo seed)
-- S-002 Onboarding wizard (business profile/settings)
+- S-001 Business signup + first tenant (tenant enforcement, owner role, demo seed) **— DONE**
+- S-002 Onboarding wizard (business profile/settings) **— DONE**: singleton `business_settings` table (JSONB hours), GET/PUT `/v1/tenants/me/settings`, 4-step wizard + quick-setup form, settings edit page
 - S-003 Service catalog (price book v1)
 
 **Epic B — CRM (clients + properties)**
@@ -419,6 +423,7 @@ For `AUTH_MODE=local`:
 - `DEV_AUTH_TENANT_ID=...` (default: seeded dev tenant UUID)
 - `DEV_AUTH_USER_ID=...` (default: seeded dev user UUID)
 - `DEV_AUTH_ROLE=owner` (owner | admin | technician)
+- Optional per-request overrides via `X-Dev-Tenant-Id` / `X-Dev-User-Id` headers (frontend sends from localStorage after signup)
 
 ### Secure links (recommended env defaults)
 - `SECURE_LINK_TOKEN_TTL_SECONDS=604800` (7 days default; adjust per type)

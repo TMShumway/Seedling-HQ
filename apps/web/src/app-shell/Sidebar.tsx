@@ -1,3 +1,4 @@
+import { useLocation } from 'react-router';
 import {
   LayoutDashboard,
   FileText,
@@ -18,32 +19,40 @@ const navItems = [
   { label: 'Schedule', icon: Calendar, href: '#', active: false },
   { label: 'Jobs', icon: Briefcase, href: '#', active: false },
   { label: 'Invoices', icon: Receipt, href: '#', active: false },
-  { label: 'Settings', icon: Settings, href: '#', active: false },
+  { label: 'Settings', icon: Settings, href: '/settings', active: true },
 ];
 
 export function Sidebar() {
+  const location = useLocation();
+
   return (
     <aside className="hidden lg:flex lg:w-64 lg:flex-col border-r border-sidebar-border bg-sidebar-background">
       <div className="flex h-14 items-center border-b border-sidebar-border px-6">
-        <span className="text-lg font-bold text-sidebar-primary">Seedling</span>
+        <span className="text-lg font-bold tracking-tight text-sidebar-primary">
+          <span className="mr-1">🌱</span> Seedling
+        </span>
       </div>
       <nav className="flex-1 space-y-1 px-3 py-4">
-        {navItems.map((item) => (
-          <a
-            key={item.label}
-            href={item.active ? item.href : undefined}
-            className={cn(
-              'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-              item.active
-                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                : 'text-muted-foreground cursor-not-allowed opacity-50',
-            )}
-            aria-disabled={!item.active}
-          >
-            <item.icon className="h-4 w-4" />
-            {item.label}
-          </a>
-        ))}
+        {navItems.map((item) => {
+          const isCurrent = item.active && location.pathname.startsWith(item.href);
+          return (
+            <a
+              key={item.label}
+              href={item.active ? item.href : undefined}
+              className={cn(
+                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                !item.active && 'text-muted-foreground cursor-not-allowed opacity-50',
+                item.active && isCurrent && 'bg-primary text-primary-foreground',
+                item.active && !isCurrent && 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+              )}
+              aria-disabled={!item.active}
+              aria-current={isCurrent ? 'page' : undefined}
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
+            </a>
+          );
+        })}
       </nav>
     </aside>
   );

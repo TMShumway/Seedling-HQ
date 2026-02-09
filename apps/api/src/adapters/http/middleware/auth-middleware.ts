@@ -16,7 +16,10 @@ export function buildAuthMiddleware(config: AppConfig) {
       if (config.NODE_ENV === 'production') {
         throw new Error('AUTH_MODE=local is not allowed in production');
       }
-      request.authContext = getLocalAuthContext(config);
+      request.authContext = getLocalAuthContext(config, {
+        tenantId: request.headers['x-dev-tenant-id'] as string | undefined,
+        userId: request.headers['x-dev-user-id'] as string | undefined,
+      });
       return;
     }
 

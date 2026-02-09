@@ -102,6 +102,16 @@ USWDS inspiration:
 - Clear error/success messaging
 - Obvious focus states
 
+> **Established in S-002 UI polish:**
+> - **Background:** warm off-white (`#f8f9fb`) so cards lift visually
+> - **Cards:** softened borders (`border-border/60`), subtle shadows (`shadow-sm`), `hover:shadow-md` transitions
+> - **Card accents:** colored left border (`border-l-4 border-l-{color}`) to differentiate card types (blue=business, indigo=owner, emerald=settings, amber=hours)
+> - **Icon badges:** small rounded-lg background + icon in card headers for visual anchoring
+> - **Gradient banners:** `bg-gradient-to-r from-primary/5` for welcome headers and CTA sections
+> - **TopBar:** hidden on desktop (`lg:hidden`) since Sidebar provides branding; only shows on mobile for hamburger menu
+> - **Sidebar:** current-page highlighting with `bg-primary text-primary-foreground` + `aria-current="page"`
+> - **Scroll on save:** use `document.querySelector('main')?.scrollTo()` — AppShell `<main>` is the scroll container, not `window`
+
 ### 5.3 Theme requirements
 - Support light theme for MVP; dark theme optional later.
 - Ensure AA contrast for text and key UI elements.
@@ -124,18 +134,25 @@ Use these shadcn/ui components (or equivalents) consistently:
   - Secondary actions in dropdown (kebab menu)
 
 ### Forms
-- Input, textarea
-- Select/combobox (Radix)
+- Input, Textarea (styled `<textarea>` wrapper)
+- Select (native `<select>` wrapper, styled to match Input) / combobox (Radix, when needed)
 - Date picker (choose one library; keep consistent)
-- Checkbox/toggle
+- Checkbox (styled `<input type="checkbox">`) / toggle
 - Form validation + inline field errors
-- “Error summary” at top on submit failures (USWDS pattern)
+- "Error summary" at top on submit failures (USWDS pattern)
+
+> **Implemented in S-002:** Input, Select, Textarea, Checkbox are in `apps/web/src/components/ui/`.
+> Multi-step wizard stepper (numbered circles) in `OnboardingWizard.tsx`.
+> **Gotcha:** Do NOT wrap multi-step wizards in `<form>` — native inputs (time, number) trigger implicit submit. Use `<div>` + explicit `onClick` handlers.
 
 ### Feedback
 - Toasts (success/error)
-- Inline banners (info/warn/error)
+- Inline banners (info/warn/error) — success banners use `CheckCircle2` icon + green border + `shadow-md` for visibility
 - Empty states (with a CTA)
-- Loading states (skeletons; disable submit buttons)
+- Loading states (Skeleton component in `components/ui/skeleton.tsx`; disable submit buttons)
+
+> **Implemented in S-002:** `Skeleton` component (`animate-pulse rounded-md bg-muted`). Used in DashboardPage, SettingsPage, and OnboardingPage loading states.
+> Success alert pattern: icon + bordered card + shadow for at-a-glance visibility. Scroll-to-top on save via `document.querySelector('main')?.scrollTo()` (AppShell `<main>` is the scroll container, not `window`).
 
 ### Data presentation
 - **Desktop**: table for lists (clients, invoices), but keep it simple
@@ -143,9 +160,9 @@ Use these shadcn/ui components (or equivalents) consistently:
 - Status badges/pills (Draft/Sent/Approved/Paid/Overdue/etc.)
 
 ### Workflow helpers
-- Stepper for multi-step flows (quote builder, onboarding)
+- Stepper for multi-step flows (quote builder, onboarding) — **Implemented in S-002** as numbered step indicator in `OnboardingWizard`
 - Confirm dialogs for destructive actions
-- “Unsaved changes” guard on forms
+- "Unsaved changes" guard on forms
 
 ---
 
@@ -208,7 +225,15 @@ External (secure link):
 - Pay CTA (Stripe)
 - Payment success page
 
-### 7.6 Client Hub (portal via secure link)
+### 7.6 Settings + Onboarding (S-002 — implemented)
+Internal:
+- **Onboarding page** (`/onboarding`): choice card (Quick Setup vs Guided Setup), or "Already configured" if settings exist
+- **Guided Setup wizard**: 4 steps — Business Info → Hours → Service Defaults → Review & Submit
+- **Quick Setup**: single scrollable form with all fields
+- **Settings page** (`/settings`): same form fields, pre-populated from saved data, "Save Settings" button
+- **Dashboard CTA**: "Complete your business profile" card when settings are null; settings summary when configured
+
+### 7.7 Client Hub (portal via secure link)
 External:
 - Minimal “hub” page:
   - upcoming visits

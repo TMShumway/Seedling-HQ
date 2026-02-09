@@ -140,12 +140,16 @@ Claude.md
 | Testing | Vitest (unit/integration) + Playwright (E2E) + axe-core (a11y) | S-001 | |
 | DB schema management | `db:push` for local dev, `db:generate` + `db:migrate` for prod | S-001 | Migrations introduced as schema evolves |
 | Transaction strategy | UnitOfWork port + `DrizzleUnitOfWork` | S-001 | Wraps `db.transaction()`; provides transaction-scoped repos to use cases |
+| Business settings | Singleton upsert via `PUT /v1/tenants/me/settings` | S-002 | JSONB business hours; `onConflictDoUpdate` on unique `tenant_id`; no UoW needed |
+| Wizard form pattern | `<div>` wrapper, not `<form>` | S-002 | Native inputs (time, number) trigger implicit submit in `<form>`; use explicit `onClick` |
+| E2E DB isolation | `db:reset` → `db:push` → `db:seed` in globalSetup | S-002 | Truncates all tables before each E2E run for clean state |
+| Local auth override | `X-Dev-Tenant-Id` / `X-Dev-User-Id` headers | S-002 | Frontend stores signup IDs in localStorage; backend overrides env var defaults per-request |
 
 ## Deferred to later stories
 
 | Item | Deferred to | Reason |
 |------|-------------|--------|
-| Cognito JWT validation (`AUTH_MODE=cognito`) | S-002+ | S-001 uses `AUTH_MODE=local`; Cognito infra in CDK sandbox |
+| Cognito JWT validation (`AUTH_MODE=cognito`) | S-003+ | S-001/S-002 use `AUTH_MODE=local`; Cognito infra in CDK sandbox |
 | `message_outbox` table | S-021 (Outbox + worker) | Not needed until comms stories |
 | `secure_link_tokens` table | S-010 (Send secure quote link) | Not needed until external access stories |
 | LocalStack in docker-compose | S-007+ (notifications, SQS) | Not needed until async/queue stories |
