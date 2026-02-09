@@ -19,7 +19,7 @@ export function getPool() {
 }
 
 export async function truncateAll() {
-  await db.execute(sql`TRUNCATE requests, properties, clients, service_items, service_categories, business_settings, audit_events, users, tenants CASCADE`);
+  await db.execute(sql`TRUNCATE message_outbox, requests, properties, clients, service_items, service_categories, business_settings, audit_events, users, tenants CASCADE`);
 }
 
 export function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {
@@ -31,6 +31,10 @@ export function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     DEV_AUTH_TENANT_ID: '00000000-0000-0000-0000-000000000001',
     DEV_AUTH_USER_ID: '00000000-0000-0000-0000-000000000010',
     DEV_AUTH_ROLE: 'owner',
+    NOTIFICATION_ENABLED: false,
+    SMTP_HOST: 'localhost',
+    SMTP_PORT: 1025,
+    SMTP_FROM: 'test@seedling.local',
     ...overrides,
   };
 }

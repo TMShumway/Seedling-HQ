@@ -6,6 +6,10 @@ export interface AppConfig {
   DEV_AUTH_TENANT_ID: string;
   DEV_AUTH_USER_ID: string;
   DEV_AUTH_ROLE: string;
+  NOTIFICATION_ENABLED: boolean;
+  SMTP_HOST: string;
+  SMTP_PORT: number;
+  SMTP_FROM: string;
 }
 
 function required(key: string): string {
@@ -29,5 +33,9 @@ export function loadConfig(): AppConfig {
     DEV_AUTH_TENANT_ID: optional('DEV_AUTH_TENANT_ID', ''),
     DEV_AUTH_USER_ID: optional('DEV_AUTH_USER_ID', ''),
     DEV_AUTH_ROLE: optional('DEV_AUTH_ROLE', ''),
+    NOTIFICATION_ENABLED: optional('NOTIFICATION_ENABLED', 'true') === 'true',
+    SMTP_HOST: optional('SMTP_HOST', 'localhost'),
+    SMTP_PORT: parseInt(optional('SMTP_PORT', '1025'), 10),
+    SMTP_FROM: optional('SMTP_FROM', 'noreply@seedling.local'),
   };
 }

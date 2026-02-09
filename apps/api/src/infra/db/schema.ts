@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, index, unique, jsonb, integer, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, timestamp, index, unique, jsonb, integer, boolean, smallint } from 'drizzle-orm/pg-core';
 
 export const tenants = pgTable('tenants', {
   id: uuid('id').primaryKey(),
@@ -167,6 +167,36 @@ export const requests = pgTable(
   (table) => [
     index('requests_tenant_created_idx').on(table.tenantId, table.createdAt),
     index('requests_tenant_status_idx').on(table.tenantId, table.status),
+  ],
+);
+
+export const messageOutbox = pgTable(
+  'message_outbox',
+  {
+    id: uuid('id').primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id),
+    type: varchar('type', { length: 100 }).notNull(),
+    recipientId: uuid('recipient_id'),
+    recipientType: varchar('recipient_type', { length: 50 }),
+    channel: varchar('channel', { length: 20 }).notNull(),
+    subject: varchar('subject', { length: 500 }),
+    body: text('body').notNull(),
+    status: varchar('status', { length: 20 }).notNull().default('queued'),
+    provider: varchar('provider', { length: 50 }),
+    providerMessageId: varchar('provider_message_id', { length: 255 }),
+    attemptCount: smallint('attempt_count').notNull().default(0),
+    lastErrorCode: varchar('last_error_code', { length: 50 }),
+    lastErrorMessage: text('last_error_message'),
+    correlationId: varchar('correlation_id', { length: 255 }).notNull(),
+    scheduledFor: timestamp('scheduled_for', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    sentAt: timestamp('sent_at', { withTimezone: true }),
+  },
+  (table) => [
+    index('message_outbox_tenant_created_idx').on(table.tenantId, table.createdAt),
+    index('message_outbox_status_created_idx').on(table.status, table.createdAt),
   ],
 );
 
