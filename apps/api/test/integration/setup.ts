@@ -19,7 +19,7 @@ export function getPool() {
 }
 
 export async function truncateAll() {
-  await db.execute(sql`TRUNCATE audit_events, users, tenants CASCADE`);
+  await db.execute(sql`TRUNCATE business_settings, audit_events, users, tenants CASCADE`);
 }
 
 export function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {

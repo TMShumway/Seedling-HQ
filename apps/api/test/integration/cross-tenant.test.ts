@@ -56,6 +56,158 @@ describe('Cross-tenant isolation', () => {
     expect(body.id).not.toBe(tenantA.tenant.id);
   });
 
+  it('Tenant B cannot see Tenant A business settings via GET', async () => {
+    const app = await buildTestApp();
+
+    // Create Tenant A
+    const resA = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: {
+        businessName: 'Tenant A Settings',
+        ownerEmail: 'a-settings@test.com',
+        ownerFullName: 'Owner A',
+      },
+    });
+    const tenantA = resA.json();
+
+    // Create Tenant B
+    const resB = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: {
+        businessName: 'Tenant B Settings',
+        ownerEmail: 'b-settings@test.com',
+        ownerFullName: 'Owner B',
+      },
+    });
+    const tenantB = resB.json();
+
+    // Tenant A saves settings
+    const appA = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenantA.tenant.id,
+      DEV_AUTH_USER_ID: tenantA.user.id,
+    });
+    await appA.inject({
+      method: 'PUT',
+      url: '/v1/tenants/me/settings',
+      payload: {
+        phone: '(555) 111-1111',
+        addressLine1: null,
+        addressLine2: null,
+        city: null,
+        state: null,
+        zip: null,
+        timezone: null,
+        businessHours: null,
+        serviceArea: null,
+        defaultDurationMinutes: null,
+        description: null,
+      },
+    });
+
+    // Tenant B should see null (no settings for their tenant)
+    const appB = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenantB.tenant.id,
+      DEV_AUTH_USER_ID: tenantB.user.id,
+    });
+    const getRes = await appB.inject({
+      method: 'GET',
+      url: '/v1/tenants/me/settings',
+    });
+
+    expect(getRes.statusCode).toBe(200);
+    expect(getRes.json()).toBeNull();
+  });
+
+  it('Tenant B PUT does not overwrite Tenant A settings', async () => {
+    const app = await buildTestApp();
+
+    // Create Tenant A
+    const resA = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: {
+        businessName: 'Tenant A Overwrite',
+        ownerEmail: 'a-overwrite@test.com',
+        ownerFullName: 'Owner A',
+      },
+    });
+    const tenantA = resA.json();
+
+    // Create Tenant B
+    const resB = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: {
+        businessName: 'Tenant B Overwrite',
+        ownerEmail: 'b-overwrite@test.com',
+        ownerFullName: 'Owner B',
+      },
+    });
+    const tenantB = resB.json();
+
+    // Tenant A saves settings
+    const appA = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenantA.tenant.id,
+      DEV_AUTH_USER_ID: tenantA.user.id,
+    });
+    await appA.inject({
+      method: 'PUT',
+      url: '/v1/tenants/me/settings',
+      payload: {
+        phone: '(555) 111-1111',
+        addressLine1: null,
+        addressLine2: null,
+        city: null,
+        state: null,
+        zip: null,
+        timezone: null,
+        businessHours: null,
+        serviceArea: null,
+        defaultDurationMinutes: null,
+        description: null,
+      },
+    });
+
+    // Tenant B saves their own settings
+    const appB = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenantB.tenant.id,
+      DEV_AUTH_USER_ID: tenantB.user.id,
+    });
+    await appB.inject({
+      method: 'PUT',
+      url: '/v1/tenants/me/settings',
+      payload: {
+        phone: '(555) 222-2222',
+        addressLine1: null,
+        addressLine2: null,
+        city: null,
+        state: null,
+        zip: null,
+        timezone: null,
+        businessHours: null,
+        serviceArea: null,
+        defaultDurationMinutes: null,
+        description: null,
+      },
+    });
+
+    // Verify Tenant A settings unchanged
+    const getResA = await appA.inject({
+      method: 'GET',
+      url: '/v1/tenants/me/settings',
+    });
+    expect(getResA.json().phone).toBe('(555) 111-1111');
+
+    // Verify Tenant B has their own settings
+    const getResB = await appB.inject({
+      method: 'GET',
+      url: '/v1/tenants/me/settings',
+    });
+    expect(getResB.json().phone).toBe('(555) 222-2222');
+  });
+
   it('Tenant B context cannot see Tenant A users via GET /v1/users/me', async () => {
     const app = await buildTestApp();
 
