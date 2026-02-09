@@ -184,7 +184,7 @@ Audit events must be durable (stored in Postgres) and include:
 Minimum audit events for MVP:
 - `auth.signup` (internal)
 - `tenant.created`
-- `business_settings.created`, `business_settings.updated` (S-002)
+- `business_settings.created`, `business_settings.updated` (S-002) — derived from upsert result timestamps, not pre-read (race-safe)
 - `request.created`
 - `quote.sent`, `quote.viewed`, `quote.approved`
 - `visit.scheduled`, `visit.rescheduled`, `visit.completed`

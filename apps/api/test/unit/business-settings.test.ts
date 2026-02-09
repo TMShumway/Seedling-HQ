@@ -83,34 +83,13 @@ describe('UpsertBusinessSettingsUseCase', () => {
     expect(settingsRepo.upsert).toHaveBeenCalledOnce();
   });
 
-  it('preserves existing id when updating', async () => {
-    const existingSettings: BusinessSettings = {
-      id: 'existing-id',
-      tenantId: 'tenant-1',
-      phone: '(555) 000-0000',
-      addressLine1: null,
-      addressLine2: null,
-      city: null,
-      state: null,
-      zip: null,
-      timezone: null,
-      businessHours: null,
-      serviceArea: null,
-      defaultDurationMinutes: null,
-      description: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    settingsRepo = makeSettingsRepo({
-      getByTenantId: vi.fn(async () => existingSettings),
-    });
-    useCase = new UpsertBusinessSettingsUseCase(settingsRepo, auditRepo);
-
+  it('always generates a new UUID for upsert (DB conflict resolution preserves original)', async () => {
     await useCase.execute(validInput, correlationId);
 
-    expect(settingsRepo.upsert).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'existing-id' }),
-    );
+    const upsertCall = vi.mocked(settingsRepo.upsert).mock.calls[0][0];
+    expect(upsertCall.id).toBeDefined();
+    expect(typeof upsertCall.id).toBe('string');
+    expect(upsertCall.id.length).toBe(36); // UUID format
   });
 
   it('records business_settings.created audit event on first save', async () => {
@@ -125,26 +104,11 @@ describe('UpsertBusinessSettingsUseCase', () => {
     expect(event.correlationId).toBe(correlationId);
   });
 
-  it('records business_settings.updated audit event on subsequent save', async () => {
-    const existingSettings: BusinessSettings = {
-      id: 'existing-id',
-      tenantId: 'tenant-1',
-      phone: null,
-      addressLine1: null,
-      addressLine2: null,
-      city: null,
-      state: null,
-      zip: null,
-      timezone: null,
-      businessHours: null,
-      serviceArea: null,
-      defaultDurationMinutes: null,
-      description: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+  it('records business_settings.updated audit event when updatedAt differs from createdAt', async () => {
+    const createdAt = new Date('2026-01-01T00:00:00Z');
+    const updatedAt = new Date('2026-02-08T12:00:00Z');
     settingsRepo = makeSettingsRepo({
-      getByTenantId: vi.fn(async () => existingSettings),
+      upsert: vi.fn(async (s) => ({ ...s, createdAt, updatedAt })),
     });
     useCase = new UpsertBusinessSettingsUseCase(settingsRepo, auditRepo);
 

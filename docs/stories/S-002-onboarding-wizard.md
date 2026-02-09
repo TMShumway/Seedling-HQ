@@ -113,6 +113,12 @@
 - [x] Add unit test for header override behavior
 - [x] Commit & push
 
+### Phase 12: PR Feedback Fixes
+- [x] Fix: include `settingsQuery.error` in DashboardPage error check (prevents false CTA on API failure)
+- [x] Fix: derive audit event name from upsert result timestamps instead of pre-read (eliminates race condition)
+- [x] Update unit tests for new audit event derivation logic
+- [x] Commit & push
+
 ---
 
 ## Design Decisions
@@ -128,6 +134,7 @@
 | Seed data | Business settings NOT seeded | Onboarding flow should prompt user to configure; E2E tests verify this path |
 | Wizard layout | `<div>` not `<form>` | `<form>` caused auto-submit when navigating between wizard steps with native inputs |
 | Local auth override | `X-Dev-Tenant-Id` / `X-Dev-User-Id` headers | After signup, frontend stores new IDs in localStorage and sends them as headers so the new tenant sees its own data |
+| Audit event derivation | Compare `createdAt` vs `updatedAt` from upsert result | Eliminates race condition from pre-read; timestamps within 1s = created, else updated |
 
 ---
 

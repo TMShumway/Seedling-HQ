@@ -16,12 +16,8 @@ export class UpsertBusinessSettingsUseCase {
     input: UpsertBusinessSettingsInput,
     correlationId: string,
   ): Promise<UpsertBusinessSettingsOutput> {
-    const existing = await this.settingsRepo.getByTenantId(input.tenantId);
-    const id = existing?.id ?? randomUUID();
-    const eventName = existing ? 'business_settings.updated' : 'business_settings.created';
-
     const settings = await this.settingsRepo.upsert({
-      id,
+      id: randomUUID(),
       tenantId: input.tenantId,
       phone: input.phone,
       addressLine1: input.addressLine1,
@@ -35,6 +31,14 @@ export class UpsertBusinessSettingsUseCase {
       defaultDurationMinutes: input.defaultDurationMinutes,
       description: input.description,
     });
+
+    // Derive event name from the result: if createdAt and updatedAt are within
+    // 1 second, this was an insert; otherwise the conflict branch fired an update.
+    const isCreate =
+      Math.abs(settings.createdAt.getTime() - settings.updatedAt.getTime()) < 1000;
+    const eventName = isCreate
+      ? 'business_settings.created'
+      : 'business_settings.updated';
 
     await this.auditRepo.record({
       id: randomUUID(),

@@ -55,7 +55,7 @@ export function DashboardPage() {
     return <DashboardSkeleton />;
   }
 
-  if (tenantQuery.error || userQuery.error) {
+  if (tenantQuery.error || userQuery.error || settingsQuery.error) {
     return (
       <div className="text-destructive">
         Failed to load dashboard data. Please try again.
