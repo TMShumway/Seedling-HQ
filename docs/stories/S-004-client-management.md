@@ -70,6 +70,16 @@
 - [x] Dashboard client count card
 - [x] Update CLAUDE.md
 
+## Phase 15: USWDS-Inspired Professional Reskin
+- [x] New color palette: deep navy primary (`#1e3a5f`), slate background, stronger borders
+- [x] Dark sidebar (slate-900) with blue-400 active highlight and left border accent
+- [x] Tighter border radii (2/4/6/8px) for crisper look
+- [x] Stronger focus indicators (`ring-2` + `ring-offset-2`) on buttons and form controls
+- [x] Deeper dashboard accent colors (sky/blue/teal replacing pastel indigo/violet/emerald)
+- [x] Plain-text welcome header (removed gradient banner), tighter spacing
+- [x] Rename branding to "Seedling HQ" across sidebar, topbar, mobile drawer
+- [x] Updated UI/UX context pack, S-002 story notes, CLAUDE.md design decisions
+
 ## Verification
 - [x] Frontend builds cleanly
 - [x] All 56 unit tests pass (41 existing + 15 new)
