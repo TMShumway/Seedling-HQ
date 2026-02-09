@@ -192,6 +192,15 @@ describe('UpdatePropertyUseCase', () => {
       ),
     ).rejects.toThrow(NotFoundError);
   });
+
+  it('throws ValidationError for whitespace-only addressLine1', async () => {
+    await expect(
+      useCase.execute(
+        { tenantId: 'tenant-1', userId: 'user-1', id: 'prop-1', addressLine1: '   ' },
+        correlationId,
+      ),
+    ).rejects.toThrow(ValidationError);
+  });
 });
 
 describe('DeactivatePropertyUseCase', () => {

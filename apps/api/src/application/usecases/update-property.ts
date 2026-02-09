@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { PropertyRepository } from '../ports/property-repository.js';
 import type { AuditEventRepository } from '../ports/audit-event-repository.js';
 import type { UpdatePropertyInput, PropertyOutput } from '../dto/property-dto.js';
-import { NotFoundError, ConflictError, isUniqueViolation } from '../../shared/errors.js';
+import { ValidationError, NotFoundError, ConflictError, isUniqueViolation } from '../../shared/errors.js';
 
 export class UpdatePropertyUseCase {
   constructor(
@@ -15,7 +15,11 @@ export class UpdatePropertyUseCase {
     correlationId: string,
   ): Promise<PropertyOutput> {
     const patch: Record<string, unknown> = {};
-    if (input.addressLine1 !== undefined) patch.addressLine1 = input.addressLine1.trim();
+    if (input.addressLine1 !== undefined) {
+      const trimmed = input.addressLine1.trim();
+      if (!trimmed) throw new ValidationError('Address line 1 is required');
+      patch.addressLine1 = trimmed;
+    }
     if (input.addressLine2 !== undefined) patch.addressLine2 = input.addressLine2;
     if (input.city !== undefined) patch.city = input.city;
     if (input.state !== undefined) patch.state = input.state;

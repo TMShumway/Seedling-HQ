@@ -173,6 +173,24 @@ describe('UpdateClientUseCase', () => {
       ),
     ).rejects.toThrow(NotFoundError);
   });
+
+  it('throws ValidationError for whitespace-only firstName', async () => {
+    await expect(
+      useCase.execute(
+        { tenantId: 'tenant-1', userId: 'user-1', id: 'client-1', firstName: '   ' },
+        correlationId,
+      ),
+    ).rejects.toThrow(ValidationError);
+  });
+
+  it('throws ValidationError for whitespace-only lastName', async () => {
+    await expect(
+      useCase.execute(
+        { tenantId: 'tenant-1', userId: 'user-1', id: 'client-1', lastName: '   ' },
+        correlationId,
+      ),
+    ).rejects.toThrow(ValidationError);
+  });
 });
 
 describe('DeactivateClientUseCase', () => {
