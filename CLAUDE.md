@@ -55,7 +55,7 @@
 | Auth provider | AWS Cognito (User Pools, JWT) | Pre-S-0001 | `AUTH_MODE=local` mock for dev; see Architecture doc 4.1 |
 | DB query layer | Drizzle ORM + drizzle-kit | S-0001 | Type-safe, SQL-like API, built-in migrations |
 | Logging | Pino (structured JSON) | S-0001 | Config object, not instance (Fastify 5 requirement) |
-| API framework | Fastify 5 + Zod schemas | S-0001 | `fastify-type-provider-zod` (NOT `@fastify/` scoped) |
+| API framework | Fastify 5 + Zod schemas | S-0001 | `fastify-type-provider-zod` (NOT `@fastify/` scoped); `trustProxy: true` for correct `request.ip` behind proxies |
 | Frontend | React 19 + Vite + Tailwind CSS v4 + shadcn/ui | S-0001 | `@tailwindcss/vite` plugin; hand-written components |
 | Monorepo | pnpm workspaces, Node 24 | S-0001 | `--env-file=../../.env` for tsx scripts (no dotenv) |
 | Testing | Vitest + Playwright + axe-core | S-0001 | |
@@ -100,7 +100,7 @@
 | Timeline exclude filter | S-0005 | `?exclude=deactivated` filters out `*.deactivated` event names server-side |
 | Public endpoint (no auth) | S-0006 | `/v1/public/*` routes skip auth middleware; use `publicRequest()` on frontend (no dev auth headers) |
 | Honeypot spam protection | S-0006 | Hidden `website` field; if filled, return fake 201 with random UUID, don't persist |
-| In-memory rate limiter | S-0006 | Sliding window `Map<ip, {count, windowStart}>`, configurable window/max, periodic cleanup; `resetRateLimitStore()` for tests |
+| In-memory rate limiter | S-0006 | Sliding window `Map<ip, {count, windowStart}>`, configurable window/max, periodic cleanup; `resetRateLimitStore()` for tests; `trustProxy: true` in Fastify for correct client IP behind ALB/API Gateway |
 | Tenant resolution via slug | S-0006 | Public routes use `:tenantSlug` param → `tenantRepo.getBySlug()` to resolve tenant |
 | System audit principal | S-0006 | Public/automated actions use `principalType: 'system'`, `principalId: 'public_form'` |
 | Count by status endpoint | S-0006 | `GET /v1/requests/count?status=new` for dashboard metrics with status filter |

@@ -207,6 +207,7 @@ Prefer:
 **Public routes (`/v1/public/...`) — no auth, rate-limited (S-0006):**
 - No auth middleware; request has no `authContext`.
 - Rate limit middleware (in-memory sliding window) applied as `preHandler`.
+- `trustProxy: true` in Fastify ensures `request.ip` is the real client IP behind proxies.
 - Tenant is resolved from URL param (e.g., `:tenantSlug` → `tenantRepo.getBySlug()`).
 - Audit events use `principalType: 'system'`, `principalId: 'public_form'`.
 - Honeypot field for spam protection: if filled, return fake success without persisting.

@@ -220,8 +220,9 @@ Applies to:
 Required controls:
 - Honeypot field on the form
 - Server-side rate limit by IP
-  - local: in-memory token bucket is OK
+  - local: in-memory sliding window is OK
   - prod: rely on API Gateway throttles and add WAF later if needed
+  - **`trustProxy: true`** in Fastify so `request.ip` resolves the real client IP from `X-Forwarded-For` (required behind ALB/API Gateway)
 - Basic logging of rejected attempts (no PII)
 
 ---
