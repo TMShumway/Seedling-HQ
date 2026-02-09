@@ -1,8 +1,13 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
+// Stateful onboarding tests run only on desktop-chrome to avoid cross-project DB state conflicts.
+// The wizard creates settings, subsequent tests depend on that state existing.
+
 test.describe('Onboarding — Guided Setup', () => {
-  test('completes all 4 wizard steps and lands on dashboard', async ({ page }) => {
+  test('completes all 4 wizard steps and lands on dashboard', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-chrome', 'Stateful wizard test runs only on desktop-chrome');
+
     await page.goto('/onboarding');
 
     // Should see the choice cards (no settings exist for demo tenant)
@@ -43,7 +48,9 @@ test.describe('Onboarding — Guided Setup', () => {
 });
 
 test.describe('Settings Edit', () => {
-  test('edits phone from settings page and persists on reload', async ({ page }) => {
+  test('edits phone from settings page and persists on reload', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-chrome', 'Stateful settings test runs only on desktop-chrome');
+
     // Settings were created by the wizard test above (tests run sequentially)
     await page.goto('/settings');
     await expect(page.getByTestId('settings-form')).toBeVisible({ timeout: 10000 });
@@ -65,7 +72,9 @@ test.describe('Settings Edit', () => {
 });
 
 test.describe('Onboarding — Already Configured', () => {
-  test('shows already configured message when settings exist', async ({ page }) => {
+  test('shows already configured message when settings exist', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-chrome', 'Stateful already-configured test runs only on desktop-chrome');
+
     // Settings exist from previous tests
     await page.goto('/onboarding');
     await expect(page.getByTestId('already-configured')).toBeVisible({ timeout: 10000 });
