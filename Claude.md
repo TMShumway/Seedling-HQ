@@ -150,6 +150,41 @@ Claude.md
 | Read use cases | Direct repo calls in route handlers | S-003 | No business logic for reads; avoids boilerplate wrappers |
 | Nav placement | Services after Dashboard, before Requests | S-003 | Setup-phase item owners configure early |
 
+## Established patterns (per story)
+
+### Backend patterns
+
+| Pattern | Story | Description |
+|---------|-------|-------------|
+| UnitOfWork for atomic writes | S-001 | `UnitOfWork` port + `DrizzleUnitOfWork`; use cases take `(readRepo, uow)` |
+| Defensive unique-constraint catch | S-001 | Pre-checks race under concurrency; wrap `uow.run()` in try/catch, map SQL state `23505` to `ConflictError` via `isUniqueViolation()` |
+| Singleton upsert | S-002 | `onConflictDoUpdate` on unique `tenant_id` constraint; no UoW needed for single-entity writes |
+| Audit event derivation | S-002 | Compare `createdAt` vs `updatedAt` timestamps from upsert result to determine created/updated event |
+| GET returns null on empty | S-002 | Return `null` with 200 for "not yet configured" singletons, not 404 |
+| Read-only routes skip use cases | S-003 | List/getById operations call repo directly in route handlers; no business logic wrapper needed |
+| Soft delete via active flag | S-003 | Set `active = false` and return 204; parent deactivation cascades to children |
+| Price in integer cents | S-003 | Store as cents in DB, display as dollars in UI; use `dollarsToCents()` / `centsToDollars()` from `format.ts` |
+| DELETE returns 204 | S-003 | Frontend `request()` function handles 204 by returning `undefined` instead of parsing JSON |
+
+### Frontend patterns
+
+| Pattern | Story | Description |
+|---------|-------|-------------|
+| Wizard as `<div>` not `<form>` | S-002 | Native inputs (time, number) trigger implicit submit in `<form>`; use explicit `onClick` handlers |
+| Local auth override via headers | S-002 | `X-Dev-Tenant-Id` / `X-Dev-User-Id` stored in localStorage after signup, sent on all requests |
+| Scroll container is `<main>` | S-002 | `document.querySelector('main')?.scrollTo()` — AppShell `<main>` has `overflow-y-auto`, not `window` |
+| Loading skeletons | S-002 | `Skeleton` component (`animate-pulse rounded-md bg-muted`) for async data loading states |
+| Dollar/cents conversion in frontend | S-003 | Convert dollars to cents before API calls, cents to dollars after responses |
+| E2E scoped locators | S-003 | Use `.filter({ hasText: ... })` when seed data coexists with test data to avoid strict mode violations |
+
+### Testing patterns
+
+| Pattern | Story | Description |
+|---------|-------|-------------|
+| E2E DB isolation | S-002 | `db:reset` → `db:push` → `db:seed` in globalSetup for clean state |
+| Cross-project skip for stateful tests | S-002 | `test.skip(testInfo.project.name !== 'desktop-chrome', 'reason')` inside test body |
+| Integration test DB sharing | S-001 | `pool: 'forks'` + `singleFork: true` in vitest config for shared DB connections |
+
 ## Deferred to later stories
 
 | Item | Deferred to | Reason |
