@@ -1,6 +1,6 @@
 # Seedling-HQ — UI/UX Context Pack (Tailwind + shadcn/ui) for AI‑Driven Development
 
-_Last updated: 2026-02-08 (America/Chihuahua)_
+_Last updated: 2026-02-09 (America/Chihuahua)_
 
 > Purpose: Paste this into a new LLM/agent so it can build consistent UI/UX for Seedling‑HQ without mockups.
 > Stack choice: **React + Vite + TypeScript + TailwindCSS + shadcn/ui (Radix)**
@@ -65,21 +65,25 @@ Use these principles everywhere:
 
 ## 4) Information architecture (MVP nav)
 
-Primary navigation (internal users):
-1) **Inbox / Requests**
-2) **Clients**
-3) **Quotes**
-4) **Schedule**
-5) **Jobs**
-6) **Invoices**
-7) **Reports** (can be stubbed)
-8) **Settings**
+Primary navigation (internal users), in sidebar order:
+1) **Dashboard** — active (S-001)
+2) **Services** — active (S-003): service catalog management
+3) **Requests** — stubbed (S-006+)
+4) **Clients** — stubbed (S-004+)
+5) **Quotes** — stubbed (S-009+)
+6) **Schedule** — stubbed (S-012+)
+7) **Jobs** — stubbed (S-012+)
+8) **Invoices** — stubbed (S-017+)
+9) **Settings** — active (S-002): business profile and hours
 
-Mobile: same items, but consider grouping:
-- “Work” group: Requests, Schedule, Jobs
-- “Money” group: Quotes, Invoices
-- “People” group: Clients
-- “Settings”
+> **Note (S-003 decision):** Services is placed early (after Dashboard) because it's a setup-phase item that owners configure before taking on clients.
+
+Mobile: same items in same order, accessed via hamburger → drawer nav.
+Consider grouping in future:
+- "Work" group: Requests, Schedule, Jobs
+- "Money" group: Quotes, Invoices
+- "People" group: Clients
+- "Settings"
 
 External customers (no login) access only via secure links:
 - Quote view/approve
@@ -318,18 +322,15 @@ When an AI agent adds UI:
 
 ---
 
-## 12) Quick “starter spec” (first UI tasks to implement)
+## 12) Quick "starter spec" (implementation status)
 
-1) App shell (sidebar + mobile drawer) with placeholder pages
-2) Page header component pattern (title + actions)
-3) Badge/status system
-4) Form components + validation approach + error summary
-5) List patterns (desktop table + mobile cards) for:
-   - Requests
-   - Clients
-   - Quotes
-   - Invoices
-6) External page templates:
+1) App shell (sidebar + mobile drawer) with placeholder pages — **DONE** (S-001): Sidebar, TopBar, MobileDrawer in `apps/web/src/app-shell/`
+2) Page header component pattern (title + actions) — **DONE** (S-001/S-002): consistent pattern in DashboardPage, SettingsPage, ServicesPage
+3) Badge/status system — **PARTIAL**: not yet needed beyond nav active/inactive states; define when Quote/Job/Invoice statuses are implemented (S-009+)
+4) Form components + validation approach + error summary — **DONE** (S-002): Input, Select, Textarea, Checkbox in `apps/web/src/components/ui/`; validation via controlled state + Zod schemas
+5) List patterns (desktop table + mobile cards) — **PARTIAL** (S-003): ServicesPage has category accordion + item rows; full table/card responsive split not yet needed
+   - Remaining: Requests, Clients, Quotes, Invoices (S-004+)
+6) External page templates — **NOT STARTED** (S-010+):
    - Quote view/approve
    - Invoice view/pay
    - Client Hub
