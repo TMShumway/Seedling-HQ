@@ -1,8 +1,8 @@
-# S-002: Onboarding Wizard — Business Profile
+# S-0002: Onboarding Wizard — Business Profile
 
 **Status:** Complete
 **Branch:** `s002-onboarding-profile-wizard`
-**Issue:** S-002 — "As an owner, I can set business defaults (hours, service area, duration) and edit later."
+**Issue:** S-0002 — "As an owner, I can set business defaults (hours, service area, duration) and edit later."
 
 ---
 
@@ -86,7 +86,7 @@
 
 | Suite | Count | Notes |
 |-------|-------|-------|
-| Unit | 27 | 19 from S-001 + 7 business-settings + 1 auth-override |
+| Unit | 27 | 19 from S-0001 + 7 business-settings + 1 auth-override |
 | Integration | 16 | 7 tenant + 7 business-settings + 2 cross-tenant (settings) |
 | E2E | 18 (15 run, 3 skipped) | 4 signup + 5 onboarding, x2 projects; 3 stateful tests skip on mobile-chrome |
 | **Total** | **61** (58 run) | |

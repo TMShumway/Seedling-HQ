@@ -144,7 +144,7 @@ sequenceDiagram
     - `DEV_AUTH_TENANT_ID` (default: a seeded dev tenant UUID)
     - `DEV_AUTH_USER_ID` (default: a seeded dev user UUID)
     - `DEV_AUTH_ROLE` (default: `owner`)
-  - **Per-request override** via headers (added in S-002):
+  - **Per-request override** via headers (added in S-0002):
     - `X-Dev-Tenant-Id` — overrides `DEV_AUTH_TENANT_ID` for this request
     - `X-Dev-User-Id` — overrides `DEV_AUTH_USER_ID` for this request
     - The frontend stores newly created tenant/user IDs in `localStorage` after signup and sends them on all subsequent requests. This allows testing the full signup → onboarding flow as the actual new tenant.
@@ -260,52 +260,52 @@ Suggested table (name is up to you, e.g., `secure_link_tokens`):
 
 ## 8) MVP epics & stories (R1 snapshot + secure-link AC updates)
 
-**Epic A — Multi-tenant setup + onboarding**
-- S-001 Business signup + first tenant (tenant enforcement, owner role, demo seed) **— DONE**
-- S-002 Onboarding wizard (business profile/settings) **— DONE**: singleton `business_settings` table (JSONB hours), GET/PUT `/v1/tenants/me/settings`, 4-step wizard + quick-setup form, settings edit page
-- S-003 Service catalog (price book v1) **— DONE**: two-level catalog (categories → items), soft delete via `active` flag, prices in integer cents, unit types (flat/hourly/per_sqft/per_unit/per_visit), CRUD routes at `/v1/services/categories` and `/v1/services`
+**Epic 0001 — Multi-tenant setup + onboarding**
+- S-0001 Business signup + first tenant (tenant enforcement, owner role, demo seed) **— DONE**
+- S-0002 Onboarding wizard (business profile/settings) **— DONE**: singleton `business_settings` table (JSONB hours), GET/PUT `/v1/tenants/me/settings`, 4-step wizard + quick-setup form, settings edit page
+- S-0003 Service catalog (price book v1) **— DONE**: two-level catalog (categories → items), soft delete via `active` flag, prices in integer cents, unit types (flat/hourly/per_sqft/per_unit/per_visit), CRUD routes at `/v1/services/categories` and `/v1/services`
 
-**Epic B — CRM (clients + properties)**
-- S-004 Client + property creation (search + notes)
-- S-005 Client timeline (activity feed v1)
+**Epic 0002 — CRM (clients + properties)**
+- S-0004 Client + property creation (search + notes)
+- S-0005 Client timeline (activity feed v1)
 
-**Epic C — Requests (lead intake)**
-- S-006 Public request form (spam protection baseline: honeypot + rate limit)
-- S-007 New request notifications (email + optional outbound SMS via worker)
-- S-008 Convert request → client + property + quote draft
+**Epic 0003 — Requests (lead intake)**
+- S-0006 Public request form (spam protection baseline: honeypot + rate limit)
+- S-0007 New request notifications (email + optional outbound SMS via worker)
+- S-0008 Convert request → client + property + quote draft
 
-**Epic D — Quotes + approvals**
-- S-009 Quote builder v1 (totals, draft/send states)
-- S-010 Send secure quote link (token access, audit events) **→ updated AC: tenant-bound + quote-bound token, scope checks, expiry/revocation, audit**
-- S-011 Customer approves quote (name + timestamp; owner notified) **→ updated AC: token scope `quote:approve`, idempotent approval, audit metadata**
+**Epic 0004 — Quotes + approvals**
+- S-0009 Quote builder v1 (totals, draft/send states)
+- S-0010 Send secure quote link (token access, audit events) **→ updated AC: tenant-bound + quote-bound token, scope checks, expiry/revocation, audit**
+- S-0011 Customer approves quote (name + timestamp; owner notified) **→ updated AC: token scope `quote:approve`, idempotent approval, audit metadata**
 
-**Epic E — Scheduling (jobs + visits)**
-- S-012 Approved quote creates Job + first Visit draft
-- S-013 Calendar view (schedule/reschedule) + customer notified
-- S-014 Assign technician to visit + tech sees “My visits”
+**Epic 0005 — Scheduling (jobs + visits)**
+- S-0012 Approved quote creates Job + first Visit draft
+- S-0013 Calendar view (schedule/reschedule) + customer notified
+- S-0014 Assign technician to visit + tech sees “My visits”
 
-**Epic F — Field execution (mobile-web v1)**
-- S-015 Tech “Today” view (mobile) + status actions
-- S-016 Complete visit with notes + photo uploads (S3 presigned URLs)
+**Epic 0006 — Field execution (mobile-web v1)**
+- S-0015 Tech “Today” view (mobile) + status actions
+- S-0016 Complete visit with notes + photo uploads (S3 presigned URLs)
 
-**Epic G — Invoicing + payments**
-- S-017 Generate invoice from completed visit + send link **→ updated AC: tenant-bound + invoice-bound token, audit**
-- S-018 Customer pays invoice online (webhook marks paid; receipt email) **→ updated AC: token scope `invoice:pay`, idempotent & tenant-safe webhook**
-- S-019 Basic AR dashboard (filters + reminder trigger)
+**Epic 0007 — Invoicing + payments**
+- S-0017 Generate invoice from completed visit + send link **→ updated AC: tenant-bound + invoice-bound token, audit**
+- S-0018 Customer pays invoice online (webhook marks paid; receipt email) **→ updated AC: token scope `invoice:pay`, idempotent & tenant-safe webhook**
+- S-0019 Basic AR dashboard (filters + reminder trigger)
 
-**Epic H — Client Hub (portal v1)**
-- S-020 Client Hub secure link (appointments + open invoices + pay) **→ updated AC: tenant-bound + client-bound hub token; hub queries scoped by (tenant_id, client_id)**
+**Epic 0008 — Client Hub (portal v1)**
+- S-0020 Client Hub secure link (appointments + open invoices + pay) **→ updated AC: tenant-bound + client-bound hub token; hub queries scoped by (tenant_id, client_id)**
 
-**Epic I — Communications (Outbound SMS + Email)**
-- S-021 Outbox + worker (email + SMS), message_jobs queue, prefs, statuses
+**Epic 0009 — Communications (Outbound SMS + Email)**
+- S-0021 Outbox + worker (email + SMS), message_jobs queue, prefs, statuses
 
-**Epic J — Automation + reminders (MVP non-negotiable)**
-- S-022 Appointment reminders (Scheduler → SQS → worker)
-- S-023 Quote follow-up automation (24h/72h style cadence; cancel on approve/decline)
-- S-024 Invoice reminder automation (cadence; cancel on paid)
+**Epic 0010 — Automation + reminders (MVP non-negotiable)**
+- S-0022 Appointment reminders (Scheduler → SQS → worker)
+- S-0023 Quote follow-up automation (24h/72h style cadence; cancel on approve/decline)
+- S-0024 Invoice reminder automation (cadence; cancel on paid)
 
-**Epic K — Security baseline**
-- S-025 Public form abuse protection (MVP)
+**Epic 0011 — Security baseline**
+- S-0025 Public form abuse protection (MVP)
 
 ---
 

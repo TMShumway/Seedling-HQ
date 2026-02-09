@@ -66,17 +66,17 @@ Use these principles everywhere:
 ## 4) Information architecture (MVP nav)
 
 Primary navigation (internal users), in sidebar order:
-1) **Dashboard** — active (S-001)
-2) **Services** — active (S-003): service catalog management
-3) **Requests** — stubbed (S-006+)
-4) **Clients** — stubbed (S-004+)
-5) **Quotes** — stubbed (S-009+)
-6) **Schedule** — stubbed (S-012+)
-7) **Jobs** — stubbed (S-012+)
-8) **Invoices** — stubbed (S-017+)
-9) **Settings** — active (S-002): business profile and hours
+1) **Dashboard** — active (S-0001)
+2) **Services** — active (S-0003): service catalog management
+3) **Requests** — stubbed (S-0006+)
+4) **Clients** — stubbed (S-0004+)
+5) **Quotes** — stubbed (S-0009+)
+6) **Schedule** — stubbed (S-0012+)
+7) **Jobs** — stubbed (S-0012+)
+8) **Invoices** — stubbed (S-0017+)
+9) **Settings** — active (S-0002): business profile and hours
 
-> **Note (S-003 decision):** Services is placed early (after Dashboard) because it's a setup-phase item that owners configure before taking on clients.
+> **Note (S-0003 decision):** Services is placed early (after Dashboard) because it's a setup-phase item that owners configure before taking on clients.
 
 Mobile: same items in same order, accessed via hamburger → drawer nav.
 Consider grouping in future:
@@ -106,7 +106,7 @@ USWDS inspiration:
 - Clear error/success messaging
 - Obvious focus states
 
-> **Established in S-002 UI polish, updated with USWDS-inspired reskin:**
+> **Established in S-0002 UI polish, updated with USWDS-inspired reskin:**
 > - **Color palette:** deep navy primary (`#1e3a5f`), cooler slate background (`#f1f5f9`), stronger borders (`#cbd5e1`), deeper destructive red (`#b91c1c`)
 > - **Dark sidebar:** slate-900 background (`#0f172a`), slate-400 text, blue-400 active highlight (`#60a5fa`)
 > - **Border radii:** tight/crisp — sm=2px, md=4px, lg=6px, xl=8px
@@ -153,7 +153,7 @@ Use these shadcn/ui components (or equivalents) consistently:
 - Form validation + inline field errors
 - "Error summary" at top on submit failures (USWDS pattern)
 
-> **Implemented in S-002:** Input, Select, Textarea, Checkbox are in `apps/web/src/components/ui/`.
+> **Implemented in S-0002:** Input, Select, Textarea, Checkbox are in `apps/web/src/components/ui/`.
 > Multi-step wizard stepper (numbered circles) in `OnboardingWizard.tsx`.
 > **Gotcha:** Do NOT wrap multi-step wizards in `<form>` — native inputs (time, number) trigger implicit submit. Use `<div>` + explicit `onClick` handlers.
 
@@ -163,7 +163,7 @@ Use these shadcn/ui components (or equivalents) consistently:
 - Empty states (with a CTA)
 - Loading states (Skeleton component in `components/ui/skeleton.tsx`; disable submit buttons)
 
-> **Implemented in S-002:** `Skeleton` component (`animate-pulse rounded-md bg-muted`). Used in DashboardPage, SettingsPage, and OnboardingPage loading states.
+> **Implemented in S-0002:** `Skeleton` component (`animate-pulse rounded-md bg-muted`). Used in DashboardPage, SettingsPage, and OnboardingPage loading states.
 > Success alert pattern: icon + bordered card + shadow for at-a-glance visibility. Scroll-to-top on save via `document.querySelector('main')?.scrollTo()` (AppShell `<main>` is the scroll container, not `window`).
 
 ### Data presentation
@@ -172,7 +172,7 @@ Use these shadcn/ui components (or equivalents) consistently:
 - Status badges/pills (Draft/Sent/Approved/Paid/Overdue/etc.)
 
 ### Workflow helpers
-- Stepper for multi-step flows (quote builder, onboarding) — **Implemented in S-002** as numbered step indicator in `OnboardingWizard`
+- Stepper for multi-step flows (quote builder, onboarding) — **Implemented in S-0002** as numbered step indicator in `OnboardingWizard`
 - Confirm dialogs for destructive actions
 - "Unsaved changes" guard on forms
 
@@ -237,7 +237,7 @@ External (secure link):
 - Pay CTA (Stripe)
 - Payment success page
 
-### 7.6 Settings + Onboarding (S-002 — implemented)
+### 7.6 Settings + Onboarding (S-0002 — implemented)
 Internal:
 - **Onboarding page** (`/onboarding`): choice card (Quick Setup vs Guided Setup), or "Already configured" if settings exist
 - **Guided Setup wizard**: 4 steps — Business Info → Hours → Service Defaults → Review & Submit
@@ -332,13 +332,13 @@ When an AI agent adds UI:
 
 ## 12) Quick "starter spec" (implementation status)
 
-1) App shell (sidebar + mobile drawer) with placeholder pages — **DONE** (S-001): Sidebar, TopBar, MobileDrawer in `apps/web/src/app-shell/`
-2) Page header component pattern (title + actions) — **DONE** (S-001/S-002): consistent pattern in DashboardPage, SettingsPage, ServicesPage
-3) Badge/status system — **PARTIAL**: not yet needed beyond nav active/inactive states; define when Quote/Job/Invoice statuses are implemented (S-009+)
-4) Form components + validation approach + error summary — **DONE** (S-002): Input, Select, Textarea, Checkbox in `apps/web/src/components/ui/`; validation via controlled state + Zod schemas
-5) List patterns (desktop table + mobile cards) — **PARTIAL** (S-003): ServicesPage has category accordion + item rows; full table/card responsive split not yet needed
-   - Remaining: Requests, Clients, Quotes, Invoices (S-004+)
-6) External page templates — **NOT STARTED** (S-010+):
+1) App shell (sidebar + mobile drawer) with placeholder pages — **DONE** (S-0001): Sidebar, TopBar, MobileDrawer in `apps/web/src/app-shell/`
+2) Page header component pattern (title + actions) — **DONE** (S-0001/S-0002): consistent pattern in DashboardPage, SettingsPage, ServicesPage
+3) Badge/status system — **PARTIAL**: not yet needed beyond nav active/inactive states; define when Quote/Job/Invoice statuses are implemented (S-0009+)
+4) Form components + validation approach + error summary — **DONE** (S-0002): Input, Select, Textarea, Checkbox in `apps/web/src/components/ui/`; validation via controlled state + Zod schemas
+5) List patterns (desktop table + mobile cards) — **PARTIAL** (S-0003): ServicesPage has category accordion + item rows; full table/card responsive split not yet needed
+   - Remaining: Requests, Clients, Quotes, Invoices (S-0004+)
+6) External page templates — **NOT STARTED** (S-0010+):
    - Quote view/approve
    - Invoice view/pay
    - Client Hub

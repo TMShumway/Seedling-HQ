@@ -52,23 +52,23 @@
 
 | Decision | Choice | Story | Notes |
 |----------|--------|-------|-------|
-| Auth provider | AWS Cognito (User Pools, JWT) | Pre-S-001 | `AUTH_MODE=local` mock for dev; see Architecture doc 4.1 |
-| DB query layer | Drizzle ORM + drizzle-kit | S-001 | Type-safe, SQL-like API, built-in migrations |
-| Logging | Pino (structured JSON) | S-001 | Config object, not instance (Fastify 5 requirement) |
-| API framework | Fastify 5 + Zod schemas | S-001 | `fastify-type-provider-zod` (NOT `@fastify/` scoped) |
-| Frontend | React 19 + Vite + Tailwind CSS v4 + shadcn/ui | S-001 | `@tailwindcss/vite` plugin; hand-written components |
-| Monorepo | pnpm workspaces, Node 24 | S-001 | `--env-file=../../.env` for tsx scripts (no dotenv) |
-| Testing | Vitest + Playwright + axe-core | S-001 | |
-| DB schema management | `db:push` (local), `db:generate` + `db:migrate` (prod) | S-001 | Migrations introduced as schema evolves |
-| Service catalog | Two-level: categories → items | S-003 | Soft delete via `active` flag; prices in integer cents |
-| Nav order | Dashboard, Services, Clients, then remaining items | S-004 | Services + Clients are setup-phase items owners configure early |
-| Client/Property model | Two-level: clients → properties | S-004 | Soft delete with cascade; nullable email (phone-only clients OK) |
-| Pagination | Cursor-based keyset pagination | S-004 | `PaginatedResult<T>` with `(created_at DESC, id DESC)`, fetch limit+1 |
-| Server-side search | ILIKE across multiple columns | S-004 | `?search=term` on `GET /v1/clients` |
-| UI theme | USWDS-inspired dark navy reskin | Post-S-004 | Deep navy primary (`#1e3a5f`), dark sidebar (`#0f172a`), tight radii (2/4/6/8px), `ring-2` focus indicators |
-| Branding | "Seedling HQ" with 🌱 emoji | Post-S-004 | Displayed in sidebar, topbar, and mobile drawer |
-| Client detail tabs | Info / Properties / Activity | S-005 | Tab layout with ARIA roles; Activity tab shows audit event timeline |
-| Timeline data source | audit_events table query | S-005 | No new table; composite index `(tenant_id, subject_type, subject_id, created_at)` |
+| Auth provider | AWS Cognito (User Pools, JWT) | Pre-S-0001 | `AUTH_MODE=local` mock for dev; see Architecture doc 4.1 |
+| DB query layer | Drizzle ORM + drizzle-kit | S-0001 | Type-safe, SQL-like API, built-in migrations |
+| Logging | Pino (structured JSON) | S-0001 | Config object, not instance (Fastify 5 requirement) |
+| API framework | Fastify 5 + Zod schemas | S-0001 | `fastify-type-provider-zod` (NOT `@fastify/` scoped) |
+| Frontend | React 19 + Vite + Tailwind CSS v4 + shadcn/ui | S-0001 | `@tailwindcss/vite` plugin; hand-written components |
+| Monorepo | pnpm workspaces, Node 24 | S-0001 | `--env-file=../../.env` for tsx scripts (no dotenv) |
+| Testing | Vitest + Playwright + axe-core | S-0001 | |
+| DB schema management | `db:push` (local), `db:generate` + `db:migrate` (prod) | S-0001 | Migrations introduced as schema evolves |
+| Service catalog | Two-level: categories → items | S-0003 | Soft delete via `active` flag; prices in integer cents |
+| Nav order | Dashboard, Services, Clients, then remaining items | S-0004 | Services + Clients are setup-phase items owners configure early |
+| Client/Property model | Two-level: clients → properties | S-0004 | Soft delete with cascade; nullable email (phone-only clients OK) |
+| Pagination | Cursor-based keyset pagination | S-0004 | `PaginatedResult<T>` with `(created_at DESC, id DESC)`, fetch limit+1 |
+| Server-side search | ILIKE across multiple columns | S-0004 | `?search=term` on `GET /v1/clients` |
+| UI theme | USWDS-inspired dark navy reskin | Post-S-0004 | Deep navy primary (`#1e3a5f`), dark sidebar (`#0f172a`), tight radii (2/4/6/8px), `ring-2` focus indicators |
+| Branding | "Seedling HQ" with 🌱 emoji | Post-S-0004 | Displayed in sidebar, topbar, and mobile drawer |
+| Client detail tabs | Info / Properties / Activity | S-0005 | Tab layout with ARIA roles; Activity tab shows audit event timeline |
+| Timeline data source | audit_events table query | S-0005 | No new table; composite index `(tenant_id, subject_type, subject_id, created_at)` |
 
 ---
 
@@ -78,46 +78,46 @@
 
 | Pattern | Story | Description |
 |---------|-------|-------------|
-| UnitOfWork for atomic writes | S-001 | `UnitOfWork` port + `DrizzleUnitOfWork`; use cases take `(readRepo, uow)` |
-| Defensive unique-constraint catch | S-001 | Wrap `uow.run()` in try/catch; map SQL state `23505` → `ConflictError` via `isUniqueViolation()` |
-| Singleton upsert | S-002 | `onConflictDoUpdate` on unique `tenant_id` constraint; no UoW needed |
-| Audit event derivation | S-002 | Compare `createdAt` vs `updatedAt` timestamps to determine created/updated event |
-| GET returns null on empty | S-002 | Return `null` with 200 for "not yet configured" singletons, not 404 |
-| Read-only routes skip use cases | S-003 | List/getById call repo directly in route handlers |
-| Soft delete via active flag | S-003 | Set `active = false`, return 204; parent deactivation cascades to children |
-| Price in integer cents | S-003 | Store cents in DB, dollars in UI; `dollarsToCents()` / `centsToDollars()` |
-| DELETE returns 204 | S-003 | Frontend `request()` handles 204 by returning `undefined` |
-| Cursor-based pagination | S-004 | `encodeCursor`/`decodeCursor` (base64url JSON); fetch limit+1 to detect `hasMore` |
-| Server-side search (ILIKE) | S-004 | `OR(ILIKE(col, %term%))` across name/email/phone/company columns |
-| Count endpoint | S-004 | `GET /v1/clients/count` for dashboard metrics |
-| Nested + flat URLs | S-004 | Properties listed at `/v1/clients/:clientId/properties`, operated at `/v1/properties/:id` |
-| Post-trim validation on updates | S-004 | Update use cases must validate required fields after trimming; create and update paths should have matching validation |
-| Timeline via audit_events query | S-005 | `listBySubjects(tenantId, subjectIds[], filters)` — no new table, reuse audit_events with composite index; always pass `subjectTypes` filter to match the `(tenant_id, subject_type, subject_id, created_at)` index |
-| Event label mapping | S-005 | `getEventLabel()` maps `client.created` → "Client created" etc.; titlecase fallback for unknown events |
-| Timeline exclude filter | S-005 | `?exclude=deactivated` filters out `*.deactivated` event names server-side |
+| UnitOfWork for atomic writes | S-0001 | `UnitOfWork` port + `DrizzleUnitOfWork`; use cases take `(readRepo, uow)` |
+| Defensive unique-constraint catch | S-0001 | Wrap `uow.run()` in try/catch; map SQL state `23505` → `ConflictError` via `isUniqueViolation()` |
+| Singleton upsert | S-0002 | `onConflictDoUpdate` on unique `tenant_id` constraint; no UoW needed |
+| Audit event derivation | S-0002 | Compare `createdAt` vs `updatedAt` timestamps to determine created/updated event |
+| GET returns null on empty | S-0002 | Return `null` with 200 for "not yet configured" singletons, not 404 |
+| Read-only routes skip use cases | S-0003 | List/getById call repo directly in route handlers |
+| Soft delete via active flag | S-0003 | Set `active = false`, return 204; parent deactivation cascades to children |
+| Price in integer cents | S-0003 | Store cents in DB, dollars in UI; `dollarsToCents()` / `centsToDollars()` |
+| DELETE returns 204 | S-0003 | Frontend `request()` handles 204 by returning `undefined` |
+| Cursor-based pagination | S-0004 | `encodeCursor`/`decodeCursor` (base64url JSON); fetch limit+1 to detect `hasMore` |
+| Server-side search (ILIKE) | S-0004 | `OR(ILIKE(col, %term%))` across name/email/phone/company columns |
+| Count endpoint | S-0004 | `GET /v1/clients/count` for dashboard metrics |
+| Nested + flat URLs | S-0004 | Properties listed at `/v1/clients/:clientId/properties`, operated at `/v1/properties/:id` |
+| Post-trim validation on updates | S-0004 | Update use cases must validate required fields after trimming; create and update paths should have matching validation |
+| Timeline via audit_events query | S-0005 | `listBySubjects(tenantId, subjectIds[], filters)` — no new table, reuse audit_events with composite index; always pass `subjectTypes` filter to match the `(tenant_id, subject_type, subject_id, created_at)` index |
+| Event label mapping | S-0005 | `getEventLabel()` maps `client.created` → "Client created" etc.; titlecase fallback for unknown events |
+| Timeline exclude filter | S-0005 | `?exclude=deactivated` filters out `*.deactivated` event names server-side |
 
 ### Frontend
 
 | Pattern | Story | Description |
 |---------|-------|-------------|
-| Wizard as `<div>` not `<form>` | S-002 | Native inputs trigger implicit submit in `<form>`; use explicit `onClick` |
-| Local auth override via headers | S-002 | `X-Dev-Tenant-Id` / `X-Dev-User-Id` in localStorage, sent on all requests |
-| Scroll container is `<main>` | S-002 | `document.querySelector('main')?.scrollTo()`, not `window.scrollTo()` |
-| Loading skeletons | S-002 | `Skeleton` component for async data loading states |
-| Dollar/cents conversion | S-003 | Convert before API calls and after responses |
-| E2E scoped locators | S-003 | Use `.filter({ hasText: ... })` when seed/test data coexist |
-| `useInfiniteQuery` for pagination | S-004 | React Query hook for "Load More" cursor-based pagination |
-| Debounced search input | S-004 | 300ms `setTimeout` in `useEffect` for search-as-you-type |
-| Tab layout on detail pages | S-005 | `useState<Tab>` + tab bar with `role="tablist"` + `role="tab"` + `role="tabpanel"` |
-| Timeline component | S-005 | `TimelineSection` with `useInfiniteQuery`, event icons, relative timestamps, "Hide removals" toggle |
+| Wizard as `<div>` not `<form>` | S-0002 | Native inputs trigger implicit submit in `<form>`; use explicit `onClick` |
+| Local auth override via headers | S-0002 | `X-Dev-Tenant-Id` / `X-Dev-User-Id` in localStorage, sent on all requests |
+| Scroll container is `<main>` | S-0002 | `document.querySelector('main')?.scrollTo()`, not `window.scrollTo()` |
+| Loading skeletons | S-0002 | `Skeleton` component for async data loading states |
+| Dollar/cents conversion | S-0003 | Convert before API calls and after responses |
+| E2E scoped locators | S-0003 | Use `.filter({ hasText: ... })` when seed/test data coexist |
+| `useInfiniteQuery` for pagination | S-0004 | React Query hook for "Load More" cursor-based pagination |
+| Debounced search input | S-0004 | 300ms `setTimeout` in `useEffect` for search-as-you-type |
+| Tab layout on detail pages | S-0005 | `useState<Tab>` + tab bar with `role="tablist"` + `role="tab"` + `role="tabpanel"` |
+| Timeline component | S-0005 | `TimelineSection` with `useInfiniteQuery`, event icons, relative timestamps, "Hide removals" toggle |
 
 ### Testing
 
 | Pattern | Story | Description |
 |---------|-------|-------------|
-| E2E DB isolation | S-002 | `db:reset` → `db:push` → `db:seed` in globalSetup |
-| Cross-project skip | S-002 | `test.skip(testInfo.project.name !== 'desktop-chrome', 'reason')` inside test body |
-| Integration DB sharing | S-001 | `pool: 'forks'` + `singleFork: true` in vitest config |
+| E2E DB isolation | S-0002 | `db:reset` → `db:push` → `db:seed` in globalSetup |
+| Cross-project skip | S-0002 | `test.skip(testInfo.project.name !== 'desktop-chrome', 'reason')` inside test body |
+| Integration DB sharing | S-0001 | `pool: 'forks'` + `singleFork: true` in vitest config |
 
 ---
 
@@ -125,12 +125,12 @@
 
 | Item | Deferred to | Reason |
 |------|-------------|--------|
-| Cognito JWT validation (`AUTH_MODE=cognito`) | S-006+ | S-001–S-005 use `AUTH_MODE=local` |
-| `message_outbox` table | S-021 | Not needed until comms stories |
-| `secure_link_tokens` table | S-010 | Not needed until external access stories |
-| LocalStack in docker-compose | S-007+ | Not needed until async/queue stories |
-| EventBridge bus + Scheduler | S-022+ | Not needed until automation stories |
-| Stripe integration | S-018 | |
+| Cognito JWT validation (`AUTH_MODE=cognito`) | S-0006+ | S-0001–S-0005 use `AUTH_MODE=local` |
+| `message_outbox` table | S-0021 | Not needed until comms stories |
+| `secure_link_tokens` table | S-0010 | Not needed until external access stories |
+| LocalStack in docker-compose | S-0007+ | Not needed until async/queue stories |
+| EventBridge bus + Scheduler | S-0022+ | Not needed until automation stories |
+| Stripe integration | S-0018 | |
 | CI/CD pipeline | Post-MVP | Context gap #6 |
 | Testcontainers | When CI needs self-contained DB | Reuse docker-compose Postgres for now |
 
@@ -138,7 +138,7 @@
 
 ## Story implementation workflow
 
-Every story gets a **story-specific markdown file** in `docs/stories/S-XXX-<short-name>.md` with item-by-item checkboxes.
+Every story gets a **story-specific markdown file** in `docs/stories/S-XXXX-<short-name>.md` with item-by-item checkboxes.
 
 **When implementing a story:**
 1. Read the story markdown file for the current checklist state

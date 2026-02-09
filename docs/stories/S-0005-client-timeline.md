@@ -1,4 +1,4 @@
-# S-005: Client Timeline (Activity Feed v1)
+# S-0005: Client Timeline (Activity Feed v1)
 
 > Issue #19: "As an owner, I can see a timeline of quotes/jobs/invoices per client."
 > v1 shows client + property audit events. Future stories expand with quote/job/invoice events.

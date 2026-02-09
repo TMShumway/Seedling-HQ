@@ -23,7 +23,7 @@ export function buildAuthMiddleware(config: AppConfig) {
       return;
     }
 
-    // AUTH_MODE=cognito — not implemented in S-001
+    // AUTH_MODE=cognito — not implemented in S-0001
     throw new UnauthorizedError('Cognito auth not yet implemented');
   };
 }

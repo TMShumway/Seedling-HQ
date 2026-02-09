@@ -10,7 +10,7 @@ _Last updated: 2026-02-09_
 
 | Prefix | Use for | Example |
 |--------|---------|---------|
-| `story/` | Story implementation (vertical slices) | `story/S-004-client-management` |
+| `story/` | Story implementation (vertical slices) | `story/S-0004-client-management` |
 | `feature/` | Non-story feature work | `feature/add-dark-mode` |
 | `devex/` | Developer experience, docs, tooling, CI | `devex/documentation-improvements` |
 | `fix/` | Bug fixes (non-urgent) | `fix/signup-slug-race` |
@@ -22,7 +22,7 @@ _Last updated: 2026-02-09_
 ## Rules
 
 1. **All lowercase, kebab-case** after the prefix slash
-2. **Story branches** include the story ID with zero-padded number: `story/S-XXX-short-description`
+2. **Story branches** include the story ID with zero-padded number: `story/S-XXXX-short-description`
 3. **Keep descriptions concise** (2-4 words)
 4. **No underscores, no camelCase, no ALL-CAPS** in the description portion
 5. **Base all branches off `main`** unless explicitly stacking on another branch
@@ -43,9 +43,9 @@ story/S-<number>-<kebab-description>
 ```
 
 Examples:
-- `story/S-004-client-properties`
-- `story/S-010-secure-quote-link`
-- `story/S-021-outbox-worker`
+- `story/S-0004-client-properties`
+- `story/S-0010-secure-quote-link`
+- `story/S-0021-outbox-worker`
 
 ### All other branches
 
@@ -78,9 +78,9 @@ Existing branches predate this convention. For reference, here is how they map:
 
 | Existing branch | Convention equivalent |
 |----------------|----------------------|
-| `S001-business-signup-and-tenancy` | `story/S-001-business-signup` |
-| `s002-onboarding-profile-wizard` | `story/S-002-onboarding-wizard` |
-| `S003-service-catalog-price-book-v1` | `story/S-003-service-catalog` |
+| `S001-business-signup-and-tenancy` | `story/S-0001-business-signup` |
+| `s002-onboarding-profile-wizard` | `story/S-0002-onboarding-wizard` |
+| `S003-service-catalog-price-book-v1` | `story/S-0003-service-catalog` |
 | `feature/aws-lambda-init` | `feature/aws-lambda-init` (already correct) |
 | `experimental/swap-express-for-fastify` | `experimental/swap-express-for-fastify` (already correct) |
 | `monorepo-setup` | `devex/monorepo-setup` |
