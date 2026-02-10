@@ -56,20 +56,20 @@ Quotes can currently only be created via the request-conversion flow (S-0008 `Co
 **Goal:** New Quote button on QuotesPage, CreateQuotePage with client search.
 **Files:** `apps/web/src/lib/api-client.ts`, `apps/web/src/pages/CreateQuotePage.tsx` (new), `apps/web/src/App.tsx`, `apps/web/src/pages/QuotesPage.tsx`
 
-- [ ] **3.1: Add createQuote to api-client.ts**
+- [x] **3.1: Add createQuote to api-client.ts**
   - Acceptance: TypeScript compiles
 
-- [ ] **3.2: Create CreateQuotePage**
+- [x] **3.2: Create CreateQuotePage**
   - Client search: debounced 300ms input → radio buttons
   - Property dropdown: enabled when client selected
   - Title input: auto-suggest on client selection
   - Submit: redirect to `/quotes/${result.id}`
-  - Acceptance: Page renders and creates quotes
+  - Acceptance: Page renders, frontend builds clean
 
-- [ ] **3.3: Add route + button**
+- [x] **3.3: Add route + button**
   - App.tsx: `/quotes/new` route BEFORE `/quotes/:id`
-  - QuotesPage: "New Quote" button in header
-  - Acceptance: Navigation works end-to-end
+  - QuotesPage: "New Quote" button in header + updated empty state text
+  - Acceptance: Frontend builds clean
 
 ## Phase 4: E2E Tests + Docs
 **Goal:** E2E tests, update docs.
@@ -91,14 +91,15 @@ Quotes can currently only be created via the request-conversion flow (S-0008 `Co
 
 ## Resume context
 ### Last completed
-- Phase 2: API Route + Integration Tests — all 137 integration tests pass
-  - `apps/api/src/adapters/http/routes/quote-routes.ts` — added POST /v1/quotes route + propertyRepo dep
-  - `apps/api/src/app.ts` — pass propertyRepo to buildQuoteRoutes
-  - `apps/api/test/integration/quote-routes.test.ts` — 9 new integration tests
+- Phase 3: Frontend
+  - `apps/web/src/lib/api-client.ts` — added `CreateQuoteRequest` + `createQuote()` method
+  - `apps/web/src/pages/CreateQuotePage.tsx` — new page with client search, property dropdown, title auto-suggest
+  - `apps/web/src/App.tsx` — added `/quotes/new` route before `/:id`
+  - `apps/web/src/pages/QuotesPage.tsx` — "New Quote" button + updated empty state text
 ### In progress
-- Starting Phase 3: Frontend
+- Starting Phase 4: E2E Tests + Docs
 ### Next up
-- Task 3.1: Add createQuote to api-client.ts
+- Task 4.1: Write E2E tests
 ### Blockers / open questions
 - None
 

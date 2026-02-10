@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { Calculator, Search } from 'lucide-react';
+import { Calculator, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -127,11 +127,17 @@ export function QuotesPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-4" data-testid="quotes-page">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Quotes</h1>
-        <p className="mt-1 text-muted-foreground">
-          Manage quotes for your clients.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Quotes</h1>
+          <p className="mt-1 text-muted-foreground">
+            Manage quotes for your clients.
+          </p>
+        </div>
+        <Button onClick={() => navigate('/quotes/new')} data-testid="new-quote-btn">
+          <Plus className="mr-1 h-4 w-4" />
+          New Quote
+        </Button>
       </div>
 
       {/* Status filter pills */}
@@ -173,7 +179,7 @@ export function QuotesPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             {searchTerm || statusFilter
               ? 'Try adjusting your search or filter.'
-              : 'Quotes will appear here after converting a request.'}
+              : 'Create a new quote or convert a request to get started.'}
           </p>
         </div>
       ) : (
