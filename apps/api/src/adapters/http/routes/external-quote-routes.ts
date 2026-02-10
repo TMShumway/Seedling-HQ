@@ -24,6 +24,7 @@ export function buildExternalQuoteRoutes(deps: {
     secureLinkTokenRepo: deps.secureLinkTokenRepo,
     config: deps.config,
     requiredScope: 'quote:read',
+    requiredSubjectType: 'quote',
   });
 
   return async function externalQuoteRoutes(app: FastifyInstance) {

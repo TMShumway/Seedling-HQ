@@ -303,6 +303,38 @@ describe('GET /v1/ext/quotes/:token', () => {
     expect(res.json().error.code).toBe('LINK_INVALID');
   });
 
+  it('returns 403 when token has wrong subjectType', async () => {
+    const { app, tenant } = await createTenantAndGetApp();
+    const converted = await createQuoteViaConvert(app, tenant.slug);
+    await addLineItemsToQuote(app, converted.quote.id);
+
+    // Insert a token with correct scope but wrong subjectType directly in DB
+    const { randomUUID } = await import('node:crypto');
+    const rawToken = randomUUID();
+    const tokenHash = hashToken(HMAC_SECRET, rawToken);
+    const db = getDb();
+    await db.insert(secureLinkTokens).values({
+      id: randomUUID(),
+      tenantId: tenant.id,
+      tokenHash,
+      hashVersion: 'v1',
+      subjectType: 'invoice',        // wrong type for quote route
+      subjectId: converted.quote.id,
+      scopes: ['quote:read'],         // correct scope
+      expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      createdByUserId: null,
+    });
+
+    const extApp = await buildTestApp();
+    const res = await extApp.inject({
+      method: 'GET',
+      url: `/v1/ext/quotes/${rawToken}`,
+    });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.json().error.code).toBe('LINK_INVALID');
+  });
+
   it('enforces cross-tenant isolation', async () => {
     const { app: appA, tenant: tenantA } = await createTenantAndGetApp();
     const converted = await createQuoteViaConvert(appA, tenantA.slug);

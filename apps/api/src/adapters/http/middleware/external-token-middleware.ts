@@ -21,6 +21,7 @@ export function buildExternalTokenMiddleware(deps: {
   secureLinkTokenRepo: SecureLinkTokenRepository;
   config: AppConfig;
   requiredScope: string;
+  requiredSubjectType?: string;
 }) {
   return async function externalTokenMiddleware(
     request: FastifyRequest<{ Params: { token: string } }>,
@@ -55,6 +56,12 @@ export function buildExternalTokenMiddleware(deps: {
     }
 
     if (!token.scopes.includes(deps.requiredScope)) {
+      return reply.status(403).send({
+        error: { code: 'LINK_INVALID', message: 'This link is no longer valid.' },
+      });
+    }
+
+    if (deps.requiredSubjectType && token.subjectType !== deps.requiredSubjectType) {
       return reply.status(403).send({
         error: { code: 'LINK_INVALID', message: 'This link is no longer valid.' },
       });
