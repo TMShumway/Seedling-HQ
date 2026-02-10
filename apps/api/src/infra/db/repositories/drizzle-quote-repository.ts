@@ -1,8 +1,20 @@
-import { eq, and, sql } from 'drizzle-orm';
-import type { QuoteRepository } from '../../../application/ports/quote-repository.js';
+import { eq, and, or, ilike, sql, lt, desc } from 'drizzle-orm';
+import type { QuoteRepository, ListQuotesFilters, QuoteUpdatePatch } from '../../../application/ports/quote-repository.js';
+import type { PaginatedResult } from '../../../application/ports/client-repository.js';
 import type { Quote, QuoteStatus, QuoteLineItem } from '../../../domain/entities/quote.js';
 import type { Database } from '../client.js';
 import { quotes } from '../schema.js';
+
+const DEFAULT_LIMIT = 20;
+
+function encodeCursor(id: string, createdAt: Date): string {
+  return Buffer.from(JSON.stringify({ id, createdAt: createdAt.toISOString() })).toString('base64url');
+}
+
+function decodeCursor(cursor: string): { id: string; createdAt: Date } {
+  const parsed = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf-8'));
+  return { id: parsed.id, createdAt: new Date(parsed.createdAt) };
+}
 
 function toEntity(row: typeof quotes.$inferSelect): Quote {
   return {
@@ -49,6 +61,61 @@ export class DrizzleQuoteRepository implements QuoteRepository {
       })
       .returning();
     return toEntity(row);
+  }
+
+  async list(tenantId: string, filters?: ListQuotesFilters): Promise<PaginatedResult<Quote>> {
+    const limit = filters?.limit ?? DEFAULT_LIMIT;
+    const conditions = [eq(quotes.tenantId, tenantId)];
+
+    if (filters?.status) {
+      conditions.push(eq(quotes.status, filters.status));
+    }
+
+    if (filters?.search) {
+      const term = `%${filters.search}%`;
+      conditions.push(ilike(quotes.title, term));
+    }
+
+    if (filters?.cursor) {
+      const { id, createdAt } = decodeCursor(filters.cursor);
+      conditions.push(
+        or(
+          lt(quotes.createdAt, createdAt),
+          and(eq(quotes.createdAt, createdAt), lt(quotes.id, id)),
+        )!,
+      );
+    }
+
+    const rows = await this.db
+      .select()
+      .from(quotes)
+      .where(and(...conditions))
+      .orderBy(desc(quotes.createdAt), desc(quotes.id))
+      .limit(limit + 1);
+
+    const hasMore = rows.length > limit;
+    const data = rows.slice(0, limit).map(toEntity);
+    const lastItem = data[data.length - 1];
+    const cursor = lastItem && hasMore ? encodeCursor(lastItem.id, lastItem.createdAt) : null;
+
+    return { data, cursor, hasMore };
+  }
+
+  async update(tenantId: string, id: string, patch: QuoteUpdatePatch): Promise<Quote | null> {
+    const setPatch: Record<string, unknown> = { updatedAt: new Date() };
+    if (patch.title !== undefined) setPatch.title = patch.title;
+    if (patch.lineItems !== undefined) setPatch.lineItems = patch.lineItems as unknown[];
+    if (patch.subtotal !== undefined) setPatch.subtotal = patch.subtotal;
+    if (patch.tax !== undefined) setPatch.tax = patch.tax;
+    if (patch.total !== undefined) setPatch.total = patch.total;
+
+    const rows = await this.db
+      .update(quotes)
+      .set(setPatch)
+      .where(and(eq(quotes.tenantId, tenantId), eq(quotes.id, id)))
+      .returning();
+
+    return rows[0] ? toEntity(rows[0]) : null;
   }
 
   async getById(tenantId: string, id: string): Promise<Quote | null> {
