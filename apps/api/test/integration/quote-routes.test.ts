@@ -132,6 +132,17 @@ describe('GET /v1/quotes', () => {
     });
     expect(res2.json().data).toHaveLength(0);
   });
+
+  it('returns 400 for invalid cursor', async () => {
+    const { app } = await createTenantAndGetApp();
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/quotes?cursor=not-valid-base64-json',
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error.code).toBe('VALIDATION_ERROR');
+  });
 });
 
 describe('GET /v1/quotes/count', () => {

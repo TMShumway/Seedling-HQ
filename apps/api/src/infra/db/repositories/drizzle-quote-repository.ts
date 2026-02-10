@@ -4,6 +4,7 @@ import type { PaginatedResult } from '../../../application/ports/client-reposito
 import type { Quote, QuoteStatus, QuoteLineItem } from '../../../domain/entities/quote.js';
 import type { Database } from '../client.js';
 import { quotes } from '../schema.js';
+import { ValidationError } from '../../../shared/errors.js';
 
 const DEFAULT_LIMIT = 20;
 
@@ -12,8 +13,12 @@ function encodeCursor(id: string, createdAt: Date): string {
 }
 
 function decodeCursor(cursor: string): { id: string; createdAt: Date } {
-  const parsed = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf-8'));
-  return { id: parsed.id, createdAt: new Date(parsed.createdAt) };
+  try {
+    const parsed = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf-8'));
+    return { id: parsed.id, createdAt: new Date(parsed.createdAt) };
+  } catch {
+    throw new ValidationError('Invalid cursor');
+  }
 }
 
 function toEntity(row: typeof quotes.$inferSelect): Quote {
