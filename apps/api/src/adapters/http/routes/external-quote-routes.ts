@@ -8,8 +8,12 @@ import type { ClientRepository } from '../../../application/ports/client-reposit
 import type { TenantRepository } from '../../../application/ports/tenant-repository.js';
 import type { PropertyRepository } from '../../../application/ports/property-repository.js';
 import type { AuditEventRepository } from '../../../application/ports/audit-event-repository.js';
+import type { UserRepository } from '../../../application/ports/user-repository.js';
+import type { MessageOutboxRepository } from '../../../application/ports/message-outbox-repository.js';
+import type { EmailSender } from '../../../application/ports/email-sender.js';
 import type { AppConfig } from '../../../shared/config.js';
 import { buildExternalTokenMiddleware } from '../middleware/external-token-middleware.js';
+import { RespondToQuoteUseCase } from '../../../application/usecases/respond-to-quote.js';
 
 export function buildExternalQuoteRoutes(deps: {
   secureLinkTokenRepo: SecureLinkTokenRepository;
@@ -18,12 +22,22 @@ export function buildExternalQuoteRoutes(deps: {
   tenantRepo: TenantRepository;
   propertyRepo: PropertyRepository;
   auditRepo: AuditEventRepository;
+  userRepo: UserRepository;
+  outboxRepo: MessageOutboxRepository;
+  emailSender: EmailSender;
   config: AppConfig;
 }) {
-  const tokenMiddleware = buildExternalTokenMiddleware({
+  const readMiddleware = buildExternalTokenMiddleware({
     secureLinkTokenRepo: deps.secureLinkTokenRepo,
     config: deps.config,
     requiredScope: 'quote:read',
+    requiredSubjectType: 'quote',
+  });
+
+  const respondMiddleware = buildExternalTokenMiddleware({
+    secureLinkTokenRepo: deps.secureLinkTokenRepo,
+    config: deps.config,
+    requiredScope: 'quote:respond',
     requiredSubjectType: 'quote',
   });
 
@@ -34,7 +48,7 @@ export function buildExternalQuoteRoutes(deps: {
     typedApp.get(
       '/v1/ext/quotes/:token',
       {
-        preHandler: tokenMiddleware,
+        preHandler: readMiddleware,
         schema: {
           params: z.object({ token: z.string() }),
         },
@@ -99,12 +113,58 @@ export function buildExternalQuoteRoutes(deps: {
             total: quote.total,
             status: quote.status,
             sentAt: quote.sentAt?.toISOString() ?? null,
+            approvedAt: quote.approvedAt?.toISOString() ?? null,
+            declinedAt: quote.declinedAt?.toISOString() ?? null,
             createdAt: quote.createdAt.toISOString(),
           },
           businessName,
           clientName,
           propertyAddress,
         };
+      },
+    );
+
+    // POST /v1/ext/quotes/:token/approve
+    typedApp.post(
+      '/v1/ext/quotes/:token/approve',
+      {
+        preHandler: respondMiddleware,
+        schema: {
+          params: z.object({ token: z.string() }),
+        },
+      },
+      async (request) => {
+        const ctx = request.externalAuthContext!;
+        const useCase = new RespondToQuoteUseCase(
+          deps.quoteRepo, deps.auditRepo, deps.userRepo,
+          deps.outboxRepo, deps.emailSender, deps.config,
+        );
+        return useCase.execute(
+          { tenantId: ctx.tenantId, quoteId: ctx.subjectId, tokenId: ctx.tokenId, action: 'approve' },
+          request.correlationId,
+        );
+      },
+    );
+
+    // POST /v1/ext/quotes/:token/decline
+    typedApp.post(
+      '/v1/ext/quotes/:token/decline',
+      {
+        preHandler: respondMiddleware,
+        schema: {
+          params: z.object({ token: z.string() }),
+        },
+      },
+      async (request) => {
+        const ctx = request.externalAuthContext!;
+        const useCase = new RespondToQuoteUseCase(
+          deps.quoteRepo, deps.auditRepo, deps.userRepo,
+          deps.outboxRepo, deps.emailSender, deps.config,
+        );
+        return useCase.execute(
+          { tenantId: ctx.tenantId, quoteId: ctx.subjectId, tokenId: ctx.tokenId, action: 'decline' },
+          request.correlationId,
+        );
       },
     );
   };

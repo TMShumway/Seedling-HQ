@@ -31,11 +31,11 @@ Add "Approve" and "Decline" buttons to the public quote view page so clients can
 **Goal:** Wire use case into external routes, update token scopes.
 **Files:** `send-quote.ts` (modify scopes), `external-quote-routes.ts` (modify), `app.ts` (modify), `send-quote.test.ts` (modify), `send-quote-routes.test.ts` (modify)
 
-- [ ] **2.1: Update SendQuoteUseCase token scopes**
-- [ ] **2.2: Expand buildExternalQuoteRoutes deps + add POST routes**
-- [ ] **2.3: Wire new deps in app.ts**
-- [ ] **2.4: Update GET response to include approvedAt/declinedAt**
-- [ ] **2.5: Write integration tests**
+- [x] **2.1: Update SendQuoteUseCase token scopes**
+- [x] **2.2: Expand buildExternalQuoteRoutes deps + add POST routes**
+- [x] **2.3: Wire new deps in app.ts**
+- [x] **2.4: Update GET response to include approvedAt/declinedAt**
+- [x] **2.5: Write integration tests**
 
 ## Phase 3: Frontend
 **Goal:** Approve/decline buttons on public view, timestamps on internal detail.
@@ -57,19 +57,20 @@ Add "Approve" and "Decline" buttons to the public quote view page so clients can
 
 ## Resume context
 ### Last completed
-- Phase 1: DTO + Use Case (TDD) — all 4 tasks complete
-  - `apps/api/src/application/dto/respond-quote-dto.ts` (new)
-  - `apps/api/src/application/usecases/respond-to-quote.ts` (new)
-  - `apps/api/src/application/dto/timeline-dto.ts` (added 2 event labels)
-  - `apps/api/test/unit/respond-to-quote.test.ts` (12 new tests, all GREEN)
+- Phase 2: API Routes + Integration Tests — all 5 tasks complete
+  - Token scopes updated from `['quote:read']` to `['quote:read', 'quote:respond']`
+  - `external-quote-routes.ts` expanded with POST /approve and /decline routes + respondMiddleware
+  - `app.ts` wired with `userRepo`, `outboxRepo`, `emailSender` for external routes
+  - GET response now includes `approvedAt`/`declinedAt`
+  - 10 new integration tests (all passing, 128 total)
 ### In progress
-- Starting Phase 2
+- Starting Phase 3
 ### Next up
-- Task 2.1: Update SendQuoteUseCase token scopes
+- Task 3.1: Add API client methods
 ### Blockers / open questions
 - None
 
 ## Test summary
 - **Unit**: 149 total (12 new)
-- **Integration**: 0 new
+- **Integration**: 128 total (10 new)
 - **E2E**: 0 new
