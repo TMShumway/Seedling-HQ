@@ -1,6 +1,6 @@
 # S-0026: Create Standalone Quote (No Request Required)
 
-## Status: In Progress
+## Status: Complete
 
 ## Overview
 Quotes can currently only be created via the request-conversion flow (S-0008 `ConvertRequestUseCase`). S-0026 adds a direct `POST /v1/quotes` endpoint and a "New Quote" button on `QuotesPage` so owners can create draft quotes for existing clients without needing a service request first. The DB schema already supports this — `requestId` and `propertyId` are nullable on the `quotes` table.
@@ -75,35 +75,27 @@ Quotes can currently only be created via the request-conversion flow (S-0008 `Co
 **Goal:** E2E tests, update docs.
 **Files:** `e2e/quotes.spec.ts`, story file, CLAUDE.md
 
-- [ ] **4.1: Write E2E tests**
+- [x] **4.1: Write E2E tests**
   - Navigate to create page via "New Quote" button
-  - Search for seeded client, select, verify property dropdown
+  - Search for seeded client (Bob Wilson), select, verify property dropdown
   - Create quote with title, verify redirect to QuoteDetailPage
   - Verify new quote appears in quotes list
-  - Acceptance: All E2E tests pass
+  - A11y scan on CreateQuotePage
+  - Acceptance: All 62 run + 32 skipped E2E tests pass (3 new: 2 functional + 1 a11y)
 
-- [ ] **4.2: Update CLAUDE.md**
-  - Add key decision + backend/frontend pattern entries for S-0026
+- [x] **4.2: Update CLAUDE.md**
+  - Added key decision for standalone quote creation
+  - Added backend patterns: CreateStandaloneQuoteUseCase, POST /v1/quotes route
+  - Added frontend patterns: CreateQuotePage with client search, New Quote button
   - Acceptance: CLAUDE.md updated
 
-- [ ] **4.3: Update story file status**
+- [x] **4.3: Update story file status**
   - Acceptance: Status set to Complete
 
 ## Resume context
-### Last completed
-- Phase 3: Frontend
-  - `apps/web/src/lib/api-client.ts` — added `CreateQuoteRequest` + `createQuote()` method
-  - `apps/web/src/pages/CreateQuotePage.tsx` — new page with client search, property dropdown, title auto-suggest
-  - `apps/web/src/App.tsx` — added `/quotes/new` route before `/:id`
-  - `apps/web/src/pages/QuotesPage.tsx` — "New Quote" button + updated empty state text
-### In progress
-- Starting Phase 4: E2E Tests + Docs
-### Next up
-- Task 4.1: Write E2E tests
-### Blockers / open questions
-- None
+All phases complete. No pending work.
 
 ## Test summary
 - **Unit**: 162 total (11 new)
 - **Integration**: 137 total (9 new)
-- **E2E**: 88 total (0 new)
+- **E2E**: 94 total — 62 run + 32 skipped (3 new: 2 functional + 1 a11y)
