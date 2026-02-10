@@ -54,7 +54,7 @@ Seedling-HQ uses three distinct signal types. Do not mix them.
 - `request_id` (unique per HTTP request)
 - `correlation_id` (propagated across async boundaries)
 - `tenant_id` (whenever known)
-- `principal_type` (`internal_user` | `external_token` | `system`)
+- `principal_type` (`internal` | `system` | `external` (future))
 - `principal_id` (user_id or token_id when known)
 
 ### 3.2 Propagation rules
@@ -173,7 +173,7 @@ If you add tracing:
 
 Audit events must be durable (stored in Postgres) and include:
 - `tenant_id`
-- `principal_type` (`internal_user` | `external_token` | `system`)
+- `principal_type` (`internal` | `system` | `external` (future))
 - `principal_id` (user_id or token_id)
 - `event_name`
 - `subject_type` (quote, invoice, visit, client_hub, etc.)

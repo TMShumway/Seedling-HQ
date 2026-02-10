@@ -133,7 +133,7 @@ sequenceDiagram
 - API middleware validates JWT signature using Cognito JWKS endpoint, checks `iss`, `aud`/`client_id`, `exp`, `token_use=access`.
 - Middleware extracts `authContext`:
   ```
-  { principal_type: "internal_user", tenant_id, user_id (sub), role (cognito:groups) }
+  { principal_type: "internal", tenant_id, user_id (sub), role (cognito:groups) }
   ```
 - React app stores tokens **in memory** (preferred) or `sessionStorage`. Do not use cookies.
 

@@ -196,7 +196,7 @@ In logs:
 ### 6.3 Audit events (required baseline)
 Audit events must include:
 - `tenant_id`
-- principal type: `internal_user` or `external_token`
+- principal type: `internal` or `system` (or `external` in future)
 - principal identifiers:
   - internal: `user_id`
   - external: `token_id` (db id, not token value)
@@ -376,7 +376,7 @@ When an AI agent adds functionality:
 ### `audit_events` (recommended baseline)
 - `id`
 - `tenant_id`
-- `principal_type` (internal_user | external_token)
+- `principal_type` (internal | system | external)
 - `principal_id` (user_id or token_id)
 - `event_name`
 - `subject_type`

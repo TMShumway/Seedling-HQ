@@ -181,7 +181,7 @@ Prefer:
 - Produces `authContext`:
   ```ts
   {
-    principal_type: 'internal_user',
+    principal_type: 'internal',
     tenant_id: string,   // from custom:tenant_id claim (or DEV_AUTH_TENANT_ID)
     user_id: string,     // from sub claim (or DEV_AUTH_USER_ID)
     role: string,        // from cognito:groups claim (or DEV_AUTH_ROLE)
@@ -194,12 +194,12 @@ Prefer:
 - Produces `authContext`:
   ```ts
   {
-    principal_type: 'external_token',
+    principal_type: 'external',
     tenant_id: string,
     token_id: string,
-    subject_type: string,
-    subject_id: string,
-    scopes: string[],
+    scope: string,
+    object_type: string,
+    object_id: string,
   }
   ```
 - Reject request with generic error if token is invalid, expired, or revoked.
