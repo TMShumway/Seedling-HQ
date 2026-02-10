@@ -31,6 +31,7 @@ function makeRequestRepo(overrides: Partial<RequestRepository> = {}): RequestRep
     list: vi.fn(async () => ({ data: [], cursor: null, hasMore: false })),
     getById: vi.fn(async () => null),
     create: vi.fn(async (r) => ({ ...r, createdAt: new Date(), updatedAt: new Date() })),
+    updateStatus: vi.fn(async () => null),
     count: vi.fn(async () => 0),
     countByStatus: vi.fn(async () => 0),
     ...overrides,

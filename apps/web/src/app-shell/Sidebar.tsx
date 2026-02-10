@@ -17,7 +17,7 @@ const navItems = [
   { label: 'Services', icon: Wrench, href: '/services', active: true },
   { label: 'Requests', icon: FileText, href: '/requests', active: true },
   { label: 'Clients', icon: Users, href: '/clients', active: true },
-  { label: 'Quotes', icon: Calculator, href: '#', active: false },
+  { label: 'Quotes', icon: Calculator, href: '/quotes', active: true },
   { label: 'Schedule', icon: Calendar, href: '#', active: false },
   { label: 'Jobs', icon: Briefcase, href: '#', active: false },
   { label: 'Invoices', icon: Receipt, href: '#', active: false },

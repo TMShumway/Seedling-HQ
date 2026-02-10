@@ -381,6 +381,28 @@ export const apiClient = {
   convertRequest: (requestId: string, input: ConvertRequestPayload) =>
     request<ConvertRequestResponse>('POST', `/v1/requests/${requestId}/convert`, input),
 
+  // Quotes
+  listQuotes: (params?: { limit?: number; cursor?: string; search?: string; status?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.limit) qs.set('limit', String(params.limit));
+    if (params?.cursor) qs.set('cursor', params.cursor);
+    if (params?.search) qs.set('search', params.search);
+    if (params?.status) qs.set('status', params.status);
+    const q = qs.toString();
+    return request<PaginatedResponse<QuoteResponse>>('GET', `/v1/quotes${q ? `?${q}` : ''}`);
+  },
+
+  getQuote: (id: string) =>
+    request<QuoteResponse>('GET', `/v1/quotes/${id}`),
+
+  updateQuote: (id: string, input: UpdateQuoteRequest) =>
+    request<QuoteResponse>('PUT', `/v1/quotes/${id}`, input),
+
+  countQuotes: (status?: string) => {
+    const qs = status ? `?status=${status}` : '';
+    return request<{ count: number }>('GET', `/v1/quotes/count${qs}`);
+  },
+
   // Timeline
   getClientTimeline: (clientId: string, params?: { limit?: number; cursor?: string; exclude?: string }) => {
     const qs = new URLSearchParams();
@@ -447,6 +469,14 @@ export interface RequestResponse {
   updatedAt: string;
 }
 
+export interface QuoteLineItemResponse {
+  serviceItemId: string | null;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
 export interface QuoteResponse {
   id: string;
   tenantId: string;
@@ -454,7 +484,7 @@ export interface QuoteResponse {
   clientId: string;
   propertyId: string | null;
   title: string;
-  lineItems: unknown[];
+  lineItems: QuoteLineItemResponse[];
   subtotal: number;
   tax: number;
   total: number;
@@ -464,6 +494,17 @@ export interface QuoteResponse {
   declinedAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface UpdateQuoteRequest {
+  title?: string;
+  lineItems?: Array<{
+    serviceItemId?: string | null;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+  }>;
+  tax?: number;
 }
 
 export interface ConvertRequestPayload {

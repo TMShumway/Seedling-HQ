@@ -1,6 +1,6 @@
 import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { tenants, users, auditEvents, serviceCategories, serviceItems, clients, properties, requests } from './schema.js';
+import { tenants, users, auditEvents, serviceCategories, serviceItems, clients, properties, requests, quotes } from './schema.js';
 import { sql } from 'drizzle-orm';
 
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
@@ -149,6 +149,36 @@ async function seed() {
       });
   }
 
+  // Upsert demo quote (linked to johnSmith client)
+  const DEMO_QUOTE_ID = '00000000-0000-0000-0000-000000000700';
+  const quoteLineItems = [
+    { serviceItemId: '00000000-0000-0000-0000-000000000300', description: 'Weekly Mowing', quantity: 1, unitPrice: 4500, total: 4500 },
+    { serviceItemId: '00000000-0000-0000-0000-000000000301', description: 'Edging & Trimming', quantity: 1, unitPrice: 2500, total: 2500 },
+  ];
+  const quoteSubtotal = 7000;
+  const quoteTax = 0;
+  const quoteTotal = 7000;
+
+  await db
+    .insert(quotes)
+    .values({
+      id: DEMO_QUOTE_ID,
+      tenantId: DEMO_TENANT_ID,
+      requestId: null,
+      clientId: DEMO_CLIENT_IDS.johnSmith,
+      propertyId: '00000000-0000-0000-0000-000000000500',
+      title: 'Lawn Service for John Smith',
+      lineItems: quoteLineItems,
+      subtotal: quoteSubtotal,
+      tax: quoteTax,
+      total: quoteTotal,
+      status: 'draft',
+    })
+    .onConflictDoUpdate({
+      target: quotes.id,
+      set: { title: 'Lawn Service for John Smith', lineItems: quoteLineItems, subtotal: quoteSubtotal, tax: quoteTax, total: quoteTotal, status: 'draft' },
+    });
+
   // Insert audit events (idempotent: check first)
   const existing = await db
     .select({ count: sql<number>`count(*)::int` })
@@ -268,6 +298,17 @@ async function seed() {
         eventName: 'request.created',
         subjectType: 'request',
         subjectId: DEMO_REQUEST_IDS.landscapeRequest,
+        correlationId: 'seed',
+      },
+      // Quote created event
+      {
+        id: '00000000-0000-0000-0000-000000000140',
+        tenantId: DEMO_TENANT_ID,
+        principalType: 'internal',
+        principalId: DEMO_USER_ID,
+        eventName: 'quote.created',
+        subjectType: 'quote',
+        subjectId: DEMO_QUOTE_ID,
         correlationId: 'seed',
       },
     ]);

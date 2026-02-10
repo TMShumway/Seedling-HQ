@@ -21,6 +21,7 @@ import { buildServiceItemRoutes } from './adapters/http/routes/service-item-rout
 import { buildClientRoutes } from './adapters/http/routes/client-routes.js';
 import { buildPropertyRoutes } from './adapters/http/routes/property-routes.js';
 import { buildRequestRoutes } from './adapters/http/routes/request-routes.js';
+import { buildQuoteRoutes } from './adapters/http/routes/quote-routes.js';
 import { DrizzleTenantRepository } from './infra/db/repositories/drizzle-tenant-repository.js';
 import { DrizzleUserRepository } from './infra/db/repositories/drizzle-user-repository.js';
 import { DrizzleAuditEventRepository } from './infra/db/repositories/drizzle-audit-event-repository.js';
@@ -30,6 +31,7 @@ import { DrizzleServiceItemRepository } from './infra/db/repositories/drizzle-se
 import { DrizzleClientRepository } from './infra/db/repositories/drizzle-client-repository.js';
 import { DrizzlePropertyRepository } from './infra/db/repositories/drizzle-property-repository.js';
 import { DrizzleRequestRepository } from './infra/db/repositories/drizzle-request-repository.js';
+import { DrizzleQuoteRepository } from './infra/db/repositories/drizzle-quote-repository.js';
 import { DrizzleMessageOutboxRepository } from './infra/db/repositories/drizzle-message-outbox-repository.js';
 import { DrizzleUnitOfWork } from './infra/db/drizzle-unit-of-work.js';
 import { NodemailerEmailSender } from './infra/email/nodemailer-email-sender.js';
@@ -74,6 +76,7 @@ export async function createApp({ config, db }: CreateAppOptions) {
   const clientRepo = new DrizzleClientRepository(db);
   const propertyRepo = new DrizzlePropertyRepository(db);
   const requestRepo = new DrizzleRequestRepository(db);
+  const quoteRepo = new DrizzleQuoteRepository(db);
   const outboxRepo = new DrizzleMessageOutboxRepository(db);
   const uow = new DrizzleUnitOfWork(db);
   const emailSender = new NodemailerEmailSender(config.SMTP_HOST, config.SMTP_PORT);
@@ -88,6 +91,7 @@ export async function createApp({ config, db }: CreateAppOptions) {
   await app.register(buildClientRoutes({ clientRepo, propertyRepo, auditRepo, config }));
   await app.register(buildPropertyRoutes({ propertyRepo, clientRepo, auditRepo, config }));
   await app.register(buildRequestRoutes({ requestRepo, tenantRepo, auditRepo, userRepo, outboxRepo, emailSender, clientRepo, uow, config }));
+  await app.register(buildQuoteRoutes({ quoteRepo, auditRepo, config }));
 
   return app;
 }

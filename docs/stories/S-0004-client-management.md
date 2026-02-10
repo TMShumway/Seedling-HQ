@@ -1,5 +1,7 @@
 # S-0004: Client + Property Management
 
+## Status: Complete
+
 ## Phase 1: Story File + DB Schema
 - [x] Create story file
 - [x] Add `clients` table to schema

@@ -89,7 +89,7 @@ export function ConvertRequestPage() {
     mutationFn: (payload: ConvertRequestPayload) =>
       apiClient.convertRequest(id!, payload),
     onSuccess: (result) => {
-      navigate(`/clients/${result.client.id}`);
+      navigate(`/quotes/${result.quote.id}`);
     },
     onError: (err: Error) => {
       setError(err.message);

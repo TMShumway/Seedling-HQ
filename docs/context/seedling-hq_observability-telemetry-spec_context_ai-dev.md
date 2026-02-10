@@ -1,6 +1,6 @@
 # Seedling-HQ — Observability & Telemetry Spec Context Pack (MVP) for AI-Driven Development
 
-_Last updated: 2026-02-08 (America/Chihuahua)_
+_Last updated: 2026-02-10 (America/Chihuahua)_
 
 > Purpose: Paste this into a new LLM/agent so it can implement **consistent observability** across API, worker, and UI.
 > Scope: MVP baseline covering:
@@ -186,6 +186,7 @@ Minimum audit events for MVP:
 - `tenant.created`
 - `business_settings.created`, `business_settings.updated` (S-0002) — derived from upsert result timestamps, not pre-read (race-safe)
 - `request.created`
+- `quote.created` (S-0008), `quote.updated` (S-0009)
 - `quote.sent`, `quote.viewed`, `quote.approved`
 - `visit.scheduled`, `visit.rescheduled`, `visit.completed`
 - `invoice.sent`, `invoice.viewed`, `invoice.paid`

@@ -1,5 +1,7 @@
 # S-0007: New Request Notifications
 
+## Status: Complete
+
 ## Checklist
 
 ### Phase 1: Domain + Schema + Config + Deps
