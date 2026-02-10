@@ -35,6 +35,7 @@
 | Adding/altering UI | UI/UX (#2), Testing (#3), Observability (#5) |
 | Adding async jobs, reminders, or comms | Architecture (#1), Security (#4), Observability (#5), Testing (#3) |
 | Adding a new entity or status machine | Domain Model (#9), Data Access (#8), API Standards (#10), Testing (#3) |
+| Adding external/secure-link endpoints | Security (#4), Data Access (#8), API Standards (#10), Architecture (#1), Testing (#3) |
 
 ---
 
@@ -180,7 +181,7 @@
 
 | Item | Deferred to | Reason |
 |------|-------------|--------|
-| Cognito JWT validation (`AUTH_MODE=cognito`) | S-0007+ | S-0001–S-0008 use `AUTH_MODE=local` |
+| Cognito JWT validation (`AUTH_MODE=cognito`) | S-0007+ | S-0001–S-0010 use `AUTH_MODE=local` |
 | SMS worker (send from outbox) | S-0021 | `message_outbox` table exists; SMS records queued but not sent |
 | LocalStack in docker-compose | S-0007+ | Not needed until async/queue stories |
 | EventBridge bus + Scheduler | S-0022+ | Not needed until automation stories |

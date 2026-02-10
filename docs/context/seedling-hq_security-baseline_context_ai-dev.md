@@ -60,7 +60,7 @@ _Last updated: 2026-02-08 (America/Chihuahua)_
   - `role` (from `cognito:groups` claim)
 - Local dev uses `AUTH_MODE=local` mock middleware producing the identical auth context shape.
 
-**B) External principals (tenant’s customers)**
+**B) External principals (tenant's customers)**
 - Loginless secure links.
 - Auth context is derived from a token:
   - `tenant_id`
@@ -68,6 +68,7 @@ _Last updated: 2026-02-08 (America/Chihuahua)_
   - `subject_id` (object id allowed)
   - `scopes` (quote:read, quote:approve, invoice:pay, hub:read)
   - `expires_at`, `revoked_at`
+- **Implemented in S-0010:** External auth is handled by the `externalAuthContext` Fastify decorator. It sets `principal_type: 'external'` and `principal_id: token_id` (the DB record ID, not the raw token value).
 
 ### 3.3 Authorization rules (must not be mixed)
 - Internal authorization: **RBAC within tenant** (“can this role do X?”)
@@ -125,6 +126,7 @@ Every secure link token must be:
   - `SHA256(secret || token)` with a versioned secret
 
 **Recommendation:** `HMAC-SHA256` using a server-side secret (e.g., `SECURE_LINK_HMAC_SECRET`).
+**Chosen in S-0010:** Implemented as `hashToken()` in `shared/crypto.ts` using HMAC-SHA256 with `SECURE_LINK_HMAC_SECRET`.
 
 ### 4.4 Versioning + rotation
 - Include a `hash_version` column (e.g., `v1`) so you can rotate the secret later.
@@ -144,6 +146,8 @@ For any secure-link route:
    - ID matches `subject_id` OR strict relationship check (e.g., invoice belongs to client in token).
 4) Ensure token includes required scope.
 5) Record audit event + update `last_used_at`.
+
+**Implemented in S-0010:** External routes use the `/v1/ext/*` prefix with `externalAuth` middleware that validates the token hash against the DB, checks expiry and revocation, and verifies the required scope. On any failure (invalid, expired, revoked, or wrong scope) the middleware returns 403 with error code `LINK_INVALID`.
 
 ### 4.7 Error handling for external pages
 - Expired/revoked/invalid token → show a safe, generic message:
