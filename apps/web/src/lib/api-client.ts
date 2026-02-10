@@ -403,6 +403,13 @@ export const apiClient = {
     return request<{ count: number }>('GET', `/v1/quotes/count${qs}`);
   },
 
+  sendQuote: (id: string, input?: { expiresInDays?: number }) =>
+    request<SendQuoteResponse>('POST', `/v1/quotes/${id}/send`, input),
+
+  // External quote view (no auth)
+  getPublicQuote: (token: string) =>
+    publicRequest<PublicQuoteViewResponse>('GET', `/v1/ext/quotes/${token}`),
+
   // Timeline
   getClientTimeline: (clientId: string, params?: { limit?: number; cursor?: string; exclude?: string }) => {
     const qs = new URLSearchParams();
@@ -528,6 +535,29 @@ export interface ConvertRequestResponse {
   property: PropertyResponse;
   quote: QuoteResponse;
   clientCreated: boolean;
+}
+
+export interface SendQuoteResponse {
+  quote: QuoteResponse;
+  token: string;
+  link: string;
+}
+
+export interface PublicQuoteViewResponse {
+  quote: {
+    id: string;
+    title: string;
+    lineItems: QuoteLineItemResponse[];
+    subtotal: number;
+    tax: number;
+    total: number;
+    status: string;
+    sentAt: string | null;
+    createdAt: string;
+  };
+  businessName: string;
+  clientName: string;
+  propertyAddress: string | null;
 }
 
 export { ApiClientError };

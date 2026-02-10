@@ -60,7 +60,7 @@ _Last updated: 2026-02-08 (America/Chihuahua)_
   - `role` (from `cognito:groups` claim)
 - Local dev uses `AUTH_MODE=local` mock middleware producing the identical auth context shape.
 
-**B) External principals (tenant’s customers)**
+**B) External principals (tenant's customers)**
 - Loginless secure links.
 - Auth context is derived from a token:
   - `tenant_id`
@@ -68,6 +68,7 @@ _Last updated: 2026-02-08 (America/Chihuahua)_
   - `subject_id` (object id allowed)
   - `scopes` (quote:read, quote:approve, invoice:pay, hub:read)
   - `expires_at`, `revoked_at`
+- **Implemented in S-0010:** External auth is handled by the `externalAuthContext` Fastify decorator. It sets `principal_type: 'external'` and `principal_id: token_id` (the DB record ID, not the raw token value).
 
 ### 3.3 Authorization rules (must not be mixed)
 - Internal authorization: **RBAC within tenant** (“can this role do X?”)
@@ -125,6 +126,7 @@ Every secure link token must be:
   - `SHA256(secret || token)` with a versioned secret
 
 **Recommendation:** `HMAC-SHA256` using a server-side secret (e.g., `SECURE_LINK_HMAC_SECRET`).
+**Chosen in S-0010:** Implemented as `hashToken()` in `shared/crypto.ts` using HMAC-SHA256 with `SECURE_LINK_HMAC_SECRET`.
 
 ### 4.4 Versioning + rotation
 - Include a `hash_version` column (e.g., `v1`) so you can rotate the secret later.
@@ -144,6 +146,10 @@ For any secure-link route:
    - ID matches `subject_id` OR strict relationship check (e.g., invoice belongs to client in token).
 4) Ensure token includes required scope.
 5) Record audit event + update `last_used_at`.
+
+**Implemented in S-0010:** External routes use the `/v1/ext/*` prefix with `externalAuth` middleware that validates the token hash against the DB, checks expiry and revocation, and verifies the required scope. The middleware also accepts an optional `requiredSubjectType` parameter; when provided, it validates that the token's `subject_type` matches the expected type for the endpoint (e.g., a quote-view endpoint requires `subject_type: 'quote'`). On any failure (invalid, expired, revoked, wrong scope, or wrong subject type) the middleware returns 403 with error code `LINK_INVALID`.
+
+**Object existence after token lookup:** If a token is valid but the referenced object is missing or deleted, the endpoint must return 403 `LINK_INVALID` — not 404. This prevents leaking entity existence to external principals who may be probing with tokens from other objects.
 
 ### 4.7 Error handling for external pages
 - Expired/revoked/invalid token → show a safe, generic message:
@@ -284,7 +290,15 @@ Recommended key format:
 
 Note: `COGNITO_USER_POOL_ID` and `COGNITO_CLIENT_ID` are not secrets (they are public in the JWT issuer URL and client-side config), but they are environment-specific and should be managed as config, not hardcoded.
 
-### 10.3 Rotation rules (MVP)
+### 10.3 Production validation of `SECURE_LINK_HMAC_SECRET`
+In production (`NODE_ENV=production`), `loadConfig()` enforces the following rules for `SECURE_LINK_HMAC_SECRET`:
+- Must not be missing or empty.
+- Must not equal the dev default value `dev-secret-change-in-production`.
+- Must be at least 16 characters long.
+
+The app will refuse to start if any of these conditions are violated. This prevents accidental deployment with weak or default secrets.
+
+### 10.4 Rotation rules (MVP)
 - Design secrets so they can be rotated without code changes:
   - store secret in Secrets Manager/SSM
   - cache with TTL in Lambda/worker if needed

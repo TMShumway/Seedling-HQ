@@ -4,7 +4,12 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import type { Quote, QuoteLineItem } from '../../../domain/entities/quote.js';
 import type { QuoteRepository } from '../../../application/ports/quote-repository.js';
 import type { AuditEventRepository } from '../../../application/ports/audit-event-repository.js';
+import type { UnitOfWork } from '../../../application/ports/unit-of-work.js';
+import type { EmailSender } from '../../../application/ports/email-sender.js';
+import type { MessageOutboxRepository } from '../../../application/ports/message-outbox-repository.js';
+import type { ClientRepository } from '../../../application/ports/client-repository.js';
 import { UpdateQuoteUseCase } from '../../../application/usecases/update-quote.js';
+import { SendQuoteUseCase } from '../../../application/usecases/send-quote.js';
 import { NotFoundError } from '../../../shared/errors.js';
 import { buildAuthMiddleware } from '../middleware/auth-middleware.js';
 import type { AppConfig } from '../../../shared/config.js';
@@ -77,9 +82,16 @@ const updateQuoteBodySchema = z.object({
 export function buildQuoteRoutes(deps: {
   quoteRepo: QuoteRepository;
   auditRepo: AuditEventRepository;
+  uow: UnitOfWork;
+  emailSender: EmailSender;
+  outboxRepo: MessageOutboxRepository;
+  clientRepo: ClientRepository;
   config: AppConfig;
 }) {
   const updateUseCase = new UpdateQuoteUseCase(deps.quoteRepo, deps.auditRepo);
+  const sendUseCase = new SendQuoteUseCase(
+    deps.quoteRepo, deps.uow, deps.emailSender, deps.outboxRepo, deps.clientRepo, deps.config,
+  );
   const authMiddleware = buildAuthMiddleware(deps.config);
 
   return async function quoteRoutes(app: FastifyInstance) {
@@ -132,6 +144,36 @@ export function buildQuoteRoutes(deps: {
           ? await deps.quoteRepo.countByStatus(request.authContext.tenant_id, request.query.status)
           : await deps.quoteRepo.count(request.authContext.tenant_id);
         return { count };
+      },
+    );
+
+    // POST /v1/quotes/:id/send — must register BEFORE /:id
+    typedApp.post(
+      '/v1/quotes/:id/send',
+      {
+        preHandler: authMiddleware,
+        schema: {
+          params: z.object({ id: z.string().uuid() }),
+          body: z.object({
+            expiresInDays: z.number().int().min(1).max(90).optional(),
+          }).nullish(),
+        },
+      },
+      async (request) => {
+        const result = await sendUseCase.execute(
+          {
+            tenantId: request.authContext.tenant_id,
+            userId: request.authContext.user_id,
+            quoteId: request.params.id,
+            expiresInDays: request.body?.expiresInDays,
+          },
+          request.correlationId,
+        );
+        return {
+          quote: serializeQuote(result.quote),
+          token: result.token,
+          link: result.link,
+        };
       },
     );
 

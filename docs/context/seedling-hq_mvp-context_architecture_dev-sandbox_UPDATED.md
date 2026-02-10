@@ -64,6 +64,10 @@ _Last updated: 2026-02-10 (America/Chihuahua)_
 - **API**: Fastify (TypeScript) deployed to Lambda behind API Gateway (HTTP API)
   - Local: runs as normal Node server
   - Swagger UI at `/docs`
+  - Route prefixes:
+    - `/v1/*` — authenticated internal routes (Cognito JWT or local mock)
+    - `/v1/public/*` — unauthenticated public routes (S-0006+)
+    - `/v1/ext/*` — external token-authenticated routes (S-0010+); token derived from URL param, validated via HMAC hash lookup against `secure_link_tokens` table
 - **Contract-first**:
   - Fastify route schemas → OpenAPI JSON → generated TS client/types
 - **Data**: Postgres system-of-record (multi-tenant)
@@ -276,7 +280,7 @@ Suggested table (name is up to you, e.g., `secure_link_tokens`):
 
 **Epic 0004 — Quotes + approvals**
 - S-0009 Quote builder v1 (totals, draft/send states) **— DONE**: quote detail page with line-item editing, totals calculation, status machine (draft→sent→approved/declined/expired), quote list page with filters
-- S-0010 Send secure quote link (token access, audit events) **→ updated AC: tenant-bound + quote-bound token, scope checks, expiry/revocation, audit**
+- S-0010 Send secure quote link (token access, audit events) **— DONE**: shared `secure_link_tokens` table + HMAC token generation, `/v1/ext/*` route prefix with token-scoped auth middleware, send-quote use case creates token + sends email with link, audit events for send/view
 - S-0011 Customer approves quote (name + timestamp; owner notified) **→ updated AC: token scope `quote:approve`, idempotent approval, audit metadata**
 
 **Epic 0005 — Scheduling (jobs + visits)**
@@ -431,7 +435,9 @@ For `AUTH_MODE=local`:
 - `DEV_AUTH_ROLE=owner` (owner | admin | technician)
 - Optional per-request overrides via `X-Dev-Tenant-Id` / `X-Dev-User-Id` headers (frontend sends from localStorage after signup)
 
-### Secure links (recommended env defaults)
+### Secure links (required as of S-0010)
+- `SECURE_LINK_HMAC_SECRET=...` (required; HMAC key used to generate and validate token hashes; minimum 16 characters enforced in production (`loadConfig()` throws); 32+ bytes recommended for optimal security)
+- `APP_BASE_URL=http://localhost:5173` (required; base URL for constructing secure link URLs sent to external customers)
 - `SECURE_LINK_TOKEN_TTL_SECONDS=604800` (7 days default; adjust per type)
 - optional: `SECURE_LINK_ROTATION_SALT=...` (if you want a versioned hash scheme)
 

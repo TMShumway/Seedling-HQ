@@ -1,5 +1,5 @@
-import { eq, and, or, ilike, sql, lt, desc } from 'drizzle-orm';
-import type { QuoteRepository, ListQuotesFilters, QuoteUpdatePatch } from '../../../application/ports/quote-repository.js';
+import { eq, and, or, ilike, sql, lt, desc, inArray } from 'drizzle-orm';
+import type { QuoteRepository, ListQuotesFilters, QuoteUpdatePatch, QuoteStatusFields } from '../../../application/ports/quote-repository.js';
 import type { PaginatedResult } from '../../../application/ports/client-repository.js';
 import type { Quote, QuoteStatus, QuoteLineItem } from '../../../domain/entities/quote.js';
 import type { Database } from '../client.js';
@@ -120,6 +120,30 @@ export class DrizzleQuoteRepository implements QuoteRepository {
       .where(and(eq(quotes.tenantId, tenantId), eq(quotes.id, id)))
       .returning();
 
+    return rows[0] ? toEntity(rows[0]) : null;
+  }
+
+  async updateStatus(
+    tenantId: string,
+    id: string,
+    status: string,
+    statusFields?: QuoteStatusFields,
+    expectedStatuses?: string[],
+  ): Promise<Quote | null> {
+    const conditions = [eq(quotes.tenantId, tenantId), eq(quotes.id, id)];
+    if (expectedStatuses?.length) {
+      conditions.push(inArray(quotes.status, expectedStatuses));
+    }
+    const setPatch: Record<string, unknown> = { status, updatedAt: new Date() };
+    if (statusFields?.sentAt !== undefined) setPatch.sentAt = statusFields.sentAt;
+    if (statusFields?.approvedAt !== undefined) setPatch.approvedAt = statusFields.approvedAt;
+    if (statusFields?.declinedAt !== undefined) setPatch.declinedAt = statusFields.declinedAt;
+
+    const rows = await this.db
+      .update(quotes)
+      .set(setPatch)
+      .where(and(...conditions))
+      .returning();
     return rows[0] ? toEntity(rows[0]) : null;
   }
 

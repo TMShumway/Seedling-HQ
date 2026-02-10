@@ -80,6 +80,7 @@ function makeQuoteRepo(overrides: Partial<QuoteRepository> = {}): QuoteRepositor
     update: vi.fn(async () => null),
     count: vi.fn(async () => 0),
     countByStatus: vi.fn(async () => 0),
+    updateStatus: vi.fn(async () => null),
     ...overrides,
   };
 }
@@ -113,6 +114,7 @@ function makeUnitOfWork(
       propertyRepo,
       requestRepo,
       quoteRepo,
+      secureLinkTokenRepo: {} as any,
     }),
   };
 }

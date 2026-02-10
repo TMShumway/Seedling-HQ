@@ -170,7 +170,7 @@ Prefer:
 ### 5.1 Route grouping
 - Internal authenticated routes: `/v1/<resource>` — require auth middleware
 - Public unauthenticated routes: `/v1/public/<resource>/:tenantSlug` — no auth, rate-limited, tenant resolved via URL slug (S-0006)
-- External secure-link routes: `/v1/ext/<resource>/:token` (future, S-0010+) — token-authenticated, tenant derived from token record
+- External secure-link routes: `/v1/ext/<resource>/:token` (implemented in S-0010) — token-authenticated, tenant derived from token record
 
 ### 5.2 Auth middleware
 
@@ -189,9 +189,10 @@ Prefer:
   ```
 - Reject request with 401 if token is missing, invalid, or expired.
 
-**External routes (`/public/...`) — secure-link token auth:**
-- Middleware resolves token from URL parameter, hashes it, looks up `secure_link_tokens` table.
-- Produces `authContext`:
+**External routes (`/v1/ext/...`) — secure-link token auth (S-0010):**
+- `buildExternalTokenMiddleware(requiredScope, requiredSubjectType?)` resolves token from URL parameter, hashes with HMAC-SHA256, looks up `secure_link_tokens` table.
+- Validates expiry and revocation; checks scope matches the route's required scope. When `requiredSubjectType` is provided, also verifies the referenced object exists and is not deleted.
+- Sets `request.externalAuthContext`:
   ```ts
   {
     principal_type: 'external',
@@ -202,7 +203,7 @@ Prefer:
     object_id: string,
   }
   ```
-- Reject request with generic error if token is invalid, expired, or revoked.
+- Reject request with 403 `LINK_INVALID` if token is missing, invalid, expired, revoked, wrong scope, or referenced object missing/deleted.
 
 **Public routes (`/v1/public/...`) — no auth, rate-limited (S-0006):**
 - No auth middleware; request has no `authContext`.

@@ -8,7 +8,7 @@ async function reset() {
   const db = drizzle(pool);
 
   console.log('Resetting database (truncating all tables)...');
-  await db.execute(sql`TRUNCATE quotes, message_outbox, requests, properties, clients, service_items, service_categories, business_settings, audit_events, users, tenants CASCADE`);
+  await db.execute(sql`TRUNCATE secure_link_tokens, quotes, message_outbox, requests, properties, clients, service_items, service_categories, business_settings, audit_events, users, tenants CASCADE`);
   console.log('Reset complete.');
 
   await pool.end();

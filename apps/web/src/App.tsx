@@ -15,6 +15,7 @@ import { QuotesPage } from '@/pages/QuotesPage';
 import { QuoteDetailPage } from '@/pages/QuoteDetailPage';
 import { PublicRequestPage } from '@/pages/PublicRequestPage';
 import { RequestSuccessPage } from '@/pages/RequestSuccessPage';
+import { PublicQuoteViewPage } from '@/pages/PublicQuoteViewPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,6 +31,7 @@ export function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/request/:tenantSlug" element={<PublicRequestPage />} />
           <Route path="/request/:tenantSlug/success" element={<RequestSuccessPage />} />
+          <Route path="/quote/:token" element={<PublicQuoteViewPage />} />
           <Route element={<AppShell />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />

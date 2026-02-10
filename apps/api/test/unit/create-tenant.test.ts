@@ -55,6 +55,7 @@ function makeUnitOfWork(
       propertyRepo: {} as any,
       requestRepo: {} as any,
       quoteRepo: {} as any,
+      secureLinkTokenRepo: {} as any,
     }),
   };
 }

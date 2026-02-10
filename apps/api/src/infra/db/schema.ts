@@ -227,6 +227,29 @@ export const properties = pgTable(
   ],
 );
 
+export const secureLinkTokens = pgTable(
+  'secure_link_tokens',
+  {
+    id: uuid('id').primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id),
+    tokenHash: varchar('token_hash', { length: 64 }).notNull().unique(),
+    hashVersion: varchar('hash_version', { length: 10 }).notNull().default('v1'),
+    subjectType: varchar('subject_type', { length: 50 }).notNull(),
+    subjectId: uuid('subject_id').notNull(),
+    scopes: jsonb('scopes').$type<string[]>().notNull().default([]),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    createdByUserId: uuid('created_by_user_id'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+  },
+  (table) => [
+    index('secure_link_tokens_tenant_subject_idx').on(table.tenantId, table.subjectType, table.subjectId),
+  ],
+);
+
 export const quotes = pgTable(
   'quotes',
   {

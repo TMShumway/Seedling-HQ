@@ -35,6 +35,7 @@
 | Adding/altering UI | UI/UX (#2), Testing (#3), Observability (#5) |
 | Adding async jobs, reminders, or comms | Architecture (#1), Security (#4), Observability (#5), Testing (#3) |
 | Adding a new entity or status machine | Domain Model (#9), Data Access (#8), API Standards (#10), Testing (#3) |
+| Adding external/secure-link endpoints | Security (#4), Data Access (#8), API Standards (#10), Architecture (#1), Testing (#3) |
 
 ---
 
@@ -84,6 +85,12 @@
 | Quote line item editing | Inline editable rows | S-0009 | No modal; description, qty, unit price inputs with computed totals |
 | Quote tax | Manual fixed-cents entry | S-0009 | No automatic tax rate for MVP; simple dollar input |
 | Quote edit guard | Only `draft` quotes editable | S-0009 | PUT returns 400 ValidationError for non-draft; status transitions deferred to S-0010 |
+| Secure link token hashing | HMAC-SHA256 with `SECURE_LINK_HMAC_SECRET` | S-0010 | `hashToken()` in `shared/crypto.ts`; tokens stored as hash, never plaintext |
+| Secure link token format | `crypto.randomUUID()` raw, hashed before storage | S-0010 | 122-bit entropy; raw token returned once to owner, hash stored in DB |
+| Secure link default TTL | 14 days | S-0010 | Configurable 1–90 days via `expiresInDays` param; security doc recommends 7–14 |
+| External route prefix | `/v1/ext/quotes/:token` | S-0010 | Distinct from `/v1/public/` (no auth) and `/v1/` (internal auth); token-derived auth |
+| External auth context | Separate `externalAuthContext` Fastify decorator | S-0010 | Avoids breaking existing `authContext` type; set by `buildExternalTokenMiddleware` |
+| Secure link config vars | `APP_BASE_URL`, `SECURE_LINK_HMAC_SECRET` | S-0010 | Base URL for link construction; HMAC secret for token hashing; production guard: `loadConfig()` throws if secret is missing, equals dev default, or < 16 chars |
 
 ---
 
@@ -128,6 +135,11 @@
 | Quote list with status filter | S-0009 | `GET /v1/quotes?status=draft&search=term` with cursor pagination; `QuoteRepository.list()` follows `DrizzleRequestRepository.list()` pattern |
 | UpdateQuoteUseCase (no UoW) | S-0009 | Direct repo + best-effort audit (follows `UpdateClientUseCase` pattern); draft guard, line item validation, total recomputation |
 | Quote routes (4 endpoints) | S-0009 | `GET /v1/quotes`, `GET /v1/quotes/count`, `GET /v1/quotes/:id`, `PUT /v1/quotes/:id`; count registered before `:id` to avoid route conflict |
+| External token middleware | S-0010 | `buildExternalTokenMiddleware({ secureLinkTokenRepo, config, requiredScope, requiredSubjectType? })` — hashes incoming `:token` param, validates expiry/revocation/scope/subjectType, sets `request.externalAuthContext`; returns 403 `LINK_INVALID` on failure; missing referenced object also returns 403 (not 404) to avoid leaking existence |
+| hashToken utility | S-0010 | `hashToken(secret, rawToken)` in `shared/crypto.ts` — HMAC-SHA256, returns 64-char hex; used in both middleware and SendQuoteUseCase |
+| SendQuoteUseCase (atomic + best-effort) | S-0010 | Inside `uow.run()`: updateStatus(draft→sent) + create token + audit; after UoW (best-effort): get client email, create outbox, send email |
+| Quote send route + external view | S-0010 | `POST /v1/quotes/:id/send` (authenticated, returns `{ quote, token, link }`), `GET /v1/ext/quotes/:token` (external, token-derived auth, returns quote + businessName + clientName + propertyAddress) |
+| Quote `updateStatus` with race guard | S-0010 | `QuoteRepository.updateStatus(tenantId, id, status, statusFields?, expectedStatuses?)` — `WHERE status IN (...)` prevents concurrent double-send; returns null if 0 rows → throw ConflictError |
 
 ### Frontend
 
@@ -151,6 +163,9 @@
 | QuotesPage with status filter pills | S-0009 | Row of pill buttons (All/Draft/Sent/Approved/Declined) controlling `statusFilter` state; `useInfiniteQuery` with status+search params |
 | QuoteDetailPage inline builder | S-0009 | `LineItemRow` components with description/qty/price inputs; `ServiceItemPicker` dropdown grouped by category; auto-computed subtotal/total; editable tax input |
 | Convert redirect to quote | S-0009 | `ConvertRequestPage` redirects to `/quotes/:id` on success (changed from `/clients/:id`) |
+| Send quote confirmation flow | S-0010 | "Send Quote" button → inline confirmation card → success shows copyable link card; quote becomes read-only after send |
+| Public quote view page | S-0010 | `/quote/:token` outside AppShell; uses `publicRequest()` to `GET /v1/ext/quotes/:token`; shows business name, client name, line items table, totals; 403 → "link no longer valid" |
+| Copy-to-clipboard link | S-0010 | `navigator.clipboard.writeText()` with visual "Copied" feedback via useState toggle |
 
 ### Testing
 
@@ -166,9 +181,8 @@
 
 | Item | Deferred to | Reason |
 |------|-------------|--------|
-| Cognito JWT validation (`AUTH_MODE=cognito`) | S-0007+ | S-0001–S-0008 use `AUTH_MODE=local` |
+| Cognito JWT validation (`AUTH_MODE=cognito`) | S-0007+ | S-0001–S-0010 use `AUTH_MODE=local` |
 | SMS worker (send from outbox) | S-0021 | `message_outbox` table exists; SMS records queued but not sent |
-| `secure_link_tokens` table | S-0010 | Not needed until external access stories |
 | LocalStack in docker-compose | S-0007+ | Not needed until async/queue stories |
 | EventBridge bus + Scheduler | S-0022+ | Not needed until automation stories |
 | Stripe integration | S-0018 | |

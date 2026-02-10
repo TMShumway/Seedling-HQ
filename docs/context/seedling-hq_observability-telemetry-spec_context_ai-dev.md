@@ -54,8 +54,10 @@ Seedling-HQ uses three distinct signal types. Do not mix them.
 - `request_id` (unique per HTTP request)
 - `correlation_id` (propagated across async boundaries)
 - `tenant_id` (whenever known)
-- `principal_type` (`internal` | `system` | `external` (future))
+- `principal_type` (`internal` | `system` | `external`)
 - `principal_id` (user_id or token_id when known)
+
+> **External principal (S-0010):** Actions triggered via secure links (e.g., `quote.viewed`) use `principal_type: 'external'` and `principal_id: <token_id>`.
 
 ### 3.2 Propagation rules
 - Web generates a `correlation_id` for each user interaction that triggers API calls.
@@ -173,7 +175,7 @@ If you add tracing:
 
 Audit events must be durable (stored in Postgres) and include:
 - `tenant_id`
-- `principal_type` (`internal` | `system` | `external` (future))
+- `principal_type` (`internal` | `system` | `external`)
 - `principal_id` (user_id or token_id)
 - `event_name`
 - `subject_type` (quote, invoice, visit, client_hub, etc.)
@@ -187,7 +189,7 @@ Minimum audit events for MVP:
 - `business_settings.created`, `business_settings.updated` (S-0002) — derived from upsert result timestamps, not pre-read (race-safe)
 - `request.created`
 - `quote.created` (S-0008), `quote.updated` (S-0009)
-- `quote.sent`, `quote.viewed`, `quote.approved`
+- `quote.sent` (S-0010), `quote.viewed` (S-0010), `quote.approved`
 - `visit.scheduled`, `visit.rescheduled`, `visit.completed`
 - `invoice.sent`, `invoice.viewed`, `invoice.paid`
 - `message.sent` (email/SMS) with outbox id linkage

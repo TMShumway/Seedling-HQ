@@ -77,7 +77,7 @@ Seedling-HQ/
 | `test` | Run unit tests |
 | `test:integration` | Run integration tests against real Postgres |
 | `db:push` | Push Drizzle schema to database |
-| `db:seed` | Seed demo tenant, user, services, clients, properties, requests, quote, and audit events |
+| `db:seed` | Seed demo tenant, user, services, clients, properties, requests, draft quote, sent quote with secure link token, and audit events |
 | `gen` | Generate OpenAPI spec to `openapi.json` |
 
 ## API Endpoints
@@ -121,6 +121,8 @@ Seedling-HQ/
 | GET | `/v1/quotes/count` | Required | Count quotes (`?status=`) |
 | GET | `/v1/quotes/:id` | Required | Get quote |
 | PUT | `/v1/quotes/:id` | Required | Update quote (draft only) |
+| POST | `/v1/quotes/:id/send` | Required | Send quote to client (draft only, creates secure link, returns token+link) |
+| GET | `/v1/ext/quotes/:token` | External token | View sent quote publicly (token-authenticated, no login) |
 
 ## Architecture
 
@@ -147,14 +149,14 @@ The demo seed creates:
 - **Service categories:** Lawn Care, Tree Service, Landscaping (with 8 service items)
 - **Clients:** John Smith, Jane Johnson, Bob Wilson (with 3 properties)
 - **Requests:** Sarah Davis, Mike Chen, Emily Rodriguez (3 public_form requests, all `new`)
-- **Quote:** "Lawn Service for John Smith" (draft, 2 line items, $70 total)
+- **Quotes:** "Lawn Service for John Smith" (draft, 2 line items, $70 total) + "Tree Service for Jane Johnson" (sent, 2 line items, $720 total with secure link token)
 - **Audit events:** tenant/user signup + client/property/request/quote creation events (for timeline)
 
 ## Database
 
 PostgreSQL 17 via Docker Compose. Schema managed by Drizzle ORM with `db:push` for local dev.
 
-**Tables (S-0001 through S-0009):**
+**Tables (S-0001 through S-0010):**
 - `tenants` — id, slug (unique), name, status, timestamps
 - `users` — id, tenant_id (FK), email, full_name, role, status, timestamps
 - `audit_events` — id, tenant_id (FK), event_name, principal/subject info, correlation_id, created_at; indexes on `(tenant_id, created_at)` and `(tenant_id, subject_type, subject_id, created_at)`
@@ -166,13 +168,14 @@ PostgreSQL 17 via Docker Compose. Schema managed by Drizzle ORM with `db:push` f
 - `requests` — id, tenant_id (FK), source, client_name, client_email, client_phone, description, status, assigned_user_id, timestamps; indexes on `(tenant_id, created_at)` and `(tenant_id, status)`
 - `message_outbox` — id, tenant_id (FK), type, recipient_id, recipient_type, channel, subject, body, status, provider, provider_message_id, attempt_count, last_error_code, last_error_message, correlation_id, scheduled_for, created_at, sent_at; indexes on `(tenant_id, created_at)` and `(status, created_at)`
 - `quotes` — id, tenant_id (FK), request_id (FK, nullable), client_id (FK), property_id (FK, nullable), title, line_items (JSONB), subtotal, tax, total, status (default 'draft'), sent_at, approved_at, declined_at, timestamps; indexes on `(tenant_id)`, `(client_id)`, `(request_id)`, `(tenant_id, status)`
+- `secure_link_tokens` — id, tenant_id (FK), token_hash (varchar 64, unique), hash_version, subject_type, subject_id, scopes (JSONB), expires_at, revoked_at, created_by_user_id, created_at, last_used_at; indexes on `(tenant_id, subject_type, subject_id)`
 
 ## Testing
 
 ```bash
-pnpm test                # 115 unit tests
-pnpm test:integration    # 105 integration tests (needs Postgres)
-pnpm test:e2e            # 70 E2E tests, 48 run + 22 skipped (starts API + Web automatically)
+pnpm test                # 137 unit tests
+pnpm test:integration    # 118 integration tests (needs Postgres)
+pnpm test:e2e            # 80 E2E tests, 54 run + 26 skipped (starts API + Web automatically)
 ```
 
 Integration tests truncate tables between runs. E2E tests re-seed the database via `globalSetup` before each run.
@@ -212,6 +215,8 @@ cp .env.example .env
 | `SMTP_HOST` | `localhost` | SMTP server host (Mailpit locally) |
 | `SMTP_PORT` | `1025` | SMTP server port (Mailpit locally) |
 | `SMTP_FROM` | `noreply@seedling.local` | Sender email address for notifications |
+| `APP_BASE_URL` | `http://localhost:5173` | Base URL for constructing secure quote links |
+| `SECURE_LINK_HMAC_SECRET` | `dev-secret-change-in-production` | HMAC secret for signing secure link tokens (change in production) |
 
 ## AI Context
 
