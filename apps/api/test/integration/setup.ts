@@ -19,7 +19,7 @@ export function getPool() {
 }
 
 export async function truncateAll() {
-  await db.execute(sql`TRUNCATE quotes, message_outbox, requests, properties, clients, service_items, service_categories, business_settings, audit_events, users, tenants CASCADE`);
+  await db.execute(sql`TRUNCATE secure_link_tokens, quotes, message_outbox, requests, properties, clients, service_items, service_categories, business_settings, audit_events, users, tenants CASCADE`);
 }
 
 export function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {
@@ -35,6 +35,8 @@ export function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     SMTP_HOST: 'localhost',
     SMTP_PORT: 1025,
     SMTP_FROM: 'test@seedling.local',
+    APP_BASE_URL: 'http://localhost:5173',
+    SECURE_LINK_HMAC_SECRET: 'test-hmac-secret',
     ...overrides,
   };
 }

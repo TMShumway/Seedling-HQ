@@ -28,6 +28,7 @@ All API errors return a consistent JSON structure:
 |-------------|-----------|-------|------|
 | 400 | `VALIDATION_ERROR` | `ValidationError` / Fastify validation | Request body or params fail schema validation, or use-case-level business rule violation (e.g., editing a non-draft quote) |
 | 401 | `UNAUTHORIZED` | `UnauthorizedError` | Missing or invalid auth credentials |
+| 403 | `LINK_INVALID` | `LinkInvalidError` | External token is invalid, expired, revoked, or scope mismatch (S-0010). Message: "This link is no longer valid." |
 | 404 | `NOT_FOUND` | `NotFoundError` | Entity not found within the tenant scope |
 | 409 | `CONFLICT` | `ConflictError` | Unique constraint violation (e.g., duplicate slug or name) |
 | 429 | `RATE_LIMITED` | _(middleware)_ | Per-IP rate limit exceeded on public endpoints (S-0006) |
@@ -39,6 +40,7 @@ All API errors return a consistent JSON structure:
 AppError (base)
   ├── ValidationError   (400, VALIDATION_ERROR)
   ├── UnauthorizedError (401, UNAUTHORIZED)
+  ├── LinkInvalidError  (403, LINK_INVALID)
   ├── NotFoundError     (404, NOT_FOUND)
   └── ConflictError     (409, CONFLICT)
 ```
@@ -64,6 +66,8 @@ AppError (base)
 | Successful deletion/deactivation | 204 | No body | `DELETE /v1/services/:id` |
 | Successful upsert (update) | 200 | Updated entity | `PUT /v1/tenants/me/settings` |
 | Composite conversion | 200 | Multi-entity result | `POST /v1/requests/:id/convert` (S-0008) |
+| Send + create token | 200 | `{ quote, token, link }` | `POST /v1/quotes/:id/send` (S-0010) |
+| External token read | 200 | Quote view data | `GET /v1/ext/quotes/:token` (S-0010) |
 
 ### Conventions
 
@@ -100,18 +104,23 @@ interface AuthContext {
 
 ### Unauthenticated endpoints
 
-These endpoints skip auth:
+These endpoints skip internal auth (`requireAuth`):
 - `GET /health`
 - `POST /v1/tenants` (signup)
 - `POST /v1/public/requests/:tenantSlug` (public request form, S-0006) — rate-limited + honeypot
+- `GET /v1/ext/quotes/:token` (external quote view, S-0010) — authenticated via secure link token, not Cognito/dev auth
 
 All other routes require auth via the `requireAuth` preHandler hook.
+
+### External token-authenticated endpoints (S-0010)
+
+Routes under `/v1/ext/*` skip `requireAuth` but use `requireExternalToken` middleware instead. The middleware validates the secure link token (hash match, expiry, revocation, scope) and attaches `tenantId` from the token record. Invalid tokens return 403 `LINK_INVALID` with message "This link is no longer valid."
 
 ### Tenant scoping
 
 - Internal routes derive `tenantId` from `authContext` (never from request params)
 - Public routes (e.g., `/v1/public/*`) derive `tenantId` from URL param (e.g., `:tenantSlug` → `tenantRepo.getBySlug()`)
-- External secure-link routes (future) derive `tenantId` from the token record
+- External secure-link routes (`/v1/ext/*`, S-0010) derive `tenantId` from the token record
 - Every database query is scoped by `tenantId`
 
 ---
@@ -132,6 +141,7 @@ All other routes require auth via the `requireAuth` preHandler hook.
 - **Examples:** `/v1/services/categories`, `/v1/services`, `/v1/tenants/me/settings`
 - **`/me` convention:** used for current-tenant-scoped singletons (`/v1/tenants/me`, `/v1/users/me`, `/v1/tenants/me/settings`)
 - **Version prefix:** always `/v1/` (bump only on breaking changes)
+- **URL prefix by auth mode:** `/v1/*` for internal authenticated routes, `/v1/public/*` for fully public unauthenticated routes (e.g., public request form), `/v1/ext/*` for external token-authenticated routes (e.g., customer-facing quote view via secure link token, S-0010)
 - **Nested read-only aggregate endpoints:** `/v1/<resource>/:id/<view>` for non-CRUD queries scoped to a parent resource (e.g., `/v1/clients/:clientId/timeline` returns paginated audit events for the client and its children). Same cursor pagination as list endpoints; supports query-param filters (e.g., `?exclude=deactivated`). **Index-matching rule:** always include a `subjectType IN (...)` predicate so the composite index `(tenant_id, subject_type, subject_id, created_at)` is fully utilized — omitting it forces Postgres to scan all tenant events before filtering by subject_id.
 
 ### JSON field names

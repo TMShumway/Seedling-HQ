@@ -35,7 +35,9 @@ Examples (implemented):
 
 Examples (planned):
 - `InvoiceRepository`
-- `SecureLinkTokenRepository`
+
+Implemented (S-0010):
+- `SecureLinkTokenRepository` (`create`, `getByTokenHash`, `updateLastUsedAt`, `revokeBySubject`)
 
 Rules:
 - Ports use **domain/application types**, not DB row types.
@@ -111,9 +113,9 @@ Search:
 
 ---
 
-## 6) Secure links data model (token storage)
+## 6) Secure links data model (token storage) — Implemented in S-0010
 
-Use a table like `secure_link_tokens`:
+`secure_link_tokens` columns:
 - `tenant_id`
 - `token_hash` (unique)
 - `hash_version`
@@ -121,6 +123,8 @@ Use a table like `secure_link_tokens`:
 - `scopes`
 - `expires_at`, `revoked_at`
 - `created_at`, `last_used_at`
+
+Indexes: unique index on `token_hash`, composite index on `(tenant_id, subject_type, subject_id)`.
 
 Rules:
 - Never store plaintext token.

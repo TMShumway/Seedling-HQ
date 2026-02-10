@@ -9,7 +9,7 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 
 ## 1) Entity overview
 
-### 1.1 Implemented entities (S-0001 through S-0009)
+### 1.1 Implemented entities (S-0001 through S-0010)
 
 | Entity | Story | Tenant-scoped | Singleton | Soft delete |
 |--------|-------|---------------|-----------|-------------|
@@ -24,6 +24,7 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 | Request | S-0006 | Yes | No | No |
 | MessageOutbox | S-0007 | Yes | No | No (append-only) |
 | Quote | S-0008 | Yes | No | No |
+| SecureLinkToken | S-0010 | Yes | No | No |
 
 ### 1.2 Planned entities (future stories)
 
@@ -32,7 +33,6 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 | Job | S-0012 | Work order created from an approved quote |
 | Visit | S-0012 | Individual scheduled service visit within a job |
 | Invoice | S-0017 | Bill generated from completed work |
-| SecureLinkToken | S-0010 | Loginless access token for external pages |
 | QuoteFollowUp | S-0023 | Automated follow-up schedule for unapproved quotes (24h/72h cadence) |
 | InvoiceReminder | S-0024 | Automated reminder schedule for unpaid invoices (tenant-configurable cadence) |
 
@@ -478,7 +478,7 @@ Tenant
 
 ## 5) Audit event catalog
 
-### Implemented events (S-0001 through S-0009)
+### Implemented events (S-0001 through S-0010)
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
@@ -502,6 +502,8 @@ Tenant
 | `request.converted` | request | Request converted to client + quote draft | S-0008 |
 | `quote.created` | quote | Quote draft created (via conversion or manually) | S-0008 |
 | `quote.updated` | quote | Quote fields changed | S-0009 |
+| `quote.sent` | quote | Secure link sent to client | S-0010 |
+| `quote.viewed` | quote | Client opens secure link | S-0010 |
 
 > **Note (S-0007):** New request notifications are tracked via `message_outbox` records (not audit events). The `message.sent` audit event is planned for S-0021 when the SMS worker is implemented.
 
@@ -509,8 +511,6 @@ Tenant
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
-| `quote.sent` | quote | Secure link sent to client | S-0010 |
-| `quote.viewed` | quote | Client opens secure link | S-0010 |
 | `quote.approved` | quote | Client approves quote | S-0011 |
 | `quote.declined` | quote | Client declines quote | S-0011 |
 | `job.created` | job | Job created from approved quote | S-0012 |

@@ -19,6 +19,8 @@ const EVENT_LABELS: Record<string, string> = {
   'request.converted': 'Request converted to client',
   'quote.created': 'Quote draft created',
   'quote.updated': 'Quote updated',
+  'quote.sent': 'Quote sent',
+  'quote.viewed': 'Quote viewed',
 };
 
 export function getEventLabel(eventName: string): string {

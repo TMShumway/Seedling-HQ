@@ -7,6 +7,7 @@ import { DrizzleClientRepository } from './repositories/drizzle-client-repositor
 import { DrizzlePropertyRepository } from './repositories/drizzle-property-repository.js';
 import { DrizzleRequestRepository } from './repositories/drizzle-request-repository.js';
 import { DrizzleQuoteRepository } from './repositories/drizzle-quote-repository.js';
+import { DrizzleSecureLinkTokenRepository } from './repositories/drizzle-secure-link-token-repository.js';
 
 export class DrizzleUnitOfWork implements UnitOfWork {
   constructor(private db: Database) {}
@@ -21,6 +22,7 @@ export class DrizzleUnitOfWork implements UnitOfWork {
         propertyRepo: new DrizzlePropertyRepository(tx),
         requestRepo: new DrizzleRequestRepository(tx),
         quoteRepo: new DrizzleQuoteRepository(tx),
+        secureLinkTokenRepo: new DrizzleSecureLinkTokenRepository(tx),
       });
     });
   }

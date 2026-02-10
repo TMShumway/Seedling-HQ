@@ -10,6 +10,8 @@ export interface AppConfig {
   SMTP_HOST: string;
   SMTP_PORT: number;
   SMTP_FROM: string;
+  APP_BASE_URL: string;
+  SECURE_LINK_HMAC_SECRET: string;
 }
 
 function required(key: string): string {
@@ -37,5 +39,7 @@ export function loadConfig(): AppConfig {
     SMTP_HOST: optional('SMTP_HOST', 'localhost'),
     SMTP_PORT: parseInt(optional('SMTP_PORT', '1025'), 10),
     SMTP_FROM: optional('SMTP_FROM', 'noreply@seedling.local'),
+    APP_BASE_URL: optional('APP_BASE_URL', 'http://localhost:5173'),
+    SECURE_LINK_HMAC_SECRET: optional('SECURE_LINK_HMAC_SECRET', 'dev-secret-change-in-production'),
   };
 }

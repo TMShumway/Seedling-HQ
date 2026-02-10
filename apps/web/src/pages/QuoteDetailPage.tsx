@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Plus, User, MapPin, FileText } from 'lucide-react';
+import { ArrowLeft, Plus, User, MapPin, FileText, Send, Copy, Check, Link as LinkIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { apiClient, type UpdateQuoteRequest } from '@/lib/api-client';
+import { apiClient, type UpdateQuoteRequest, type SendQuoteResponse } from '@/lib/api-client';
 import { formatPrice, centsToDollars, dollarsToCents } from '@/lib/format';
 import { LineItemRow, type LineItemData } from '@/components/quotes/LineItemRow';
 import { ServiceItemPicker } from '@/components/quotes/ServiceItemPicker';
@@ -65,6 +65,9 @@ export function QuoteDetailPage() {
   const [tax, setTax] = useState(0); // dollars
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showSendConfirm, setShowSendConfirm] = useState(false);
+  const [sentLink, setSentLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const successTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
@@ -107,6 +110,35 @@ export function QuoteDetailPage() {
       setSuccessMessage(null);
     },
   });
+
+  const sendMutation = useMutation({
+    mutationFn: () => apiClient.sendQuote(id!),
+    onSuccess: (data: SendQuoteResponse) => {
+      queryClient.invalidateQueries({ queryKey: ['quote', id] });
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      setSentLink(data.link);
+      setSuccessMessage('Quote sent successfully! The client will receive an email with a link to view the quote.');
+      setError(null);
+      setShowSendConfirm(false);
+      successTimerRef.current = setTimeout(() => setSuccessMessage(null), 5000);
+    },
+    onError: (err: Error) => {
+      setError(err.message);
+      setSuccessMessage(null);
+      setShowSendConfirm(false);
+    },
+  });
+
+  const handleCopyLink = async () => {
+    if (!sentLink) return;
+    try {
+      await navigator.clipboard.writeText(sentLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback: select text
+    }
+  };
 
   const handleSave = () => {
     setError(null);
@@ -350,9 +382,53 @@ export function QuoteDetailPage() {
         </CardContent>
       </Card>
 
+      {/* Sent link card */}
+      {sentLink && (
+        <Card data-testid="quote-link-card">
+          <CardContent className="flex items-center gap-3 pt-6">
+            <LinkIcon className="h-5 w-5 shrink-0 text-muted-foreground" />
+            <code className="flex-1 truncate rounded bg-muted px-2 py-1 text-sm" data-testid="quote-link">
+              {sentLink}
+            </code>
+            <Button variant="outline" size="sm" onClick={handleCopyLink} data-testid="copy-link-btn">
+              {copied ? <Check className="mr-1 h-4 w-4" /> : <Copy className="mr-1 h-4 w-4" />}
+              {copied ? 'Copied' : 'Copy Link'}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Send confirmation dialog */}
+      {showSendConfirm && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="pt-6">
+            <p className="mb-3 text-sm text-blue-900">
+              Send this quote to the client? This will email them a secure link and mark the quote as sent. You will no longer be able to edit it.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={() => sendMutation.mutate()}
+                disabled={sendMutation.isPending}
+              >
+                {sendMutation.isPending ? 'Sending...' : 'Yes, Send Quote'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSendConfirm(false)}
+                disabled={sendMutation.isPending}
+              >
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Actions */}
       {isDraft && (
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
           <Button
             onClick={handleSave}
             disabled={updateMutation.isPending}
@@ -360,6 +436,17 @@ export function QuoteDetailPage() {
           >
             {updateMutation.isPending ? 'Saving...' : 'Save Quote'}
           </Button>
+          {lineItems.length > 0 && (
+            <Button
+              variant="default"
+              onClick={() => setShowSendConfirm(true)}
+              disabled={sendMutation.isPending || showSendConfirm}
+              data-testid="send-quote-btn"
+            >
+              <Send className="mr-1 h-4 w-4" />
+              Send Quote
+            </Button>
+          )}
         </div>
       )}
     </div>

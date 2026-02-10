@@ -16,11 +16,18 @@ export interface QuoteUpdatePatch {
   total?: number;
 }
 
+export interface QuoteStatusFields {
+  sentAt?: Date;
+  approvedAt?: Date;
+  declinedAt?: Date;
+}
+
 export interface QuoteRepository {
   create(quote: Omit<Quote, 'createdAt' | 'updatedAt'>): Promise<Quote>;
   getById(tenantId: string, id: string): Promise<Quote | null>;
   list(tenantId: string, filters?: ListQuotesFilters): Promise<PaginatedResult<Quote>>;
   update(tenantId: string, id: string, patch: QuoteUpdatePatch): Promise<Quote | null>;
+  updateStatus(tenantId: string, id: string, status: string, statusFields?: QuoteStatusFields, expectedStatuses?: string[]): Promise<Quote | null>;
   count(tenantId: string): Promise<number>;
   countByStatus(tenantId: string, status: string): Promise<number>;
 }

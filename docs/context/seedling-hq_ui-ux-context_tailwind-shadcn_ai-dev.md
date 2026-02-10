@@ -207,13 +207,15 @@ Internal:
   - inline line-item builder with service item picker, custom description, quantity, unit price
   - editable tax rate with auto-computed subtotal, tax, and total
   - draft-only editing (sent/approved/declined/expired quotes are read-only)
-  - send link — planned (S-0010)
+  - send link — **DONE** (S-0010): "Send Quote" button (visible when draft + has line items) → inline confirmation card → sends quote → shows copyable secure-link card
 
 External (secure link):
-- Quote view:
-  - clear summary + line items
-  - approve button (captures name)
-  - audit-friendly confirmation
+- Quote view — **DONE** (S-0010): `PublicQuoteViewPage` at `/quote/:token`
+  - business name header + "Prepared for: clientName" + property address
+  - line items table with description, qty, unit price, total columns
+  - subtotal, tax, and total summary
+  - approve button (captures name) — planned (S-0010+)
+  - audit-friendly confirmation — planned (S-0010+)
 
 ### 7.4 Scheduling / Jobs / Visits
 Internal:
@@ -341,10 +343,11 @@ When an AI agent adds UI:
 4) Form components + validation approach + error summary — **DONE** (S-0002): Input, Select, Textarea, Checkbox in `apps/web/src/components/ui/`; validation via controlled state + Zod schemas
 5) List patterns (desktop table + mobile cards) — **PARTIAL** (S-0003+): ServicesPage has category accordion + item rows (S-0003); ClientsPage has card list + search + cursor pagination (S-0004); RequestsPage has card list + search + status badges + click-through to detail (S-0006/S-0008); QuotesPage has card list + search + status filter pills + cursor pagination (S-0009)
    - Remaining: Invoices (S-0017+)
-6) External page templates — **NOT STARTED** (S-0010+):
-   - Quote view/approve
-   - Invoice view/pay
-   - Client Hub
+6) External page templates — **PARTIAL** (S-0010):
+   - Quote view — **DONE** (S-0010): `PublicQuoteViewPage` at `/quote/:token` — business name header, "Prepared for: clientName", property address, line items table, subtotal/tax/total
+   - Quote approve — planned (S-0010+)
+   - Invoice view/pay — planned (S-0017+)
+   - Client Hub — planned (future)
 
 ---
 

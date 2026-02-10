@@ -1,6 +1,6 @@
 import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { tenants, users, auditEvents, serviceCategories, serviceItems, clients, properties, requests, quotes } from './schema.js';
+import { tenants, users, auditEvents, serviceCategories, serviceItems, clients, properties, requests, quotes, secureLinkTokens } from './schema.js';
 import { sql } from 'drizzle-orm';
 
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
@@ -177,6 +177,59 @@ async function seed() {
     .onConflictDoUpdate({
       target: quotes.id,
       set: { title: 'Lawn Service for John Smith', lineItems: quoteLineItems, subtotal: quoteSubtotal, tax: quoteTax, total: quoteTotal, status: 'draft' },
+    });
+
+  // Upsert demo sent quote (linked to janeJohnson client) with secure link token
+  const DEMO_SENT_QUOTE_ID = '00000000-0000-0000-0000-000000000701';
+  const DEMO_TOKEN_ID = '00000000-0000-0000-0000-000000000800';
+  const sentQuoteLineItems = [
+    { serviceItemId: '00000000-0000-0000-0000-000000000303', description: 'Tree Trimming', quantity: 2, unitPrice: 8500, total: 17000 },
+    { serviceItemId: '00000000-0000-0000-0000-000000000304', description: 'Tree Removal', quantity: 1, unitPrice: 50000, total: 50000 },
+  ];
+  const sentQuoteSubtotal = 67000;
+  const sentQuoteTax = 5000;
+  const sentQuoteTotal = 72000;
+
+  await db
+    .insert(quotes)
+    .values({
+      id: DEMO_SENT_QUOTE_ID,
+      tenantId: DEMO_TENANT_ID,
+      requestId: null,
+      clientId: DEMO_CLIENT_IDS.janeJohnson,
+      propertyId: '00000000-0000-0000-0000-000000000501',
+      title: 'Tree Service for Jane Johnson',
+      lineItems: sentQuoteLineItems,
+      subtotal: sentQuoteSubtotal,
+      tax: sentQuoteTax,
+      total: sentQuoteTotal,
+      status: 'sent',
+      sentAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: quotes.id,
+      set: { title: 'Tree Service for Jane Johnson', lineItems: sentQuoteLineItems, subtotal: sentQuoteSubtotal, tax: sentQuoteTax, total: sentQuoteTotal, status: 'sent' },
+    });
+
+  // Known raw token: 'e2e-test-quote-token'
+  // HMAC-SHA256('dev-secret-change-in-production', 'e2e-test-quote-token')
+  const knownTokenHash = 'e30a42691c46fc9d7c346ab8296ae8049d540895f23bbb2a08658dae72eb6c22';
+  await db
+    .insert(secureLinkTokens)
+    .values({
+      id: DEMO_TOKEN_ID,
+      tenantId: DEMO_TENANT_ID,
+      tokenHash: knownTokenHash,
+      hashVersion: 'v1',
+      subjectType: 'quote',
+      subjectId: DEMO_SENT_QUOTE_ID,
+      scopes: ['quote:read'],
+      expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days
+      createdByUserId: DEMO_USER_ID,
+    })
+    .onConflictDoUpdate({
+      target: secureLinkTokens.id,
+      set: { tokenHash: knownTokenHash, subjectId: DEMO_SENT_QUOTE_ID, expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) },
     });
 
   // Insert audit events (idempotent: check first)

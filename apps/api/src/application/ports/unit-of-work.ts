@@ -5,6 +5,7 @@ import type { ClientRepository } from './client-repository.js';
 import type { PropertyRepository } from './property-repository.js';
 import type { RequestRepository } from './request-repository.js';
 import type { QuoteRepository } from './quote-repository.js';
+import type { SecureLinkTokenRepository } from './secure-link-token-repository.js';
 
 export interface TransactionRepos {
   tenantRepo: TenantRepository;
@@ -14,6 +15,7 @@ export interface TransactionRepos {
   propertyRepo: PropertyRepository;
   requestRepo: RequestRepository;
   quoteRepo: QuoteRepository;
+  secureLinkTokenRepo: SecureLinkTokenRepository;
 }
 
 export interface UnitOfWork {
