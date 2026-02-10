@@ -8,6 +8,8 @@ import type { UnitOfWork } from '../../../application/ports/unit-of-work.js';
 import type { EmailSender } from '../../../application/ports/email-sender.js';
 import type { MessageOutboxRepository } from '../../../application/ports/message-outbox-repository.js';
 import type { ClientRepository } from '../../../application/ports/client-repository.js';
+import type { PropertyRepository } from '../../../application/ports/property-repository.js';
+import { CreateStandaloneQuoteUseCase } from '../../../application/usecases/create-quote.js';
 import { UpdateQuoteUseCase } from '../../../application/usecases/update-quote.js';
 import { SendQuoteUseCase } from '../../../application/usecases/send-quote.js';
 import { NotFoundError } from '../../../shared/errors.js';
@@ -86,8 +88,10 @@ export function buildQuoteRoutes(deps: {
   emailSender: EmailSender;
   outboxRepo: MessageOutboxRepository;
   clientRepo: ClientRepository;
+  propertyRepo: PropertyRepository;
   config: AppConfig;
 }) {
+  const createUseCase = new CreateStandaloneQuoteUseCase(deps.quoteRepo, deps.clientRepo, deps.propertyRepo, deps.auditRepo);
   const updateUseCase = new UpdateQuoteUseCase(deps.quoteRepo, deps.auditRepo);
   const sendUseCase = new SendQuoteUseCase(
     deps.quoteRepo, deps.uow, deps.emailSender, deps.outboxRepo, deps.clientRepo, deps.config,
@@ -144,6 +148,35 @@ export function buildQuoteRoutes(deps: {
           ? await deps.quoteRepo.countByStatus(request.authContext.tenant_id, request.query.status)
           : await deps.quoteRepo.count(request.authContext.tenant_id);
         return { count };
+      },
+    );
+
+    // POST /v1/quotes — create standalone quote
+    typedApp.post(
+      '/v1/quotes',
+      {
+        preHandler: authMiddleware,
+        schema: {
+          body: z.object({
+            clientId: z.string().uuid(),
+            propertyId: z.string().uuid().nullish(),
+            title: z.string().min(1).max(500),
+          }),
+          response: { 201: quoteResponseSchema },
+        },
+      },
+      async (request, reply) => {
+        const result = await createUseCase.execute(
+          {
+            tenantId: request.authContext.tenant_id,
+            userId: request.authContext.user_id,
+            clientId: request.body.clientId,
+            propertyId: request.body.propertyId ?? undefined,
+            title: request.body.title,
+          },
+          request.correlationId,
+        );
+        return reply.status(201).send(serializeQuote(result.quote));
       },
     );
 

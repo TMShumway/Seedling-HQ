@@ -40,17 +40,17 @@ Quotes can currently only be created via the request-conversion flow (S-0008 `Co
 **Goal:** Wire `POST /v1/quotes` and add integration tests.
 **Files:** `apps/api/src/adapters/http/routes/quote-routes.ts`, `apps/api/src/app.ts`, `apps/api/test/integration/quote-routes.test.ts`
 
-- [ ] **2.1: Add `propertyRepo` to quote route deps**
+- [x] **2.1: Add `propertyRepo` to quote route deps**
   - Acceptance: TypeScript compiles with no errors
 
-- [ ] **2.2: Add POST /v1/quotes route**
+- [x] **2.2: Add POST /v1/quotes route**
   - Zod schema: `{ clientId: uuid, propertyId?: uuid | null, title: string min(1) max(500) }`
   - Response: 201 with serialized quote
-  - Acceptance: Route compiles and manual testing returns 201
+  - Acceptance: Route compiles
 
-- [ ] **2.3: Write integration tests (~9 tests)**
+- [x] **2.3: Write integration tests (9 tests)**
   - Happy path (with/without property), 404 client, 404 property, 400 property-client mismatch, 400 empty title, 400 missing clientId, appears in GET list, cross-tenant isolation
-  - Acceptance: All integration tests pass
+  - Acceptance: All 137 integration tests pass (9 new)
 
 ## Phase 3: Frontend
 **Goal:** New Quote button on QuotesPage, CreateQuotePage with client search.
@@ -91,18 +91,18 @@ Quotes can currently only be created via the request-conversion flow (S-0008 `Co
 
 ## Resume context
 ### Last completed
-- Phase 1: DTO + Use Case (TDD) — all 11 unit tests pass
-  - `apps/api/src/application/dto/quote-dto.ts` — added `CreateStandaloneQuoteInput`
-  - `apps/api/src/application/usecases/create-quote.ts` — new use case
-  - `apps/api/test/unit/create-quote.test.ts` — 11 unit tests
+- Phase 2: API Route + Integration Tests — all 137 integration tests pass
+  - `apps/api/src/adapters/http/routes/quote-routes.ts` — added POST /v1/quotes route + propertyRepo dep
+  - `apps/api/src/app.ts` — pass propertyRepo to buildQuoteRoutes
+  - `apps/api/test/integration/quote-routes.test.ts` — 9 new integration tests
 ### In progress
-- Starting Phase 2: API Route + Integration Tests
+- Starting Phase 3: Frontend
 ### Next up
-- Task 2.1: Add `propertyRepo` to quote route deps
+- Task 3.1: Add createQuote to api-client.ts
 ### Blockers / open questions
 - None
 
 ## Test summary
 - **Unit**: 162 total (11 new)
-- **Integration**: 128 total (0 new)
+- **Integration**: 137 total (9 new)
 - **E2E**: 88 total (0 new)
