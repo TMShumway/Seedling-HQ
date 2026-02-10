@@ -168,12 +168,9 @@ Route maps lineItems with `total: 0` placeholder — use case computes actual va
 
 3. **Convert redirect title assertion:** After changing redirect from `/clients/:id` to `/quotes/:id`, convert E2E test used `getByText('Service for Convert Test User')` but the title is in an `<Input>` element (draft quotes render editable input, not static text). Fix: use `getByTestId('quote-title-input').toHaveValue('Service for Convert Test User')`.
 
-## Resume context
-(Story complete — no resume context needed)
-
 ## Test summary
-- **Unit**: 114 total (14 new in update-quote.test.ts)
-- **Integration**: 104 total (13 new in quote-routes.test.ts)
+- **Unit**: 115 total (15 new in update-quote.test.ts)
+- **Integration**: 105 total (14 new in quote-routes.test.ts)
 - **E2E**: 70 total (8 new in quotes.spec.ts — 5 run + 3 skipped non-desktop), 48 passed + 22 skipped overall
 
 ## Commit log

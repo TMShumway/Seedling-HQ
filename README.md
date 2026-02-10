@@ -170,8 +170,8 @@ PostgreSQL 17 via Docker Compose. Schema managed by Drizzle ORM with `db:push` f
 ## Testing
 
 ```bash
-pnpm test                # 114 unit tests
-pnpm test:integration    # 104 integration tests (needs Postgres)
+pnpm test                # 115 unit tests
+pnpm test:integration    # 105 integration tests (needs Postgres)
 pnpm test:e2e            # 70 E2E tests, 48 run + 22 skipped (starts API + Web automatically)
 ```
 
