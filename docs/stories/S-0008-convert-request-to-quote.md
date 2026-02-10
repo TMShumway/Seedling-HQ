@@ -24,7 +24,7 @@
 ### Phase 3: Use case (TDD)
 - [x] Write unit tests (~13 cases)
 - [x] Implement `ConvertRequestUseCase`
-- [x] All unit tests pass (99 total)
+- [x] All unit tests pass (100 total)
 
 ### Phase 4: Route + app wiring + integration tests
 - [x] Add `POST /v1/requests/:id/convert` route

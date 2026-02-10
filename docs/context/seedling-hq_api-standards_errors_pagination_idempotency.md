@@ -71,7 +71,7 @@ AppError (base)
 - **DELETE returns 204** with no response body. The frontend `request()` function handles 204 by returning `undefined` instead of parsing JSON.
 - **PUT is full-replace** for the resource. Partial updates may use PATCH in future but are not yet implemented.
 - **POST creates a new entity** each time — it is not idempotent.
-- **Composite POST** (e.g., `POST /v1/requests/:id/convert`) returns 200 (not 201) since it modifies an existing resource and creates multiple new ones. The status gate (`new`/`reviewed` only) prevents repeated execution.
+- **Composite POST** (e.g., `POST /v1/requests/:id/convert`) returns 200 (not 201) since it modifies an existing resource and creates multiple new ones. The status gate (`new`/`reviewed` only) prevents repeated execution. A concurrent double-convert race is guarded by `updateStatus(..., expectedStatuses)` which adds `WHERE status IN (...)` to the SQL UPDATE — if another transaction already converted the request, 0 rows are updated, the transaction rolls back, and a 409 `CONFLICT` is returned.
 
 ---
 
