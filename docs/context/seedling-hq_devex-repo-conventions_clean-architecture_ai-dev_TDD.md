@@ -190,8 +190,8 @@ Prefer:
 - Reject request with 401 if token is missing, invalid, or expired.
 
 **External routes (`/v1/ext/...`) — secure-link token auth (S-0010):**
-- `buildExternalTokenMiddleware()` resolves token from URL parameter, hashes with HMAC-SHA256, looks up `secure_link_tokens` table.
-- Validates expiry and revocation; checks scope matches the route's required scope.
+- `buildExternalTokenMiddleware(requiredScope, requiredSubjectType?)` resolves token from URL parameter, hashes with HMAC-SHA256, looks up `secure_link_tokens` table.
+- Validates expiry and revocation; checks scope matches the route's required scope. When `requiredSubjectType` is provided, also verifies the referenced object exists and is not deleted.
 - Sets `request.externalAuthContext`:
   ```ts
   {
@@ -203,7 +203,7 @@ Prefer:
     object_id: string,
   }
   ```
-- Reject request with 403 `LINK_INVALID` if token is missing, invalid, expired, revoked, or wrong scope.
+- Reject request with 403 `LINK_INVALID` if token is missing, invalid, expired, revoked, wrong scope, or referenced object missing/deleted.
 
 **Public routes (`/v1/public/...`) — no auth, rate-limited (S-0006):**
 - No auth middleware; request has no `authContext`.

@@ -231,8 +231,13 @@ External pages are:
 
 **Integration tests for `/v1/ext/*` routes (Fastify inject):**
 - Test token hash validation: valid token returns 200, expired token → 403 `LINK_INVALID`, revoked token → 403 `LINK_INVALID`, wrong scope → 403 `LINK_INVALID`
+- Valid token with wrong `subjectType` (e.g., invoice token used on quote endpoint) → 403 `LINK_INVALID`
+- Valid token but referenced object no longer exists (deleted/deactivated) → 403 `LINK_INVALID`
 - Verify `request.externalAuthContext` is set correctly (tenantId, objectType, objectId, scope from token record)
 - Test object-binding: token for Quote A cannot access Quote B endpoint
+
+**Config validation unit tests:**
+- Verify that the production HMAC secret guard rejects startup when `SECURE_LINK_HMAC_SECRET` is missing or below the minimum length threshold. Test as a pure unit test against the config validation function (no Fastify boot needed).
 
 **E2E must cover:**
 - Quote view + approve flow (name capture + success state)

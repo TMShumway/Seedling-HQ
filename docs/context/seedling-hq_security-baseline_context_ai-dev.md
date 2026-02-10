@@ -147,7 +147,9 @@ For any secure-link route:
 4) Ensure token includes required scope.
 5) Record audit event + update `last_used_at`.
 
-**Implemented in S-0010:** External routes use the `/v1/ext/*` prefix with `externalAuth` middleware that validates the token hash against the DB, checks expiry and revocation, and verifies the required scope. On any failure (invalid, expired, revoked, or wrong scope) the middleware returns 403 with error code `LINK_INVALID`.
+**Implemented in S-0010:** External routes use the `/v1/ext/*` prefix with `externalAuth` middleware that validates the token hash against the DB, checks expiry and revocation, and verifies the required scope. The middleware also accepts an optional `requiredSubjectType` parameter; when provided, it validates that the token's `subject_type` matches the expected type for the endpoint (e.g., a quote-view endpoint requires `subject_type: 'quote'`). On any failure (invalid, expired, revoked, wrong scope, or wrong subject type) the middleware returns 403 with error code `LINK_INVALID`.
+
+**Object existence after token lookup:** If a token is valid but the referenced object is missing or deleted, the endpoint must return 403 `LINK_INVALID` — not 404. This prevents leaking entity existence to external principals who may be probing with tokens from other objects.
 
 ### 4.7 Error handling for external pages
 - Expired/revoked/invalid token → show a safe, generic message:
@@ -288,7 +290,15 @@ Recommended key format:
 
 Note: `COGNITO_USER_POOL_ID` and `COGNITO_CLIENT_ID` are not secrets (they are public in the JWT issuer URL and client-side config), but they are environment-specific and should be managed as config, not hardcoded.
 
-### 10.3 Rotation rules (MVP)
+### 10.3 Production validation of `SECURE_LINK_HMAC_SECRET`
+In production (`NODE_ENV=production`), `loadConfig()` enforces the following rules for `SECURE_LINK_HMAC_SECRET`:
+- Must not be missing or empty.
+- Must not equal the dev default value `dev-secret-change-in-production`.
+- Must be at least 16 characters long.
+
+The app will refuse to start if any of these conditions are violated. This prevents accidental deployment with weak or default secrets.
+
+### 10.4 Rotation rules (MVP)
 - Design secrets so they can be rotated without code changes:
   - store secret in Secrets Manager/SSM
   - cache with TTL in Lambda/worker if needed

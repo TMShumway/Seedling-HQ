@@ -28,7 +28,7 @@ All API errors return a consistent JSON structure:
 |-------------|-----------|-------|------|
 | 400 | `VALIDATION_ERROR` | `ValidationError` / Fastify validation | Request body or params fail schema validation, or use-case-level business rule violation (e.g., editing a non-draft quote) |
 | 401 | `UNAUTHORIZED` | `UnauthorizedError` | Missing or invalid auth credentials |
-| 403 | `LINK_INVALID` | `LinkInvalidError` | External token is invalid, expired, revoked, or scope mismatch (S-0010). Message: "This link is no longer valid." |
+| 403 | `LINK_INVALID` | `LinkInvalidError` | External token is invalid, expired, revoked, scope mismatch, subject_type mismatch, or referenced object missing/deleted (S-0010). All cases return the same generic message: "This link is no longer valid." |
 | 404 | `NOT_FOUND` | `NotFoundError` | Entity not found within the tenant scope |
 | 409 | `CONFLICT` | `ConflictError` | Unique constraint violation (e.g., duplicate slug or name) |
 | 429 | `RATE_LIMITED` | _(middleware)_ | Per-IP rate limit exceeded on public endpoints (S-0006) |

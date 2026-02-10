@@ -436,7 +436,7 @@ For `AUTH_MODE=local`:
 - Optional per-request overrides via `X-Dev-Tenant-Id` / `X-Dev-User-Id` headers (frontend sends from localStorage after signup)
 
 ### Secure links (required as of S-0010)
-- `SECURE_LINK_HMAC_SECRET=...` (required; HMAC key used to generate and validate token hashes; minimum 32 bytes recommended)
+- `SECURE_LINK_HMAC_SECRET=...` (required; HMAC key used to generate and validate token hashes; minimum 16 characters enforced in production (`loadConfig()` throws); 32+ bytes recommended for optimal security)
 - `APP_BASE_URL=http://localhost:5173` (required; base URL for constructing secure link URLs sent to external customers)
 - `SECURE_LINK_TOKEN_TTL_SECONDS=604800` (7 days default; adjust per type)
 - optional: `SECURE_LINK_ROTATION_SALT=...` (if you want a versioned hash scheme)
