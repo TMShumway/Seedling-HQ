@@ -1,9 +1,9 @@
-# S-0051: Rain Delay Bulk Reschedule
+# S-0056: Rain Delay Bulk Reschedule
 
 **Status:** Post-MVP (not scheduled)
 **Priority:** P2 — operational efficiency
 **Epic:** E-0021 (Weather Integration)
-**Depends on:** S-0050 (Weather on calendar), S-0013 (Calendar)
+**Depends on:** S-0055 (Weather on calendar), S-0013 (Calendar)
 
 ## Context
 
@@ -19,8 +19,8 @@ Allow dispatchers to bulk reschedule visits affected by weather (or other reason
 - Bulk select: check individual visits or "Select All" — choose target date (suggest next dry day from forecast)
 - Smart reschedule: auto-suggest the next available slot based on tech availability and weather forecast
 - Reschedule reasons: rain, snow, extreme heat, equipment breakdown, other (tracked for analytics)
-- Notifications: auto-send reschedule notifications to affected clients (uses templates from S-0038)
-- Recurring service awareness: if the visit is part of a recurring agreement (S-0027), adjust the cadence or add a makeup visit
+- Notifications: auto-send reschedule notifications to affected clients (uses templates from S-0043)
+- Recurring service awareness: if the visit is part of a recurring agreement (S-0032), adjust the cadence or add a makeup visit
 - Audit trail: log bulk reschedule action with count and reason
 
 ## Open questions

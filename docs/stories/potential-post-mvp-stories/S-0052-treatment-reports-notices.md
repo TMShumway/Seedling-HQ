@@ -1,9 +1,9 @@
-# S-0047: Treatment Reports + Customer Notices
+# S-0052: Treatment Reports + Customer Notices
 
 **Status:** Post-MVP (not scheduled)
 **Priority:** P2 — regulatory compliance
 **Epic:** E-0019 (Chemical/Treatment Compliance)
-**Depends on:** S-0046 (Treatment record logging)
+**Depends on:** S-0051 (Treatment record logging)
 
 ## Context
 
@@ -23,9 +23,9 @@ Generate and deliver customer treatment notices and compliance reports from trea
   - Monthly/quarterly treatment summary: all applications grouped by property, product, and applicator
   - Product usage report: total volume of each product used in a period
   - Applicator log: all treatments by a specific applicator (for license audits)
-- Reports accessible from Reports nav section (alongside revenue reports from S-0033)
+- Reports accessible from Reports nav section (alongside revenue reports from S-0038)
 - Export: PDF and CSV formats for state submission
-- Client Hub integration: treatment records visible in service history (S-0044) if the client hub is implemented
+- Client Hub integration: treatment records visible in service history (S-0049) if the client hub is implemented
 
 ## Open questions
 

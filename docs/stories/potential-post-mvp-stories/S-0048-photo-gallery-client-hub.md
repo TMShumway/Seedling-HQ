@@ -1,4 +1,4 @@
-# S-0043: Before/After Photo Gallery on Client Hub
+# S-0048: Before/After Photo Gallery on Client Hub
 
 **Status:** Post-MVP (not scheduled)
 **Priority:** P1 — showcases work quality to clients

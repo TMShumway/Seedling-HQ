@@ -1,4 +1,4 @@
-# S-0053: Material Cost Tracking per Job
+# S-0058: Material Cost Tracking per Job
 
 **Status:** Post-MVP (not scheduled)
 **Priority:** P2 — enables job profitability analysis
@@ -7,7 +7,7 @@
 
 ## Context
 
-Landscaping jobs often involve material costs (mulch, soil, plants, pavers, irrigation parts) in addition to labor. For profitability analysis (S-0035), the business needs to track material costs per job. Currently there's no way to record what materials were used and at what cost.
+Landscaping jobs often involve material costs (mulch, soil, plants, pavers, irrigation parts) in addition to labor. For profitability analysis (S-0040), the business needs to track material costs per job. Currently there's no way to record what materials were used and at what cost.
 
 ## Goal
 
@@ -20,7 +20,7 @@ Allow tracking of material costs against jobs for cost analysis and profitabilit
 - Receipt photo: optional photo upload of receipt (S3 presigned URL, same pattern as visit photos)
 - Materials summary on job: total material cost, displayed alongside labor cost for profitability view
 - Common materials library (optional): tenant-level `materials` table with common items + default prices, for quick add
-- Report integration: material costs feed into job profitability reports (S-0035)
+- Report integration: material costs feed into job profitability reports (S-0040)
 - Visit-level materials (optional): assign materials to specific visits within a job
 
 ## Open questions

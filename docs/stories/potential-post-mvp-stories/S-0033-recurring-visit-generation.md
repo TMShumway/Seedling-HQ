@@ -1,9 +1,9 @@
-# S-0028: Recurring Visit Auto-Generation
+# S-0033: Recurring Visit Auto-Generation
 
 **Status**: Post-MVP (not scheduled)
 **Priority**: P0 — core recurring services functionality
 **Epic**: E-0012 (Recurring Services)
-**Depends on**: S-0027 (Service agreement entity)
+**Depends on**: S-0032 (Service agreement entity)
 
 ---
 
@@ -92,4 +92,4 @@ For each active agreement:
 
 ## Why P0
 
-Without automated visit generation, service agreements are just static records. This story is what transforms an agreement into actual scheduled work. It is the core automation loop for recurring services and directly enables the recurring invoicing in S-0029.
+Without automated visit generation, service agreements are just static records. This story is what transforms an agreement into actual scheduled work. It is the core automation loop for recurring services and directly enables the recurring invoicing in S-0034.

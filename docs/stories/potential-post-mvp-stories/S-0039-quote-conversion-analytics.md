@@ -1,4 +1,4 @@
-# S-0034: Quote Conversion + Pipeline Analytics
+# S-0039: Quote Conversion + Pipeline Analytics
 
 **Status:** Post-MVP (not scheduled)
 **Priority:** P1 — helps optimize sales process
