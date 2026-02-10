@@ -11,6 +11,8 @@ import { ClientDetailPage } from '@/pages/ClientDetailPage';
 import { RequestsPage } from '@/pages/RequestsPage';
 import { RequestDetailPage } from '@/pages/RequestDetailPage';
 import { ConvertRequestPage } from '@/pages/ConvertRequestPage';
+import { QuotesPage } from '@/pages/QuotesPage';
+import { QuoteDetailPage } from '@/pages/QuoteDetailPage';
 import { PublicRequestPage } from '@/pages/PublicRequestPage';
 import { RequestSuccessPage } from '@/pages/RequestSuccessPage';
 
@@ -37,6 +39,8 @@ export function App() {
             <Route path="/requests" element={<RequestsPage />} />
             <Route path="/requests/:id" element={<RequestDetailPage />} />
             <Route path="/requests/:id/convert" element={<ConvertRequestPage />} />
+            <Route path="/quotes" element={<QuotesPage />} />
+            <Route path="/quotes/:id" element={<QuoteDetailPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
