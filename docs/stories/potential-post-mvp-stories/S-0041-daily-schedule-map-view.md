@@ -1,4 +1,4 @@
-# S-0036: Daily Schedule Map View
+# S-0041: Daily Schedule Map View
 
 Status: Post-MVP (not scheduled)
 Priority: P1 — essential for daily field operations

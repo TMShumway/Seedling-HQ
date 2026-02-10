@@ -1,9 +1,9 @@
-# S-0055: Automated Review Request Campaigns
+# S-0060: Automated Review Request Campaigns
 
 **Status:** Post-MVP (not scheduled)
 **Priority:** P2 — growth through reputation
 **Epic:** E-0023 (Reputation Management)
-**Depends on:** S-0054 (Satisfaction survey)
+**Depends on:** S-0059 (Satisfaction survey)
 
 ## Context
 

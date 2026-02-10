@@ -1,4 +1,4 @@
-# S-0044: Service History + Document Access
+# S-0049: Service History + Document Access
 
 **Status:** Post-MVP (not scheduled)
 **Priority:** P2 — enhances client self-service
@@ -17,13 +17,13 @@ Provide a comprehensive service history and document access section in the Clien
 
 - Service History tab on Client Hub:
   - Chronological list of completed visits: date, service description, tech name, duration, notes
-  - Click to expand: full visit details, line items, photos (if S-0043 done)
+  - Click to expand: full visit details, line items, photos (if S-0048 done)
   - Filter by property (if client has multiple), date range, service type
   - Summary stats: "12 visits this year", "Total spent: $4,800"
 - Documents section:
   - List of past quotes (approved) and invoices (paid + outstanding)
   - Click to view/download as PDF
-  - Service agreements (if S-0027 done) with current status
+  - Service agreements (if S-0032 done) with current status
 - Invoice payment history: date paid, amount, payment method
 - Year-end summary: annual spending summary for tax purposes
 
@@ -31,6 +31,6 @@ Provide a comprehensive service history and document access section in the Clien
 
 - [ ] How far back should history go? All time or configurable?
 - [ ] PDF generation: server-side (Puppeteer/wkhtmltopdf) or client-side (jsPDF)?
-- [ ] Should chemical treatment records (S-0046) appear here for compliance?
+- [ ] Should chemical treatment records (S-0051) appear here for compliance?
 - [ ] Can clients export their data (GDPR-style data portability)?
 - [ ] Should there be a "notes to my service provider" section (client -> owner messaging)?

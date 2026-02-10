@@ -1,9 +1,9 @@
-# S-0037: Route Optimization + Reordering
+# S-0042: Route Optimization + Reordering
 
 Status: Post-MVP (not scheduled)
 Priority: P2 — differentiator feature
 Epic: E-0015 (Route Planning + Maps)
-Depends on: S-0036 (Map view)
+Depends on: S-0041 (Map view)
 
 Context: Once visits are on a map, the natural next step is optimizing the route — minimizing drive time between stops. This is the Traveling Salesman Problem (TSP), and even an approximate solution saves significant time and fuel costs. Most field service competitors offer some form of route optimization.
 

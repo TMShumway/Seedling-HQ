@@ -1,4 +1,4 @@
-# S-0052: Equipment Inventory + Maintenance Tracking
+# S-0057: Equipment Inventory + Maintenance Tracking
 
 **Status:** Post-MVP (not scheduled)
 **Priority:** P2 — asset management for growing businesses
@@ -21,7 +21,7 @@ Track equipment inventory with assignment to crews/trucks and maintenance schedu
 - Equipment detail page: info, maintenance history, upcoming maintenance
 - Maintenance reminders: daily check for equipment where next_due_at <= now + 7 days, create notification
 - Dashboard widget: "Equipment maintenance due" count
-- Assign to crew: drag/drop or dropdown to assign equipment to crews (S-0032)
+- Assign to crew: drag/drop or dropdown to assign equipment to crews (S-0037)
 
 ## Open questions
 
@@ -29,4 +29,4 @@ Track equipment inventory with assignment to crews/trucks and maintenance schedu
 - [ ] GPS tracking integration for trucks/trailers (hardware dependency)?
 - [ ] Depreciation tracking for accounting purposes?
 - [ ] Equipment checkout/checkin flow (who has the chainsaw today)?
-- [ ] Should equipment costs be factored into job profitability (S-0035)?
+- [ ] Should equipment costs be factored into job profitability (S-0040)?

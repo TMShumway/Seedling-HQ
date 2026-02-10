@@ -1,4 +1,4 @@
-# S-0045: Client Self-Service Booking from Hub
+# S-0050: Client Self-Service Booking from Hub
 
 **Status:** Post-MVP (not scheduled)
 **Priority:** P2 — reduces phone calls, increases bookings

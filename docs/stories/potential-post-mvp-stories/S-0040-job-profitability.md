@@ -1,4 +1,4 @@
-# S-0035: Job Profitability Reports
+# S-0040: Job Profitability Reports
 
 **Status:** Post-MVP (not scheduled)
 **Priority:** P1 — key business insight
@@ -24,7 +24,7 @@ Provide job-level and service-level profitability analysis comparing revenue aga
   - Trend: is profitability improving or declining over time?
 - Cost inputs (may need new fields):
   - Labor: visit duration (already captured in completion) x tech hourly rate (new field on user or crew)
-  - Materials: per-job material cost entry (see S-0053) or estimated from quote line items
+  - Materials: per-job material cost entry (see S-0058) or estimated from quote line items
 - API: `GET /v1/reports/profitability?from=&to=`
 - For MVP of this story: use visit duration x a configurable default labor rate; material costs can be manual entry per job
 - Gross margin = revenue - labor cost - material cost

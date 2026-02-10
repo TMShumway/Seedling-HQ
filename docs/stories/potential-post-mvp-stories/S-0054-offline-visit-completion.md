@@ -1,9 +1,9 @@
-# S-0049: Offline Visit Completion + Sync Queue
+# S-0054: Offline Visit Completion + Sync Queue
 
 **Status:** Post-MVP (not scheduled)
 **Priority:** P2 — critical for field reliability
 **Epic:** E-0020 (PWA + Offline Support)
-**Depends on:** S-0048 (PWA manifest), S-0016 (Job completion)
+**Depends on:** S-0053 (PWA manifest), S-0016 (Job completion)
 
 ## Context
 
