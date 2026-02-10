@@ -59,6 +59,6 @@ Add "Approve" and "Decline" buttons to the public quote view page so clients can
 Story complete. All phases implemented and tested.
 
 ## Test summary
-- **Unit**: 149 total (12 new)
+- **Unit**: 151 total (14 new)
 - **Integration**: 128 total (10 new)
 - **E2E**: 88 total (58 run + 30 skipped), 8 new (4 desktop + 4 mobile-skipped)
