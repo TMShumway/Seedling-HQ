@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiClient, ApiClientError } from '@/lib/api-client';
 import { formatPrice } from '@/lib/format';
@@ -8,12 +10,48 @@ import { formatPrice } from '@/lib/format';
 export function PublicQuoteViewPage() {
   const { token } = useParams<{ token: string }>();
 
+  const [respondStatus, setRespondStatus] = useState<'idle' | 'loading' | 'success'>('idle');
+  const [respondAction, setRespondAction] = useState<'approve' | 'decline' | null>(null);
+  const [showDeclineConfirm, setShowDeclineConfirm] = useState(false);
+  const [respondError, setRespondError] = useState<string | null>(null);
+
   const quoteQuery = useQuery({
     queryKey: ['public-quote', token],
     queryFn: () => apiClient.getPublicQuote(token!),
     enabled: !!token,
     retry: false,
   });
+
+  const handleApprove = async () => {
+    if (!token) return;
+    setRespondStatus('loading');
+    setRespondAction('approve');
+    setRespondError(null);
+    try {
+      await apiClient.approveQuote(token);
+      setRespondStatus('success');
+    } catch (err) {
+      setRespondStatus('idle');
+      setRespondAction(null);
+      setRespondError(err instanceof Error ? err.message : 'Something went wrong.');
+    }
+  };
+
+  const handleDecline = async () => {
+    if (!token) return;
+    setRespondStatus('loading');
+    setRespondAction('decline');
+    setRespondError(null);
+    setShowDeclineConfirm(false);
+    try {
+      await apiClient.declineQuote(token);
+      setRespondStatus('success');
+    } catch (err) {
+      setRespondStatus('idle');
+      setRespondAction(null);
+      setRespondError(err instanceof Error ? err.message : 'Something went wrong.');
+    }
+  };
 
   if (quoteQuery.isLoading) {
     return (
@@ -49,6 +87,13 @@ export function PublicQuoteViewPage() {
   const data = quoteQuery.data!;
   const { quote } = data;
 
+  // Determine which banner to show
+  const showApprovedBanner = respondStatus === 'success' && respondAction === 'approve';
+  const showDeclinedBanner = respondStatus === 'success' && respondAction === 'decline';
+  const alreadyApproved = quote.status === 'approved' && respondStatus !== 'success';
+  const alreadyDeclined = quote.status === 'declined' && respondStatus !== 'success';
+  const canRespond = quote.status === 'sent' && respondStatus !== 'success';
+
   return (
     <div className="flex min-h-screen justify-center px-4 py-12" data-testid="public-quote-view">
       <div className="w-full max-w-2xl space-y-6">
@@ -56,6 +101,34 @@ export function PublicQuoteViewPage() {
         <div className="text-center">
           <h1 className="text-2xl font-bold">{data.businessName}</h1>
         </div>
+
+        {/* Status banners */}
+        {showApprovedBanner && (
+          <div className="rounded-md border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-800" data-testid="quote-response-status">
+            Quote approved! The business has been notified.
+          </div>
+        )}
+        {showDeclinedBanner && (
+          <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800" data-testid="quote-response-status">
+            Quote declined. The business has been notified.
+          </div>
+        )}
+        {alreadyApproved && (
+          <div className="rounded-md border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-800" data-testid="quote-response-status">
+            You approved this quote on {new Date(quote.approvedAt!).toLocaleDateString()}.
+          </div>
+        )}
+        {alreadyDeclined && (
+          <div className="rounded-md border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-700" data-testid="quote-response-status">
+            This quote was declined on {new Date(quote.declinedAt!).toLocaleDateString()}.
+          </div>
+        )}
+
+        {respondError && (
+          <div className="rounded-md border border-red-300 bg-red-50 px-4 py-2 text-sm text-red-800">
+            {respondError}
+          </div>
+        )}
 
         {/* Quote info */}
         <Card>
@@ -116,6 +189,59 @@ export function PublicQuoteViewPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Action buttons */}
+        {canRespond && !showDeclineConfirm && (
+          <div className="flex justify-center gap-3">
+            <Button
+              onClick={handleApprove}
+              disabled={respondStatus === 'loading'}
+              className="bg-green-600 hover:bg-green-700"
+              data-testid="approve-quote-btn"
+            >
+              {respondStatus === 'loading' && respondAction === 'approve' ? 'Approving...' : 'Approve Quote'}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeclineConfirm(true)}
+              disabled={respondStatus === 'loading'}
+              className="border-red-300 text-red-600 hover:bg-red-50"
+              data-testid="decline-quote-btn"
+            >
+              Decline Quote
+            </Button>
+          </div>
+        )}
+
+        {/* Decline confirmation */}
+        {showDeclineConfirm && (
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="pt-6">
+              <p className="mb-3 text-sm text-red-900">
+                Are you sure you want to decline this quote?
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={handleDecline}
+                  disabled={respondStatus === 'loading'}
+                  data-testid="decline-confirm-btn"
+                >
+                  {respondStatus === 'loading' && respondAction === 'decline' ? 'Declining...' : 'Decline'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDeclineConfirm(false)}
+                  disabled={respondStatus === 'loading'}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Footer */}
         {quote.sentAt && (

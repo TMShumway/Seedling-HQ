@@ -41,9 +41,9 @@ Add "Approve" and "Decline" buttons to the public quote view page so clients can
 **Goal:** Approve/decline buttons on public view, timestamps on internal detail.
 **Files:** `api-client.ts` (modify), `PublicQuoteViewPage.tsx` (modify), `QuoteDetailPage.tsx` (modify)
 
-- [ ] **3.1: Add API client methods**
-- [ ] **3.2: Update PublicQuoteViewPage**
-- [ ] **3.3: Update QuoteDetailPage timestamps**
+- [x] **3.1: Add API client methods**
+- [x] **3.2: Update PublicQuoteViewPage**
+- [x] **3.3: Update QuoteDetailPage timestamps**
 
 ## Phase 4: Seed Data + E2E Tests + Docs
 **Goal:** Update seed, write E2E tests, update all docs.
@@ -57,16 +57,14 @@ Add "Approve" and "Decline" buttons to the public quote view page so clients can
 
 ## Resume context
 ### Last completed
-- Phase 2: API Routes + Integration Tests — all 5 tasks complete
-  - Token scopes updated from `['quote:read']` to `['quote:read', 'quote:respond']`
-  - `external-quote-routes.ts` expanded with POST /approve and /decline routes + respondMiddleware
-  - `app.ts` wired with `userRepo`, `outboxRepo`, `emailSender` for external routes
-  - GET response now includes `approvedAt`/`declinedAt`
-  - 10 new integration tests (all passing, 128 total)
+- Phase 3: Frontend — all 3 tasks complete
+  - `api-client.ts`: Added `QuoteRespondResponse` type, `approveQuote()`/`declineQuote()` methods, `approvedAt`/`declinedAt` to `PublicQuoteViewResponse`
+  - `PublicQuoteViewPage.tsx`: Added approve/decline buttons, decline confirmation dialog, success/already-responded banners, loading/error states
+  - `QuoteDetailPage.tsx`: Added approved/declined timestamp display below status badge
 ### In progress
-- Starting Phase 3
+- Starting Phase 4
 ### Next up
-- Task 3.1: Add API client methods
+- Task 4.1: Update seed data
 ### Blockers / open questions
 - None
 
