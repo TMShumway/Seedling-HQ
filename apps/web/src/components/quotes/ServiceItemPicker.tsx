@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiClient, type ServiceCategoryResponse, type ServiceItemResponse } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
 import type { LineItemData } from './LineItemRow';
 
 interface ServiceItemPickerProps {

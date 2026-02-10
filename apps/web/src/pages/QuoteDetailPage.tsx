@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Plus, User, MapPin, FileText } from 'lucide-react';
@@ -65,6 +65,13 @@ export function QuoteDetailPage() {
   const [tax, setTax] = useState(0); // dollars
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const successTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    };
+  }, []);
 
   // Initialize form when quote loads
   useEffect(() => {
@@ -93,7 +100,7 @@ export function QuoteDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       setSuccessMessage('Quote saved successfully.');
       setError(null);
-      setTimeout(() => setSuccessMessage(null), 3000);
+      successTimerRef.current = setTimeout(() => setSuccessMessage(null), 3000);
     },
     onError: (err: Error) => {
       setError(err.message);
