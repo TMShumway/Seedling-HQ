@@ -47,7 +47,15 @@ function makeUnitOfWork(
   auditRepo: AuditEventRepository,
 ): UnitOfWork {
   return {
-    run: async (fn) => fn({ tenantRepo, userRepo, auditRepo }),
+    run: async (fn) => fn({
+      tenantRepo,
+      userRepo,
+      auditRepo,
+      clientRepo: {} as any,
+      propertyRepo: {} as any,
+      requestRepo: {} as any,
+      quoteRepo: {} as any,
+    }),
   };
 }
 

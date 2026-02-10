@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { FileText, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -36,11 +37,15 @@ function formatRelativeTime(dateStr: string): string {
   return date.toLocaleDateString();
 }
 
-function RequestCard({ req }: { req: RequestResponse }) {
+function RequestCard({ req, onClick }: { req: RequestResponse; onClick: () => void }) {
   return (
     <div
-      className="rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-md"
+      className="cursor-pointer rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-md"
       data-testid="request-card"
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
@@ -62,6 +67,7 @@ function RequestCard({ req }: { req: RequestResponse }) {
 }
 
 export function RequestsPage() {
+  const navigate = useNavigate();
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -145,7 +151,7 @@ export function RequestsPage() {
       ) : (
         <div className="space-y-3">
           {allRequests.map((req) => (
-            <RequestCard key={req.id} req={req} />
+            <RequestCard key={req.id} req={req} onClick={() => navigate(`/requests/${req.id}`)} />
           ))}
         </div>
       )}

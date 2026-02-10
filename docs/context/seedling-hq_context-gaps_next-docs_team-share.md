@@ -44,8 +44,8 @@ Seedling-HQ currently has ten context packs:
    - Secure-link token storage, outbox data model, S3 keying rules
 
 9) **Domain model + status machines + audit catalog**
-   - Implemented entity definitions (through S-0007) and planned entity definitions with status machines
-   - Audit event catalog (17 implemented + 15 planned), entity relationships
+   - Implemented entity definitions (through S-0008) and planned entity definitions with status machines
+   - Audit event catalog (19 implemented + 15 planned), entity relationships
 
 10) **API standards (errors, pagination, idempotency)**
     - Error shape and codes, response conventions, auth context contract
@@ -61,6 +61,7 @@ This foundation is strong. What remains are the "rails" that prevent agents (and
 - **S-0005 implemented (2026-02-09):** Client timeline with tab layout. Reuses `audit_events` table with composite index `(tenant_id, subject_type, subject_id, created_at)`. Tab layout with ARIA roles on client detail page (Info / Properties / Activity). `getEventLabel()` maps event names to human-readable labels.
 - **S-0006 implemented (2026-02-09):** Public request form. `POST /v1/public/requests/:tenantSlug` with honeypot spam protection and in-memory sliding-window rate limiter. Request status machine: `new` → `reviewed` → `converted` / `declined`. Tenant resolution via slug. System audit principal for public actions.
 - **S-0007 implemented (2026-02-09):** New request notifications. First outbound comms story. Introduces `message_outbox` table and `MessageOutbox` entity. Email sent immediately via Nodemailer (Mailpit locally), SMS records queued for S-0021 worker. `SendRequestNotificationUseCase` is best-effort (wraps all logic in try/catch, never throws). Config toggle: `NOTIFICATION_ENABLED`. 86 unit, 84 integration, 39 E2E tests passing.
+- **S-0008 implemented (2026-02-09):** Convert request to client + quote draft. First cross-entity atomic operation. Introduces `quotes` table and `Quote` entity with `QuoteRepository`. Extends `TransactionRepos` to 7 repos. `ConvertRequestUseCase` atomically creates client + property + quote draft + updates request status inside `uow.run()`. Status gate: only `new`/`reviewed` requests convertible. Frontend: `RequestDetailPage`, `ConvertRequestPage` with name splitting and existing-client email search. 99 unit, 91 integration, 43 E2E tests passing.
 
 ---
 
@@ -68,7 +69,7 @@ This foundation is strong. What remains are the "rails" that prevent agents (and
 
 ### ~~1) Domain model + canonical status/state machines~~ — DONE
 > Covered by: `seedling-hq_domain-model_status-machines_audit-catalog.md`
-> Defines all implemented entities (Tenant, User, BusinessSettings, ServiceCategory, ServiceItem) with full field lists, planned entities with status machines (Request, Quote, Job, Visit, Invoice), audit event catalog (16 implemented + 15 planned), entity relationships, and source-of-truth rules.
+> Defines all implemented entities (Tenant, User, BusinessSettings, ServiceCategory, ServiceItem, Client, Property, Request, MessageOutbox, Quote) with full field lists, planned entities with status machines (Job, Visit, Invoice), audit event catalog (19 implemented + 15 planned), entity relationships, and source-of-truth rules.
 
 ### ~~2) API standards and conventions (behavioral contract)~~ — DONE
 > Covered by: `seedling-hq_api-standards_errors_pagination_idempotency.md`

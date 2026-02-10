@@ -182,12 +182,14 @@ Use these shadcn/ui components (or equivalents) consistently:
 
 ### 7.1 Requests (lead intake)
 Internal:
-- Requests list with status + quick actions
-- Request detail with “Convert to client + quote draft” CTA
+- Requests list with status badges + click-through to detail — **DONE** (S-0006)
+- Request detail page with contact info, description, timestamps, status badge — **DONE** (S-0008)
+- "Convert to Client" button (visible when status `new`/`reviewed`) → conversion form — **DONE** (S-0008)
+- Conversion form: pre-fills name/email/phone from request, existing client match via email search, property address, quote title — **DONE** (S-0008)
 
 External:
-- Public request form (minimal, clear)
-- Confirmation page
+- Public request form (minimal, clear) — **DONE** (S-0006)
+- Confirmation page — **DONE** (S-0006)
 
 ### 7.2 Clients (CRM)
 - Clients list: search by name/phone/email, cursor-based pagination with "Load More"
@@ -336,7 +338,7 @@ When an AI agent adds UI:
 2) Page header component pattern (title + actions) — **DONE** (S-0001/S-0002): consistent pattern in DashboardPage, SettingsPage, ServicesPage
 3) Badge/status system — **PARTIAL** (S-0006): `StatusBadge` implemented in RequestsPage (new=amber, reviewed=blue, converted=green, declined=gray); extend for Quote/Job/Invoice statuses (S-0009+)
 4) Form components + validation approach + error summary — **DONE** (S-0002): Input, Select, Textarea, Checkbox in `apps/web/src/components/ui/`; validation via controlled state + Zod schemas
-5) List patterns (desktop table + mobile cards) — **PARTIAL** (S-0003+): ServicesPage has category accordion + item rows (S-0003); ClientsPage has card list + search + cursor pagination (S-0004); RequestsPage has card list + search + status badges (S-0006)
+5) List patterns (desktop table + mobile cards) — **PARTIAL** (S-0003+): ServicesPage has category accordion + item rows (S-0003); ClientsPage has card list + search + cursor pagination (S-0004); RequestsPage has card list + search + status badges + click-through to detail (S-0006/S-0008)
    - Remaining: Quotes, Invoices (S-0009+)
 6) External page templates — **NOT STARTED** (S-0010+):
    - Quote view/approve

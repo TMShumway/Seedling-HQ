@@ -3,7 +3,7 @@
 _Last updated: 2026-02-09 (America/Chihuahua)_
 
 > Purpose: Define consistent API behavior so agents and humans build endpoints the same way.
-> This doc captures conventions established in S-0001 through S-0006 and defines standards for future stories.
+> This doc captures conventions established in S-0001 through S-0008 and defines standards for future stories.
 
 ---
 
@@ -63,6 +63,7 @@ AppError (base)
 | Successful creation | 201 | Created entity | `POST /v1/tenants` |
 | Successful deletion/deactivation | 204 | No body | `DELETE /v1/services/:id` |
 | Successful upsert (update) | 200 | Updated entity | `PUT /v1/tenants/me/settings` |
+| Composite conversion | 200 | Multi-entity result | `POST /v1/requests/:id/convert` (S-0008) |
 
 ### Conventions
 
@@ -70,6 +71,7 @@ AppError (base)
 - **DELETE returns 204** with no response body. The frontend `request()` function handles 204 by returning `undefined` instead of parsing JSON.
 - **PUT is full-replace** for the resource. Partial updates may use PATCH in future but are not yet implemented.
 - **POST creates a new entity** each time — it is not idempotent.
+- **Composite POST** (e.g., `POST /v1/requests/:id/convert`) returns 200 (not 201) since it modifies an existing resource and creates multiple new ones. The status gate (`new`/`reviewed` only) prevents repeated execution.
 
 ---
 
@@ -189,7 +191,7 @@ GET /v1/clients?limit=50&cursor=<opaque_string>
 
 ## 6) Filtering conventions
 
-### Established patterns (S-0003 through S-0006)
+### Established patterns (S-0003 through S-0008)
 
 | Parameter | Type | Description | Example |
 |-----------|------|-------------|---------|
@@ -198,6 +200,7 @@ GET /v1/clients?limit=50&cursor=<opaque_string>
 | `search` | string | ILIKE search across multiple columns | `?search=smith` |
 | `limit` | number | Page size for cursor pagination | `?limit=25` |
 | `cursor` | string | Opaque cursor from previous page | `?cursor=eyJpZCI6...` |
+| `status` | string | Filter by status (e.g., requests count) | `?status=new` |
 
 ### Future conventions
 

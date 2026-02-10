@@ -116,6 +116,7 @@ Seedling-HQ/
 | GET | `/v1/requests` | Required | List requests (paginated, searchable, `?status=`) |
 | GET | `/v1/requests/count` | Required | Count requests (`?status=new`) |
 | GET | `/v1/requests/:id` | Required | Get request |
+| POST | `/v1/requests/:id/convert` | Required | Convert request to client + property + quote draft |
 
 ## Architecture
 
@@ -147,7 +148,7 @@ The demo seed creates:
 
 PostgreSQL 17 via Docker Compose. Schema managed by Drizzle ORM with `db:push` for local dev.
 
-**Tables (S-0001 through S-0007):**
+**Tables (S-0001 through S-0008):**
 - `tenants` — id, slug (unique), name, status, timestamps
 - `users` — id, tenant_id (FK), email, full_name, role, status, timestamps
 - `audit_events` — id, tenant_id (FK), event_name, principal/subject info, correlation_id, created_at; indexes on `(tenant_id, created_at)` and `(tenant_id, subject_type, subject_id, created_at)`
@@ -158,13 +159,14 @@ PostgreSQL 17 via Docker Compose. Schema managed by Drizzle ORM with `db:push` f
 - `properties` — id, tenant_id (FK), client_id (FK), address fields, notes, active, timestamps; unique (tenant_id, client_id, address_line1)
 - `requests` — id, tenant_id (FK), source, client_name, client_email, client_phone, description, status, assigned_user_id, timestamps; indexes on `(tenant_id, created_at)` and `(tenant_id, status)`
 - `message_outbox` — id, tenant_id (FK), type, recipient_id, recipient_type, channel, subject, body, status, provider, provider_message_id, attempt_count, last_error_code, last_error_message, correlation_id, scheduled_for, created_at, sent_at; indexes on `(tenant_id, created_at)` and `(status, created_at)`
+- `quotes` — id, tenant_id (FK), request_id (FK, nullable), client_id (FK), property_id (FK, nullable), title, line_items (JSONB), subtotal, tax, total, status (default 'draft'), sent_at, approved_at, declined_at, timestamps; indexes on `(tenant_id)`, `(client_id)`, `(request_id)`, `(tenant_id, status)`
 
 ## Testing
 
 ```bash
-pnpm test                # 86 unit tests
-pnpm test:integration    # 84 integration tests (needs Postgres)
-pnpm test:e2e            # 56 E2E tests, 39 run + 17 skipped (starts API + Web automatically)
+pnpm test                # 99 unit tests
+pnpm test:integration    # 91 integration tests (needs Postgres)
+pnpm test:e2e            # 60 E2E tests, 43 run + 17 skipped (starts API + Web automatically)
 ```
 
 Integration tests truncate tables between runs. E2E tests re-seed the database via `globalSetup` before each run.
