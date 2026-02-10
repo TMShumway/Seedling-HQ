@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 const KNOWN_RAW_TOKEN = 'e2e-test-quote-token';
+const KNOWN_RAW_TOKEN_2 = 'e2e-test-quote-token-2';
 
 test.describe('Send Quote', () => {
   test('sends draft quote and shows link card', async ({ page }, testInfo) => {
@@ -81,6 +82,71 @@ test.describe('Public Quote View', () => {
     // Should show error message
     await expect(page.getByText('This link is no longer valid.')).toBeVisible();
     await expect(page.getByText('Please contact the business for an updated link.')).toBeVisible();
+  });
+});
+
+test.describe('Quote Approve/Decline', () => {
+  test('sent quote shows Approve and Decline buttons', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-chrome', 'Uses seeded token data');
+
+    await page.goto(`/quote/${KNOWN_RAW_TOKEN}`);
+    await expect(page.getByTestId('public-quote-view')).toBeVisible({ timeout: 10000 });
+
+    await expect(page.getByTestId('approve-quote-btn')).toBeVisible();
+    await expect(page.getByTestId('decline-quote-btn')).toBeVisible();
+  });
+
+  test('approve quote shows success banner', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-chrome', 'Stateful test — approves seeded quote');
+
+    await page.goto(`/quote/${KNOWN_RAW_TOKEN}`);
+    await expect(page.getByTestId('public-quote-view')).toBeVisible({ timeout: 10000 });
+
+    await page.getByTestId('approve-quote-btn').click();
+
+    await expect(page.getByTestId('quote-response-status')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('quote-response-status')).toContainText('approved');
+
+    // Buttons should be gone after approval
+    await expect(page.getByTestId('approve-quote-btn')).not.toBeVisible();
+    await expect(page.getByTestId('decline-quote-btn')).not.toBeVisible();
+  });
+
+  test('revisiting approved quote shows read-only banner', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-chrome', 'Depends on previous approve test');
+
+    await page.goto(`/quote/${KNOWN_RAW_TOKEN}`);
+    await expect(page.getByTestId('public-quote-view')).toBeVisible({ timeout: 10000 });
+
+    await expect(page.getByTestId('quote-response-status')).toBeVisible();
+    await expect(page.getByTestId('quote-response-status')).toContainText('approved this quote');
+
+    // No action buttons
+    await expect(page.getByTestId('approve-quote-btn')).not.toBeVisible();
+    await expect(page.getByTestId('decline-quote-btn')).not.toBeVisible();
+  });
+
+  test('decline quote with confirmation dialog', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-chrome', 'Stateful test — declines second seeded quote');
+
+    await page.goto(`/quote/${KNOWN_RAW_TOKEN_2}`);
+    await expect(page.getByTestId('public-quote-view')).toBeVisible({ timeout: 10000 });
+
+    // Click decline to open confirmation
+    await page.getByTestId('decline-quote-btn').click();
+
+    // Confirmation dialog should appear
+    await expect(page.getByText('Are you sure you want to decline this quote?')).toBeVisible();
+
+    // Confirm decline
+    await page.getByTestId('decline-confirm-btn').click();
+
+    await expect(page.getByTestId('quote-response-status')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('quote-response-status')).toContainText('declined');
+
+    // Buttons should be gone
+    await expect(page.getByTestId('approve-quote-btn')).not.toBeVisible();
+    await expect(page.getByTestId('decline-quote-btn')).not.toBeVisible();
   });
 });
 

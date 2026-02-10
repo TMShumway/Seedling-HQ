@@ -67,7 +67,7 @@ export class SendQuoteUseCase {
         hashVersion: 'v1',
         subjectType: 'quote',
         subjectId: input.quoteId,
-        scopes: ['quote:read'],
+        scopes: ['quote:read', 'quote:respond'],
         expiresAt,
         revokedAt: null,
         createdByUserId: input.userId,

@@ -9,7 +9,7 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 
 ## 1) Entity overview
 
-### 1.1 Implemented entities (S-0001 through S-0010)
+### 1.1 Implemented entities (S-0001 through S-0011)
 
 | Entity | Story | Tenant-scoped | Singleton | Soft delete |
 |--------|-------|---------------|-----------|-------------|
@@ -478,7 +478,7 @@ Tenant
 
 ## 5) Audit event catalog
 
-### Implemented events (S-0001 through S-0010)
+### Implemented events (S-0001 through S-0011)
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
@@ -504,6 +504,8 @@ Tenant
 | `quote.updated` | quote | Quote fields changed | S-0009 |
 | `quote.sent` | quote | Secure link sent to client | S-0010 |
 | `quote.viewed` | quote | Client opens secure link | S-0010 |
+| `quote.approved` | quote | Client approves quote via secure link (`principalType: 'external'`) | S-0011 |
+| `quote.declined` | quote | Client declines quote via secure link (`principalType: 'external'`) | S-0011 |
 
 > **Note (S-0007):** New request notifications are tracked via `message_outbox` records (not audit events). The `message.sent` audit event is planned for S-0021 when the SMS worker is implemented.
 
@@ -511,8 +513,6 @@ Tenant
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
-| `quote.approved` | quote | Client approves quote | S-0011 |
-| `quote.declined` | quote | Client declines quote | S-0011 |
 | `job.created` | job | Job created from approved quote | S-0012 |
 | `visit.scheduled` | visit | Visit date/time assigned | S-0012 |
 | `visit.rescheduled` | visit | Visit date/time changed | S-0013 |
@@ -539,7 +539,7 @@ All audit events share this structure:
 {
   id: string;                // UUID
   tenantId: string;          // FK → tenants.id
-  principalType: string;     // 'internal' | 'system' | 'external' (future)
+  principalType: string;     // 'internal' | 'system' | 'external'
   principalId: string;       // user_id or token_id
   eventName: string;         // e.g., 'quote.approved'
   subjectType: string;       // e.g., 'quote'
@@ -592,13 +592,13 @@ All audit events share this structure:
 | S-0007 | New request notifications (Email + outbound SMS) | intake | E-0003 |
 | S-0008 | Convert request to client + quote draft | intake | E-0003 |
 | S-0009 | Quote builder v1 | quotes | E-0004 |
+| S-0010 | Send quote link to customer (secure link) | quotes | E-0004 |
+| S-0011 | Customer approves quote | quotes | E-0004 |
 
 ### Planned (MVP — Release R1)
 
 | Story | Title | Area | Epic | Priority |
 |-------|-------|------|------|----------|
-| S-0010 | Send quote link to customer (secure link) | quotes | E-0004 | P0 |
-| S-0011 | Customer approves quote | quotes | E-0004 | P0 |
 | S-0012 | Create job + first visit from approved quote | scheduling | E-0005 | P0 |
 | S-0013 | Calendar view (week/day) + schedule/reschedule | scheduling | E-0005 | P0 |
 | S-0014 | Assign technician to visit | scheduling | E-0005 | P0 |

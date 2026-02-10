@@ -28,7 +28,7 @@ Examples (implemented):
 - `ServiceCategoryRepository`, `ServiceItemRepository`
 - `ClientRepository`, `PropertyRepository`
 - `RequestRepository` (includes `updateStatus(tenantId, id, status, expectedStatuses?)` with optional race guard via `WHERE status IN (...)`, S-0008)
-- `QuoteRepository` (S-0008/S-0009 — `create`, `getById`, `list`, `update`, `count`, `countByStatus`)
+- `QuoteRepository` (S-0008/S-0009/S-0011 — `create`, `getById`, `list`, `update`, `count`, `countByStatus`, `updateStatus(tenantId, id, status, statusFields?, expectedStatuses?)` with optional race guard via `WHERE status IN (...)` for idempotent external actions)
 - `MessageOutboxRepository` (S-0007 — `create`, `updateStatus`)
 - `UserRepository` (includes `getOwnerByTenantId` for notification recipient lookup)
 - `EmailSender` (port for SMTP — implemented by `NodemailerEmailSender`)
@@ -113,7 +113,7 @@ Search:
 
 ---
 
-## 6) Secure links data model (token storage) — Implemented in S-0010
+## 6) Secure links data model (token storage) — Implemented in S-0010/S-0011
 
 `secure_link_tokens` columns:
 - `tenant_id`
@@ -125,6 +125,10 @@ Search:
 - `created_at`, `last_used_at`
 
 Indexes: unique index on `token_hash`, composite index on `(tenant_id, subject_type, subject_id)`.
+
+Scope values: `'quote:read'` (view quote), `'quote:respond'` (approve/decline). A single token can have multiple scopes (e.g., `['quote:read', 'quote:respond']` on quote send). External route middleware validates the incoming request's required scope matches one of the token's scopes.
+
+`externalAuthContext` (S-0010): Routes decorated with `buildExternalTokenMiddleware` produce an `externalAuthContext` (not `authContext`) containing: `tenantId`, `tokenId`, `scope`, `objectType`, `objectId`.
 
 Rules:
 - Never store plaintext token.

@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import { buildTestApp, truncateAll, getPool, getDb } from './setup.js';
 import { resetRateLimitStore } from '../../src/adapters/http/middleware/rate-limit.js';
 import { hashToken } from '../../src/shared/crypto.js';
-import { secureLinkTokens, quotes } from '../../src/infra/db/schema.js';
-import { eq } from 'drizzle-orm';
+import { secureLinkTokens, quotes, auditEvents, messageOutbox } from '../../src/infra/db/schema.js';
+import { eq, and } from 'drizzle-orm';
 
 const HMAC_SECRET = 'test-hmac-secret';
 
@@ -370,7 +370,6 @@ describe('GET /v1/ext/quotes/:token', () => {
     });
 
     // Check message_outbox for the email record
-    const { messageOutbox } = await import('../../src/infra/db/schema.js');
     const db = getDb();
     const outboxRecords = await db
       .select()
@@ -380,5 +379,208 @@ describe('GET /v1/ext/quotes/:token', () => {
     const quoteEmails = outboxRecords.filter((r) => r.type === 'quote_sent');
     expect(quoteEmails).toHaveLength(1);
     expect(quoteEmails[0].channel).toBe('email');
+  });
+});
+
+async function sendQuoteAndGetToken(app: ReturnType<typeof buildTestApp> extends Promise<infer T> ? T : never, tenantSlug: string) {
+  const converted = await createQuoteViaConvert(app, tenantSlug);
+  await addLineItemsToQuote(app, converted.quote.id);
+
+  const sendRes = await app.inject({
+    method: 'POST',
+    url: `/v1/quotes/${converted.quote.id}/send`,
+  });
+  const { token } = sendRes.json();
+  return { token, quoteId: converted.quote.id };
+}
+
+describe('POST /v1/ext/quotes/:token/approve & /decline', () => {
+  beforeEach(async () => {
+    await truncateAll();
+    resetRateLimitStore();
+  });
+
+  it('approves a sent quote and returns 200', async () => {
+    const { app, tenant } = await createTenantAndGetApp();
+    const { token } = await sendQuoteAndGetToken(app, tenant.slug);
+
+    const extApp = await buildTestApp();
+    const res = await extApp.inject({
+      method: 'POST',
+      url: `/v1/ext/quotes/${token}/approve`,
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.quote.status).toBe('approved');
+    expect(body.quote.approvedAt).toBeTruthy();
+    expect(body.quote.declinedAt).toBeNull();
+  });
+
+  it('declines a sent quote and returns 200', async () => {
+    const { app, tenant } = await createTenantAndGetApp();
+    const { token } = await sendQuoteAndGetToken(app, tenant.slug);
+
+    const extApp = await buildTestApp();
+    const res = await extApp.inject({
+      method: 'POST',
+      url: `/v1/ext/quotes/${token}/decline`,
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.quote.status).toBe('declined');
+    expect(body.quote.declinedAt).toBeTruthy();
+    expect(body.quote.approvedAt).toBeNull();
+  });
+
+  it('is idempotent: approve twice returns 200 both times', async () => {
+    const { app, tenant } = await createTenantAndGetApp();
+    const { token } = await sendQuoteAndGetToken(app, tenant.slug);
+
+    const extApp = await buildTestApp();
+    const res1 = await extApp.inject({
+      method: 'POST',
+      url: `/v1/ext/quotes/${token}/approve`,
+    });
+    expect(res1.statusCode).toBe(200);
+
+    const res2 = await extApp.inject({
+      method: 'POST',
+      url: `/v1/ext/quotes/${token}/approve`,
+    });
+    expect(res2.statusCode).toBe(200);
+    expect(res2.json().quote.status).toBe('approved');
+  });
+
+  it('is idempotent: decline twice returns 200 both times', async () => {
+    const { app, tenant } = await createTenantAndGetApp();
+    const { token } = await sendQuoteAndGetToken(app, tenant.slug);
+
+    const extApp = await buildTestApp();
+    const res1 = await extApp.inject({
+      method: 'POST',
+      url: `/v1/ext/quotes/${token}/decline`,
+    });
+    expect(res1.statusCode).toBe(200);
+
+    const res2 = await extApp.inject({
+      method: 'POST',
+      url: `/v1/ext/quotes/${token}/decline`,
+    });
+    expect(res2.statusCode).toBe(200);
+    expect(res2.json().quote.status).toBe('declined');
+  });
+
+  it('returns 400 for cross-transition: approve then decline', async () => {
+    const { app, tenant } = await createTenantAndGetApp();
+    const { token } = await sendQuoteAndGetToken(app, tenant.slug);
+
+    const extApp = await buildTestApp();
+    await extApp.inject({
+      method: 'POST',
+      url: `/v1/ext/quotes/${token}/approve`,
+    });
+
+    const res = await extApp.inject({
+      method: 'POST',
+      url: `/v1/ext/quotes/${token}/decline`,
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('returns 400 for cross-transition: decline then approve', async () => {
+    const { app, tenant } = await createTenantAndGetApp();
+    const { token } = await sendQuoteAndGetToken(app, tenant.slug);
+
+    const extApp = await buildTestApp();
+    await extApp.inject({
+      method: 'POST',
+      url: `/v1/ext/quotes/${token}/decline`,
+    });
+
+    const res = await extApp.inject({
+      method: 'POST',
+      url: `/v1/ext/quotes/${token}/approve`,
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('returns 403 for invalid token', async () => {
+    const extApp = await buildTestApp();
+    const res = await extApp.inject({
+      method: 'POST',
+      url: '/v1/ext/quotes/invalid-token/approve',
+    });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.json().error.code).toBe('LINK_INVALID');
+  });
+
+  it('records audit event on approve', async () => {
+    const { app, tenant } = await createTenantAndGetApp();
+    const { token, quoteId } = await sendQuoteAndGetToken(app, tenant.slug);
+
+    const extApp = await buildTestApp();
+    await extApp.inject({
+      method: 'POST',
+      url: `/v1/ext/quotes/${token}/approve`,
+    });
+
+    const db = getDb();
+    const events = await db
+      .select()
+      .from(auditEvents)
+      .where(and(eq(auditEvents.subjectId, quoteId), eq(auditEvents.eventName, 'quote.approved')));
+
+    expect(events).toHaveLength(1);
+    expect(events[0].principalType).toBe('external');
+  });
+
+  it('creates outbox record on approve', async () => {
+    const { app, tenant } = await createTenantAndGetApp();
+    const { token } = await sendQuoteAndGetToken(app, tenant.slug);
+
+    const extApp = await buildTestApp({ NOTIFICATION_ENABLED: true, SMTP_HOST: 'localhost', SMTP_PORT: 1025 });
+    await extApp.inject({
+      method: 'POST',
+      url: `/v1/ext/quotes/${token}/approve`,
+    });
+
+    const db = getDb();
+    const outboxRecords = await db
+      .select()
+      .from(messageOutbox)
+      .where(eq(messageOutbox.tenantId, tenant.id));
+
+    const approvedEmails = outboxRecords.filter((r) => r.type === 'quote_approved');
+    expect(approvedEmails).toHaveLength(1);
+    expect(approvedEmails[0].channel).toBe('email');
+  });
+
+  it('GET returns approvedAt/declinedAt after response', async () => {
+    const { app, tenant } = await createTenantAndGetApp();
+    const { token } = await sendQuoteAndGetToken(app, tenant.slug);
+
+    const extApp = await buildTestApp();
+    await extApp.inject({
+      method: 'POST',
+      url: `/v1/ext/quotes/${token}/approve`,
+    });
+
+    const getRes = await extApp.inject({
+      method: 'GET',
+      url: `/v1/ext/quotes/${token}`,
+    });
+
+    expect(getRes.statusCode).toBe(200);
+    const body = getRes.json();
+    expect(body.quote.status).toBe('approved');
+    expect(body.quote.approvedAt).toBeTruthy();
+    expect(body.quote.declinedAt).toBeNull();
   });
 });

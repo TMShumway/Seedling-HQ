@@ -223,7 +223,19 @@ export function QuoteDetailPage() {
             <h1 className="text-xl font-semibold">{quote.title}</h1>
           )}
         </div>
-        <QuoteStatusBadge status={quote.status} />
+        <div className="flex flex-col items-end gap-1">
+          <QuoteStatusBadge status={quote.status} />
+          {quote.approvedAt && (
+            <span className="text-xs text-green-700">
+              Approved on {new Date(quote.approvedAt).toLocaleDateString()}
+            </span>
+          )}
+          {quote.declinedAt && (
+            <span className="text-xs text-red-700">
+              Declined on {new Date(quote.declinedAt).toLocaleDateString()}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Messages */}

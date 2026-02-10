@@ -91,6 +91,10 @@
 | External route prefix | `/v1/ext/quotes/:token` | S-0010 | Distinct from `/v1/public/` (no auth) and `/v1/` (internal auth); token-derived auth |
 | External auth context | Separate `externalAuthContext` Fastify decorator | S-0010 | Avoids breaking existing `authContext` type; set by `buildExternalTokenMiddleware` |
 | Secure link config vars | `APP_BASE_URL`, `SECURE_LINK_HMAC_SECRET` | S-0010 | Base URL for link construction; HMAC secret for token hashing; production guard: `loadConfig()` throws if secret is missing, equals dev default, or < 16 chars |
+| Token scopes include respond | `['quote:read', 'quote:respond']` on send | S-0011 | Same link for view + approve/decline; no new token needed |
+| Idempotent external actions | Same-action repeat → 200 no-op, cross-transition → 400 | S-0011 | Client may double-click approve; prevent approve→decline flip |
+| External principal type | `principalType: 'external'`, `principalId: tokenId` | S-0011 | Distinguishes token-based actions from `internal` (user) and `system` (automation) |
+| Quote response status machine | `sent` → `approved` / `declined` | S-0011 | Only `sent` quotes can be responded to; draft/expired/already-terminal blocked |
 
 ---
 
@@ -139,7 +143,10 @@
 | hashToken utility | S-0010 | `hashToken(secret, rawToken)` in `shared/crypto.ts` — HMAC-SHA256, returns 64-char hex; used in both middleware and SendQuoteUseCase |
 | SendQuoteUseCase (atomic + best-effort) | S-0010 | Inside `uow.run()`: updateStatus(draft→sent) + create token + audit; after UoW (best-effort): get client email, create outbox, send email |
 | Quote send route + external view | S-0010 | `POST /v1/quotes/:id/send` (authenticated, returns `{ quote, token, link }`), `GET /v1/ext/quotes/:token` (external, token-derived auth, returns quote + businessName + clientName + propertyAddress) |
-| Quote `updateStatus` with race guard | S-0010 | `QuoteRepository.updateStatus(tenantId, id, status, statusFields?, expectedStatuses?)` — `WHERE status IN (...)` prevents concurrent double-send; returns null if 0 rows → throw ConflictError |
+| Quote `updateStatus` with race guard | S-0010 | `QuoteRepository.updateStatus(tenantId, id, status, statusFields?, expectedStatuses?)` — `WHERE status IN (...)` prevents concurrent transitions; returns null if 0 rows (caller handles: SendQuoteUseCase throws ConflictError, RespondToQuoteUseCase re-fetches for idempotency) |
+| RespondToQuoteUseCase (single class) | S-0011 | Parameterized by `action: 'approve' | 'decline'`; no UoW needed (single entity write + best-effort audit + notification); race-safe idempotency: on null updateStatus, re-fetches quote — same-action race → 200 with current state, cross-action race → 400 ValidationError |
+| External approve/decline routes | S-0011 | `POST /v1/ext/quotes/:token/approve` and `/decline`; `respondMiddleware` requires `quote:respond` scope; returns `{ quote: { id, status, approvedAt, declinedAt } }` |
+| Quote response notification | S-0011 | Best-effort email to owner via outbox; `buildQuoteResponseEmail()` inline HTML builder; type `quote_approved`/`quote_declined` in outbox |
 
 ### Frontend
 
@@ -166,6 +173,9 @@
 | Send quote confirmation flow | S-0010 | "Send Quote" button → inline confirmation card → success shows copyable link card; quote becomes read-only after send |
 | Public quote view page | S-0010 | `/quote/:token` outside AppShell; uses `publicRequest()` to `GET /v1/ext/quotes/:token`; shows business name, client name, line items table, totals; 403 → "link no longer valid" |
 | Copy-to-clipboard link | S-0010 | `navigator.clipboard.writeText()` with visual "Copied" feedback via useState toggle |
+| Public quote approve/decline flow | S-0011 | Approve button → direct call; Decline button → confirmation dialog (state-based, matches send confirm pattern); success → status banner + hide buttons; `useEffect` resets respond state on token change |
+| Already-responded read-only banners | S-0011 | If `status === 'approved'/'declined'` on page load, show date-stamped banner, hide action buttons |
+| Quote detail timestamps | S-0011 | Below status badge: green "Approved on {date}" or red "Declined on {date}" from `quote.approvedAt`/`declinedAt` |
 
 ### Testing
 

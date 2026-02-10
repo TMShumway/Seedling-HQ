@@ -66,9 +66,9 @@ _Last updated: 2026-02-08 (America/Chihuahua)_
   - `tenant_id`
   - `subject_type` (quote / invoice / client)
   - `subject_id` (object id allowed)
-  - `scopes` (quote:read, quote:approve, invoice:pay, hub:read)
+  - `scopes` (quote:read, quote:respond, invoice:pay, hub:read)
   - `expires_at`, `revoked_at`
-- **Implemented in S-0010:** External auth is handled by the `externalAuthContext` Fastify decorator. It sets `principal_type: 'external'` and `principal_id: token_id` (the DB record ID, not the raw token value).
+- **Implemented in S-0010/S-0011:** External auth is handled by the `externalAuthContext` Fastify decorator. It sets `principal_type: 'external'` and `principal_id: token_id` (the DB record ID, not the raw token value). A single token can have multiple scopes (e.g., `['quote:read', 'quote:respond']` on quote send). Each route specifies its required scope; the middleware validates the token includes it.
 
 ### 3.3 Authorization rules (must not be mixed)
 - Internal authorization: **RBAC within tenant** (“can this role do X?”)
@@ -133,8 +133,7 @@ Every secure link token must be:
 - Keep previous secrets for a limited overlap window if needed.
 
 ### 4.5 TTL recommendations (MVP defaults)
-- Quote view token: 7–14 days
-- Quote approve token: 7 days
+- Quote token (view + respond): 7–14 days (single token with both `quote:read` and `quote:respond` scopes)
 - Invoice pay token: 7–14 days
 - Client Hub token: 30–90 days (business decision; include revoke path)
 
@@ -202,7 +201,7 @@ In logs:
 ### 6.3 Audit events (required baseline)
 Audit events must include:
 - `tenant_id`
-- principal type: `internal` or `system` (or `external` in future)
+- principal type: `internal`, `system`, or `external`
 - principal identifiers:
   - internal: `user_id`
   - external: `token_id` (db id, not token value)
@@ -211,7 +210,7 @@ Audit events must include:
 - optional: ip/user-agent (careful with PII policy)
 
 Minimum audit events (MVP):
-- `quote.sent`, `quote.viewed`, `quote.approved`
+- `quote.sent`, `quote.viewed`, `quote.approved`, `quote.declined`
 - `invoice.sent`, `invoice.viewed`, `invoice.paid`
 - `hub.viewed`
 

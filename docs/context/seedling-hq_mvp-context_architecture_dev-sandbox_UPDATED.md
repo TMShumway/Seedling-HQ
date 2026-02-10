@@ -213,7 +213,7 @@ A token-derived auth context should include:
 - `tenant_id`
 - `subject_type` (e.g., `quote`, `invoice`, `client_hub`)
 - `subject_id` (the object they can access)
-- `scopes` (e.g., `quote:read`, `quote:approve`, `invoice:pay`, `hub:read`)
+- `scopes` (e.g., `quote:read`, `quote:respond`, `invoice:pay`, `hub:read`)
 - `expires_at`, `revoked_at` (and optional `last_used_at`)
 
 ---
@@ -281,7 +281,7 @@ Suggested table (name is up to you, e.g., `secure_link_tokens`):
 **Epic 0004 — Quotes + approvals**
 - S-0009 Quote builder v1 (totals, draft/send states) **— DONE**: quote detail page with line-item editing, totals calculation, status machine (draft→sent→approved/declined/expired), quote list page with filters
 - S-0010 Send secure quote link (token access, audit events) **— DONE**: shared `secure_link_tokens` table + HMAC token generation, `/v1/ext/*` route prefix with token-scoped auth middleware, send-quote use case creates token + sends email with link, audit events for send/view
-- S-0011 Customer approves quote (name + timestamp; owner notified) **→ updated AC: token scope `quote:approve`, idempotent approval, audit metadata**
+- S-0011 Customer approves quote **— DONE**: `RespondToQuoteUseCase` (approve/decline), token scope `quote:respond`, idempotent external actions (same-action → 200 no-op, cross-transition → 400), `principalType: 'external'` audit events, owner notification via outbox
 
 **Epic 0005 — Scheduling (jobs + visits)**
 - S-0012 Approved quote creates Job + first Visit draft

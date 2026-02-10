@@ -207,6 +207,7 @@ Internal:
   - inline line-item builder with service item picker, custom description, quantity, unit price
   - editable tax rate with auto-computed subtotal, tax, and total
   - draft-only editing (sent/approved/declined/expired quotes are read-only)
+  - approved/declined timestamps displayed below status badge — **DONE** (S-0011)
   - send link — **DONE** (S-0010): "Send Quote" button (visible when draft + has line items) → inline confirmation card → sends quote → shows copyable secure-link card
 
 External (secure link):
@@ -214,8 +215,8 @@ External (secure link):
   - business name header + "Prepared for: clientName" + property address
   - line items table with description, qty, unit price, total columns
   - subtotal, tax, and total summary
-  - approve button (captures name) — planned (S-0010+)
-  - audit-friendly confirmation — planned (S-0010+)
+  - approve/decline buttons — **DONE** (S-0011): "Approve Quote" (green) and "Decline Quote" (red outline) buttons; decline has state-based confirmation dialog; success/already-responded banners with `data-testid="quote-response-status"`
+  - read-only state — **DONE** (S-0011): already-approved/declined quotes show status banner with date and no action buttons
 
 ### 7.4 Scheduling / Jobs / Visits
 Internal:
@@ -345,7 +346,7 @@ When an AI agent adds UI:
    - Remaining: Invoices (S-0017+)
 6) External page templates — **PARTIAL** (S-0010):
    - Quote view — **DONE** (S-0010): `PublicQuoteViewPage` at `/quote/:token` — business name header, "Prepared for: clientName", property address, line items table, subtotal/tax/total
-   - Quote approve — planned (S-0010+)
+   - Quote approve/decline — **DONE** (S-0011): approve button, decline with confirmation, success banners, read-only state for already-responded
    - Invoice view/pay — planned (S-0017+)
    - Client Hub — planned (future)
 

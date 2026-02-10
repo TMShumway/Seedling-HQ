@@ -410,6 +410,12 @@ export const apiClient = {
   getPublicQuote: (token: string) =>
     publicRequest<PublicQuoteViewResponse>('GET', `/v1/ext/quotes/${token}`),
 
+  approveQuote: (token: string) =>
+    publicRequest<QuoteRespondResponse>('POST', `/v1/ext/quotes/${token}/approve`),
+
+  declineQuote: (token: string) =>
+    publicRequest<QuoteRespondResponse>('POST', `/v1/ext/quotes/${token}/decline`),
+
   // Timeline
   getClientTimeline: (clientId: string, params?: { limit?: number; cursor?: string; exclude?: string }) => {
     const qs = new URLSearchParams();
@@ -553,11 +559,22 @@ export interface PublicQuoteViewResponse {
     total: number;
     status: string;
     sentAt: string | null;
+    approvedAt: string | null;
+    declinedAt: string | null;
     createdAt: string;
   };
   businessName: string;
   clientName: string;
   propertyAddress: string | null;
+}
+
+export interface QuoteRespondResponse {
+  quote: {
+    id: string;
+    status: string;
+    approvedAt: string | null;
+    declinedAt: string | null;
+  };
 }
 
 export { ApiClientError };

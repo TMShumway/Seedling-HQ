@@ -223,13 +223,63 @@ async function seed() {
       hashVersion: 'v1',
       subjectType: 'quote',
       subjectId: DEMO_SENT_QUOTE_ID,
-      scopes: ['quote:read'],
+      scopes: ['quote:read', 'quote:respond'],
       expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days
       createdByUserId: DEMO_USER_ID,
     })
     .onConflictDoUpdate({
       target: secureLinkTokens.id,
-      set: { tokenHash: knownTokenHash, subjectId: DEMO_SENT_QUOTE_ID, expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) },
+      set: { tokenHash: knownTokenHash, scopes: ['quote:read', 'quote:respond'], subjectId: DEMO_SENT_QUOTE_ID, expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) },
+    });
+
+  // Upsert second sent quote (for E2E decline test — needs separate terminal-state quote)
+  const DEMO_SENT_QUOTE_2_ID = '00000000-0000-0000-0000-000000000702';
+  const DEMO_TOKEN_2_ID = '00000000-0000-0000-0000-000000000801';
+  const sentQuote2LineItems = [
+    { serviceItemId: '00000000-0000-0000-0000-000000000305', description: 'Mulch Installation', quantity: 200, unitPrice: 350, total: 70000 },
+    { serviceItemId: '00000000-0000-0000-0000-000000000307', description: 'Shrub Planting', quantity: 10, unitPrice: 2500, total: 25000 },
+  ];
+
+  await db
+    .insert(quotes)
+    .values({
+      id: DEMO_SENT_QUOTE_2_ID,
+      tenantId: DEMO_TENANT_ID,
+      requestId: null,
+      clientId: DEMO_CLIENT_IDS.bobWilson,
+      propertyId: '00000000-0000-0000-0000-000000000502',
+      title: 'Landscaping for Bob Wilson',
+      lineItems: sentQuote2LineItems,
+      subtotal: 95000,
+      tax: 7000,
+      total: 102000,
+      status: 'sent',
+      sentAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: quotes.id,
+      set: { title: 'Landscaping for Bob Wilson', lineItems: sentQuote2LineItems, subtotal: 95000, tax: 7000, total: 102000, status: 'sent' },
+    });
+
+  // Known raw token 2: 'e2e-test-quote-token-2'
+  // HMAC-SHA256('dev-secret-change-in-production', 'e2e-test-quote-token-2')
+  const knownToken2Hash = '6a7fa43f82f30e07852192767586b42ed234c1e25cf69508987cd4961a93701b';
+  await db
+    .insert(secureLinkTokens)
+    .values({
+      id: DEMO_TOKEN_2_ID,
+      tenantId: DEMO_TENANT_ID,
+      tokenHash: knownToken2Hash,
+      hashVersion: 'v1',
+      subjectType: 'quote',
+      subjectId: DEMO_SENT_QUOTE_2_ID,
+      scopes: ['quote:read', 'quote:respond'],
+      expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      createdByUserId: DEMO_USER_ID,
+    })
+    .onConflictDoUpdate({
+      target: secureLinkTokens.id,
+      set: { tokenHash: knownToken2Hash, scopes: ['quote:read', 'quote:respond'], subjectId: DEMO_SENT_QUOTE_2_ID, expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) },
     });
 
   // Insert audit events (idempotent: check first)

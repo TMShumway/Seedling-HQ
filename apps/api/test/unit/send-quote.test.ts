@@ -272,7 +272,7 @@ describe('SendQuoteUseCase', () => {
     );
 
     const createCall = (txRepos.secureLinkTokenRepo.create as ReturnType<typeof vi.fn>).mock.calls[0][0];
-    expect(createCall.scopes).toEqual(['quote:read']);
+    expect(createCall.scopes).toEqual(['quote:read', 'quote:respond']);
     expect(createCall.subjectType).toBe('quote');
     expect(createCall.subjectId).toBe(QUOTE_ID);
   });
