@@ -1,6 +1,6 @@
 # S-0009: Quote Builder v1
 
-## Status: In Progress
+## Status: Complete
 
 ## Overview
 First story in the Quotes epic. S-0008 created the `quotes` table and `QuoteRepository` with basic CRUD used by the convert-request flow. This story adds the paginated quotes list page, quote detail/builder page with inline line-item editing, and 4 backend endpoints. After S-0009, users can convert a request and immediately build out the quote with line items and totals.
@@ -85,18 +85,15 @@ First story in the Quotes epic. S-0008 created the `quotes` table and `QuoteRepo
   - Acceptance: `pnpm --filter e2e test` all pass (48 passed, 22 skipped)
 
 ## Phase 6: Doc Updates
-- [ ] **6.1: Update CLAUDE.md**
+
+**Files touched:**
+- `CLAUDE.md` — updated key decisions (convert redirect, quote search/editing/tax/edit guard), established patterns (backend: list, UpdateQuoteUseCase, routes; frontend: QuotesPage, QuoteDetailPage, convert redirect), nav order updated
+
+- [x] **6.1: Update CLAUDE.md**
+  - Acceptance: CLAUDE.md accurately reflects S-0009 state
 
 ## Resume context
-### Last completed
-- Phase 5 complete: seed data, convert redirect, E2E tests all passing
-- Commits: `d725c10` (phases 1-3), `3de1db9` (phase 4)
-### In progress
-- Nothing — about to commit phase 5, then start Phase 6
-### Next up
-- Task 6.1: Update CLAUDE.md
-### Blockers / open questions
-- None
+(Story complete — no resume context needed)
 
 ## Test summary
 - **Unit**: 114 total (14 new in update-quote.test.ts)

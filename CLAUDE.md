@@ -61,7 +61,7 @@
 | Testing | Vitest + Playwright + axe-core | S-0001 | |
 | DB schema management | `db:push` (local), `db:generate` + `db:migrate` (prod) | S-0001 | Migrations introduced as schema evolves |
 | Service catalog | Two-level: categories → items | S-0003 | Soft delete via `active` flag; prices in integer cents |
-| Nav order | Dashboard, Services, Requests, Clients, then remaining items | S-0004 | Services + Clients are setup-phase items; Requests inserted in S-0006 |
+| Nav order | Dashboard, Services, Requests, Clients, Quotes, then remaining items | S-0009 | Quotes enabled in S-0009; Schedule, Jobs, Invoices still disabled |
 | Client/Property model | Two-level: clients → properties | S-0004 | Soft delete with cascade; nullable email (phone-only clients OK) |
 | Pagination | Cursor-based keyset pagination | S-0004 | `PaginatedResult<T>` with `(created_at DESC, id DESC)`, fetch limit+1 |
 | Server-side search | ILIKE across multiple columns | S-0004 | `?search=term` on `GET /v1/clients` |
@@ -78,8 +78,12 @@
 | Owner lookup | `getOwnerByTenantId` on UserRepository | S-0007 | Query users WHERE role='owner' for notification recipient |
 | Quote entity | Draft quote with JSONB lineItems | S-0008 | `quotes` table with nullable `requestId`/`propertyId` FKs; status machine: draft→sent→approved/declined/expired |
 | Convert status gate | Only `new` or `reviewed` requests | S-0008 | Prevents double conversion; returns 400 for `converted`/`declined` |
-| Convert redirect | Client detail page | S-0008 | Quote detail page doesn't exist until S-0009; revisit then |
+| Convert redirect | Quote detail page | S-0009 | Changed from `/clients/:id` to `/quotes/:id` after conversion (S-0008 deferred item resolved) |
 | Name splitting | Split on last space | S-0008 | "Sarah Jane Davis" → "Sarah Jane" / "Davis"; single word → all firstName |
+| Quote search | ILIKE on `title` only | S-0009 | Title typically contains client name; avoids JOIN complexity |
+| Quote line item editing | Inline editable rows | S-0009 | No modal; description, qty, unit price inputs with computed totals |
+| Quote tax | Manual fixed-cents entry | S-0009 | No automatic tax rate for MVP; simple dollar input |
+| Quote edit guard | Only `draft` quotes editable | S-0009 | PUT returns 400 ValidationError for non-draft; status transitions deferred to S-0010 |
 
 ---
 
@@ -121,6 +125,9 @@
 | Request `updateStatus` with race guard | S-0008 | `RequestRepository.updateStatus(tenantId, id, status, expectedStatuses?)` adds `WHERE status IN (...)` to prevent concurrent double-convert; returns `null` (0 rows) if another transaction already transitioned the status → throw `ConflictError` to roll back |
 | Composite convert endpoint | S-0008 | `POST /v1/requests/:id/convert` returns 200 (not 201) with `{ request, client, property, quote, clientCreated }` |
 | Existing client match on convert | S-0008 | Optional `existingClientId` skips client creation; frontend searches by email with debounced query |
+| Quote list with status filter | S-0009 | `GET /v1/quotes?status=draft&search=term` with cursor pagination; `QuoteRepository.list()` follows `DrizzleRequestRepository.list()` pattern |
+| UpdateQuoteUseCase (no UoW) | S-0009 | Direct repo + best-effort audit (follows `UpdateClientUseCase` pattern); draft guard, line item validation, total recomputation |
+| Quote routes (4 endpoints) | S-0009 | `GET /v1/quotes`, `GET /v1/quotes/count`, `GET /v1/quotes/:id`, `PUT /v1/quotes/:id`; count registered before `:id` to avoid route conflict |
 
 ### Frontend
 
@@ -141,6 +148,9 @@
 | Status badge component | S-0006 | Inline `StatusBadge` with color map for request statuses (new=amber, reviewed=blue, etc.) |
 | Request detail + convert flow | S-0008 | `RequestDetailPage` shows request info + "Convert to Client" button; `ConvertRequestPage` pre-fills from request, supports existing client match, creates client+property+quote |
 | Name splitting on convert | S-0008 | `splitName()` splits on last space for pre-fill; user can edit in form |
+| QuotesPage with status filter pills | S-0009 | Row of pill buttons (All/Draft/Sent/Approved/Declined) controlling `statusFilter` state; `useInfiniteQuery` with status+search params |
+| QuoteDetailPage inline builder | S-0009 | `LineItemRow` components with description/qty/price inputs; `ServiceItemPicker` dropdown grouped by category; auto-computed subtotal/total; editable tax input |
+| Convert redirect to quote | S-0009 | `ConvertRequestPage` redirects to `/quotes/:id` on success (changed from `/clients/:id`) |
 
 ### Testing
 
