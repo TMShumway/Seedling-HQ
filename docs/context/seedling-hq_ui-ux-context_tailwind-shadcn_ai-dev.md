@@ -70,7 +70,7 @@ Primary navigation (internal users), in sidebar order:
 2) **Services** — active (S-0003): service catalog management
 3) **Requests** — active (S-0006): public request form + authenticated list
 4) **Clients** — active (S-0004): client/property management
-5) **Quotes** — stubbed (S-0009+)
+5) **Quotes** — active (S-0009)
 6) **Schedule** — stubbed (S-0012+)
 7) **Jobs** — stubbed (S-0012+)
 8) **Invoices** — stubbed (S-0017+)
@@ -201,12 +201,13 @@ External:
 
 ### 7.3 Quotes
 Internal:
-- Quote list: Draft/Sent/Approved
-- Quote builder:
-  - select client + property
-  - add services
-  - totals
-  - send link
+- Quote list: paginated list with status filter pills (all/draft/sent/approved/declined/expired), debounced search, status badges, click-through to detail — **DONE** (S-0009)
+- Quote detail / builder: — **DONE** (S-0009)
+  - select client + property (linked from quote header)
+  - inline line-item builder with service item picker, custom description, quantity, unit price
+  - editable tax rate with auto-computed subtotal, tax, and total
+  - draft-only editing (sent/approved/declined/expired quotes are read-only)
+  - send link — planned (S-0010)
 
 External (secure link):
 - Quote view:
@@ -336,10 +337,10 @@ When an AI agent adds UI:
 
 1) App shell (sidebar + mobile drawer) with placeholder pages — **DONE** (S-0001): Sidebar, TopBar, MobileDrawer in `apps/web/src/app-shell/`
 2) Page header component pattern (title + actions) — **DONE** (S-0001/S-0002): consistent pattern in DashboardPage, SettingsPage, ServicesPage
-3) Badge/status system — **PARTIAL** (S-0006): `StatusBadge` implemented in RequestsPage (new=amber, reviewed=blue, converted=green, declined=gray); extend for Quote/Job/Invoice statuses (S-0009+)
+3) Badge/status system — **PARTIAL** (S-0006/S-0009): `StatusBadge` implemented in RequestsPage (new=amber, reviewed=blue, converted=green, declined=gray) and QuotesPage (draft=gray, sent=blue, approved=green, declined=red, expired=amber); extend for Job/Invoice statuses (S-0012+/S-0017+)
 4) Form components + validation approach + error summary — **DONE** (S-0002): Input, Select, Textarea, Checkbox in `apps/web/src/components/ui/`; validation via controlled state + Zod schemas
-5) List patterns (desktop table + mobile cards) — **PARTIAL** (S-0003+): ServicesPage has category accordion + item rows (S-0003); ClientsPage has card list + search + cursor pagination (S-0004); RequestsPage has card list + search + status badges + click-through to detail (S-0006/S-0008)
-   - Remaining: Quotes, Invoices (S-0009+)
+5) List patterns (desktop table + mobile cards) — **PARTIAL** (S-0003+): ServicesPage has category accordion + item rows (S-0003); ClientsPage has card list + search + cursor pagination (S-0004); RequestsPage has card list + search + status badges + click-through to detail (S-0006/S-0008); QuotesPage has card list + search + status filter pills + cursor pagination (S-0009)
+   - Remaining: Invoices (S-0017+)
 6) External page templates — **NOT STARTED** (S-0010+):
    - Quote view/approve
    - Invoice view/pay

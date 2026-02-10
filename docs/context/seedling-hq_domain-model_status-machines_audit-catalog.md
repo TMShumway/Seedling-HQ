@@ -9,7 +9,7 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 
 ## 1) Entity overview
 
-### 1.1 Implemented entities (S-0001 through S-0008)
+### 1.1 Implemented entities (S-0001 through S-0009)
 
 | Entity | Story | Tenant-scoped | Singleton | Soft delete |
 |--------|-------|---------------|-----------|-------------|
@@ -324,7 +324,7 @@ draft → sent → approved
 - `expired`: token TTL passed without action (S-0010)
 
 **Creation via conversion (S-0008):** `POST /v1/requests/:id/convert` atomically creates client + property + quote draft + updates request status to `converted`. The quote is created with empty `lineItems`, zero totals, and `draft` status.
-**Authenticated endpoints (S-0009+):** `GET /v1/quotes` (paginated), `GET /v1/quotes/:id`, `PUT /v1/quotes/:id`, `GET /v1/quotes/count`
+**Authenticated endpoints (S-0009):** `GET /v1/quotes` (paginated), `GET /v1/quotes/:id`, `PUT /v1/quotes/:id`, `GET /v1/quotes/count`
 
 ---
 
@@ -478,7 +478,7 @@ Tenant
 
 ## 5) Audit event catalog
 
-### Implemented events (S-0001 through S-0008)
+### Implemented events (S-0001 through S-0009)
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
@@ -501,6 +501,7 @@ Tenant
 | `request.created` | request | New request submitted (public form) | S-0006 |
 | `request.converted` | request | Request converted to client + quote draft | S-0008 |
 | `quote.created` | quote | Quote draft created (via conversion or manually) | S-0008 |
+| `quote.updated` | quote | Quote fields changed | S-0009 |
 
 > **Note (S-0007):** New request notifications are tracked via `message_outbox` records (not audit events). The `message.sent` audit event is planned for S-0021 when the SMS worker is implemented.
 
@@ -508,7 +509,6 @@ Tenant
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
-| `quote.updated` | quote | Quote fields changed | S-0009 |
 | `quote.sent` | quote | Secure link sent to client | S-0010 |
 | `quote.viewed` | quote | Client opens secure link | S-0010 |
 | `quote.approved` | quote | Client approves quote | S-0011 |
@@ -591,12 +591,12 @@ All audit events share this structure:
 | S-0006 | Public "Request Service" form | intake | E-0003 |
 | S-0007 | New request notifications (Email + outbound SMS) | intake | E-0003 |
 | S-0008 | Convert request to client + quote draft | intake | E-0003 |
+| S-0009 | Quote builder v1 | quotes | E-0004 |
 
 ### Planned (MVP — Release R1)
 
 | Story | Title | Area | Epic | Priority |
 |-------|-------|------|------|----------|
-| S-0009 | Quote builder v1 | quotes | E-0004 | P0 |
 | S-0010 | Send quote link to customer (secure link) | quotes | E-0004 | P0 |
 | S-0011 | Customer approves quote | quotes | E-0004 | P0 |
 | S-0012 | Create job + first visit from approved quote | scheduling | E-0005 | P0 |

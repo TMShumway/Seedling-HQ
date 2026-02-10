@@ -3,7 +3,7 @@
 _Last updated: 2026-02-09 (America/Chihuahua)_
 
 > Purpose: Define consistent API behavior so agents and humans build endpoints the same way.
-> This doc captures conventions established in S-0001 through S-0008 and defines standards for future stories.
+> This doc captures conventions established in S-0001 through S-0009 and defines standards for future stories.
 
 ---
 
@@ -26,7 +26,7 @@ All API errors return a consistent JSON structure:
 
 | HTTP Status | Error Code | Class | When |
 |-------------|-----------|-------|------|
-| 400 | `VALIDATION_ERROR` | `ValidationError` / Fastify validation | Request body or params fail schema validation |
+| 400 | `VALIDATION_ERROR` | `ValidationError` / Fastify validation | Request body or params fail schema validation, or use-case-level business rule violation (e.g., editing a non-draft quote) |
 | 401 | `UNAUTHORIZED` | `UnauthorizedError` | Missing or invalid auth credentials |
 | 404 | `NOT_FOUND` | `NotFoundError` | Entity not found within the tenant scope |
 | 409 | `CONFLICT` | `ConflictError` | Unique constraint violation (e.g., duplicate slug or name) |
@@ -69,7 +69,7 @@ AppError (base)
 
 - **GET returns 200 with `null`** for singleton entities that don't exist yet (not 404). This distinguishes "not configured" from "not found."
 - **DELETE returns 204** with no response body. The frontend `request()` function handles 204 by returning `undefined` instead of parsing JSON.
-- **PUT is full-replace** for the resource. Partial updates may use PATCH in future but are not yet implemented.
+- **PUT is full-replace** for the resource. In practice, some PUT endpoints accept optional fields for partial updates (e.g., `PUT /v1/quotes/:id` — all body fields are optional). Future stories may introduce PATCH for clarity.
 - **POST creates a new entity** each time — it is not idempotent.
 - **Composite POST** (e.g., `POST /v1/requests/:id/convert`) returns 200 (not 201) since it modifies an existing resource and creates multiple new ones. The status gate (`new`/`reviewed` only) prevents repeated execution. A concurrent double-convert race is guarded by `updateStatus(..., expectedStatuses)` which adds `WHERE status IN (...)` to the SQL UPDATE — if another transaction already converted the request, 0 rows are updated, the transaction rolls back, and a 409 `CONFLICT` is returned.
 
@@ -191,7 +191,7 @@ GET /v1/clients?limit=50&cursor=<opaque_string>
 
 ## 6) Filtering conventions
 
-### Established patterns (S-0003 through S-0008)
+### Established patterns (S-0003 through S-0009)
 
 | Parameter | Type | Description | Example |
 |-----------|------|-------------|---------|

@@ -1,5 +1,7 @@
 # S-0006: Public "Request Service" Form
 
+## Status: Complete
+
 ## Acceptance Criteria
 - External customer can submit a service request via public form (no auth required)
 - Request record is created, tenant-scoped via slug

@@ -76,6 +76,8 @@ function makeQuoteRepo(overrides: Partial<QuoteRepository> = {}): QuoteRepositor
   return {
     create: vi.fn(async (q) => ({ ...q, createdAt: new Date(), updatedAt: new Date() })),
     getById: vi.fn(async () => null),
+    list: vi.fn(async () => ({ data: [], cursor: null, hasMore: false })),
+    update: vi.fn(async () => null),
     count: vi.fn(async () => 0),
     countByStatus: vi.fn(async () => 0),
     ...overrides,

@@ -1,6 +1,6 @@
 # Seedling-HQ — MVP Context, Architecture, Naming, Dev Sandbox, and Customer Model (Single Source of Truth)
 
-_Last updated: 2026-02-08 (America/Chihuahua)_
+_Last updated: 2026-02-10 (America/Chihuahua)_
 
 > This document updates the prior “MVP Context, Architecture, Naming, and Dev Sandbox” file to include:
 > - Two customer types (internal vs external) and how that impacts tenancy
@@ -266,16 +266,16 @@ Suggested table (name is up to you, e.g., `secure_link_tokens`):
 - S-0003 Service catalog (price book v1) **— DONE**: two-level catalog (categories → items), soft delete via `active` flag, prices in integer cents, unit types (flat/hourly/per_sqft/per_unit/per_visit), CRUD routes at `/v1/services/categories` and `/v1/services`
 
 **Epic 0002 — CRM (clients + properties)**
-- S-0004 Client + property creation (search + notes)
-- S-0005 Client timeline (activity feed v1)
+- S-0004 Client + property creation (search + notes) **— DONE**: two-level model (clients → properties), cursor-based pagination, server-side ILIKE search, soft delete with cascade, nested + flat URL pattern
+- S-0005 Client timeline (activity feed v1) **— DONE**: timeline via `audit_events` query with composite index, tab layout (Info/Properties/Activity), event label mapping, exclude filter
 
 **Epic 0003 — Requests (lead intake)**
-- S-0006 Public request form (spam protection baseline: honeypot + rate limit)
-- S-0007 New request notifications (email + optional outbound SMS via worker)
-- S-0008 Convert request → client + property + quote draft
+- S-0006 Public request form (spam protection baseline: honeypot + rate limit) **— DONE**: public endpoint `/v1/public/requests/:tenantSlug`, honeypot + in-memory rate limiter, tenant resolution via slug, system audit principal
+- S-0007 New request notifications (email + optional outbound SMS via worker) **— DONE**: message outbox pattern, Nodemailer → Mailpit (local SMTP), best-effort notification, SMS queued for S-0021 worker
+- S-0008 Convert request → client + property + quote draft **— DONE**: atomic cross-entity conversion in single UoW, extended TransactionRepos (7 repos), race-guarded `updateStatus`, existing client match on convert
 
 **Epic 0004 — Quotes + approvals**
-- S-0009 Quote builder v1 (totals, draft/send states)
+- S-0009 Quote builder v1 (totals, draft/send states) **— DONE**: quote detail page with line-item editing, totals calculation, status machine (draft→sent→approved/declined/expired), quote list page with filters
 - S-0010 Send secure quote link (token access, audit events) **→ updated AC: tenant-bound + quote-bound token, scope checks, expiry/revocation, audit**
 - S-0011 Customer approves quote (name + timestamp; owner notified) **→ updated AC: token scope `quote:approve`, idempotent approval, audit metadata**
 

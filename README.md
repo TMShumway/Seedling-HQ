@@ -77,7 +77,7 @@ Seedling-HQ/
 | `test` | Run unit tests |
 | `test:integration` | Run integration tests against real Postgres |
 | `db:push` | Push Drizzle schema to database |
-| `db:seed` | Seed demo tenant, user, services, clients, properties, and audit events |
+| `db:seed` | Seed demo tenant, user, services, clients, properties, requests, quote, and audit events |
 | `gen` | Generate OpenAPI spec to `openapi.json` |
 
 ## API Endpoints
@@ -117,6 +117,10 @@ Seedling-HQ/
 | GET | `/v1/requests/count` | Required | Count requests (`?status=new`) |
 | GET | `/v1/requests/:id` | Required | Get request |
 | POST | `/v1/requests/:id/convert` | Required | Convert request to client + property + quote draft |
+| GET | `/v1/quotes` | Required | List quotes (paginated, searchable, `?status=`) |
+| GET | `/v1/quotes/count` | Required | Count quotes (`?status=`) |
+| GET | `/v1/quotes/:id` | Required | Get quote |
+| PUT | `/v1/quotes/:id` | Required | Update quote (draft only) |
 
 ## Architecture
 
@@ -142,13 +146,15 @@ The demo seed creates:
 - **User:** `00000000-0000-0000-0000-000000000010` (email: `owner@demo.local`, role: `owner`)
 - **Service categories:** Lawn Care, Tree Service, Landscaping (with 8 service items)
 - **Clients:** John Smith, Jane Johnson, Bob Wilson (with 3 properties)
-- **Audit events:** tenant/user signup + client/property creation events (for timeline)
+- **Requests:** Sarah Davis, Mike Chen, Emily Rodriguez (3 public_form requests, all `new`)
+- **Quote:** "Lawn Service for John Smith" (draft, 2 line items, $70 total)
+- **Audit events:** tenant/user signup + client/property/request/quote creation events (for timeline)
 
 ## Database
 
 PostgreSQL 17 via Docker Compose. Schema managed by Drizzle ORM with `db:push` for local dev.
 
-**Tables (S-0001 through S-0008):**
+**Tables (S-0001 through S-0009):**
 - `tenants` — id, slug (unique), name, status, timestamps
 - `users` — id, tenant_id (FK), email, full_name, role, status, timestamps
 - `audit_events` — id, tenant_id (FK), event_name, principal/subject info, correlation_id, created_at; indexes on `(tenant_id, created_at)` and `(tenant_id, subject_type, subject_id, created_at)`
@@ -164,9 +170,9 @@ PostgreSQL 17 via Docker Compose. Schema managed by Drizzle ORM with `db:push` f
 ## Testing
 
 ```bash
-pnpm test                # 100 unit tests
-pnpm test:integration    # 91 integration tests (needs Postgres)
-pnpm test:e2e            # 62 E2E tests, 43 run + 19 skipped (starts API + Web automatically)
+pnpm test                # 114 unit tests
+pnpm test:integration    # 104 integration tests (needs Postgres)
+pnpm test:e2e            # 70 E2E tests, 48 run + 22 skipped (starts API + Web automatically)
 ```
 
 Integration tests truncate tables between runs. E2E tests re-seed the database via `globalSetup` before each run.

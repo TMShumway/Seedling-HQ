@@ -28,7 +28,7 @@ Examples (implemented):
 - `ServiceCategoryRepository`, `ServiceItemRepository`
 - `ClientRepository`, `PropertyRepository`
 - `RequestRepository` (includes `updateStatus(tenantId, id, status, expectedStatuses?)` with optional race guard via `WHERE status IN (...)`, S-0008)
-- `QuoteRepository` (S-0008 — `create`, `getById`, `count`, `countByStatus`)
+- `QuoteRepository` (S-0008/S-0009 — `create`, `getById`, `list`, `update`, `count`, `countByStatus`)
 - `MessageOutboxRepository` (S-0007 — `create`, `updateStatus`)
 - `UserRepository` (includes `getOwnerByTenantId` for notification recipient lookup)
 - `EmailSender` (port for SMTP — implemented by `NodemailerEmailSender`)
