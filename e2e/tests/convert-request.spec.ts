@@ -51,9 +51,9 @@ test.describe('Convert Request to Client', () => {
     // Step 7: Submit conversion
     await page.getByTestId('convert-submit').click();
 
-    // Step 8: Verify redirect to client detail page
-    await expect(page.getByTestId('client-detail-page')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('Convert Test User')).toBeVisible();
+    // Step 8: Verify redirect to quote detail page
+    await expect(page.getByTestId('quote-detail-page')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('quote-title-input')).toHaveValue('Service for Convert Test User');
   });
 
   test('already-converted request shows no convert button', async ({ page }, testInfo) => {
