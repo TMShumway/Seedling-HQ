@@ -48,7 +48,7 @@ Clean Architecture in this repo means:
 **Application (Use Cases + Ports)**
 - "Upsert business settings" (singleton per tenant; no UoW needed)
 - "Send quote link"
-- "Approve quote"
+- "Respond to quote (approve/decline)" — single use case, parameterized by action (S-0011)
 - "Create job from approved quote"
 - "Schedule visit + create reminders"
 - "Complete visit + photos"
@@ -60,7 +60,7 @@ Clean Architecture in this repo means:
 **Interface adapters**
 - Fastify route handler wiring
 - Input validation + mapping to use case request DTO
-- Auth middleware: Cognito JWT validation (internal routes) or secure-link token resolution (external routes) → produces `authContext`
+- Auth middleware: Cognito JWT validation (internal routes) or secure-link token resolution (external routes) → produces `authContext` or `externalAuthContext` (with `principalType: 'external'`, `principal_id: tokenId`)
 - Output formatting (HTTP status codes, response DTO)
 
 **Infrastructure**
@@ -101,7 +101,7 @@ We use **TDD as the default workflow** for domain + application work (and often 
 When writing the first failing test, include at least one:
 - cross-tenant denial case (where applicable)
 - scope mismatch / token invalid case (for external flows)
-- idempotency retry case (for worker/outbox jobs)
+- idempotency retry case (for worker/outbox jobs, or external actions — same-action → 200, cross-transition → 400)
 
 ---
 

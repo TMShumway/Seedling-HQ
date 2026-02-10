@@ -61,4 +61,4 @@ Story complete. All phases implemented and tested.
 ## Test summary
 - **Unit**: 149 total (12 new)
 - **Integration**: 128 total (10 new)
-- **E2E**: 88 total (58 run + 30 skipped), 4 new tests
+- **E2E**: 88 total (58 run + 30 skipped), 8 new (4 desktop + 4 mobile-skipped)

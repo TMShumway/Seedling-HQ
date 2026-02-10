@@ -77,7 +77,7 @@ Seedling-HQ/
 | `test` | Run unit tests |
 | `test:integration` | Run integration tests against real Postgres |
 | `db:push` | Push Drizzle schema to database |
-| `db:seed` | Seed demo tenant, user, services, clients, properties, requests, draft quote, sent quote with secure link token, and audit events |
+| `db:seed` | Seed demo tenant, user, services, clients, properties, requests, draft quote, two sent quotes with secure link tokens, and audit events |
 | `gen` | Generate OpenAPI spec to `openapi.json` |
 
 ## API Endpoints
@@ -123,6 +123,8 @@ Seedling-HQ/
 | PUT | `/v1/quotes/:id` | Required | Update quote (draft only) |
 | POST | `/v1/quotes/:id/send` | Required | Send quote to client (draft only, creates secure link, returns token+link) |
 | GET | `/v1/ext/quotes/:token` | External token | View sent quote publicly (token-authenticated, no login) |
+| POST | `/v1/ext/quotes/:token/approve` | External token | Approve sent quote (token-authenticated, idempotent) |
+| POST | `/v1/ext/quotes/:token/decline` | External token | Decline sent quote (token-authenticated, idempotent) |
 
 ## Architecture
 
@@ -149,14 +151,14 @@ The demo seed creates:
 - **Service categories:** Lawn Care, Tree Service, Landscaping (with 8 service items)
 - **Clients:** John Smith, Jane Johnson, Bob Wilson (with 3 properties)
 - **Requests:** Sarah Davis, Mike Chen, Emily Rodriguez (3 public_form requests, all `new`)
-- **Quotes:** "Lawn Service for John Smith" (draft, 2 line items, $70 total) + "Tree Service for Jane Johnson" (sent, 2 line items, $720 total with secure link token)
+- **Quotes:** "Lawn Service for John Smith" (draft, 2 line items, $70 total) + "Tree Service for Jane Johnson" (sent, 2 line items, $720 total with secure link token) + "Landscaping for Bob Wilson" (sent, 2 line items, $1,020 total with second secure link token)
 - **Audit events:** tenant/user signup + client/property/request/quote creation events (for timeline)
 
 ## Database
 
 PostgreSQL 17 via Docker Compose. Schema managed by Drizzle ORM with `db:push` for local dev.
 
-**Tables (S-0001 through S-0010):**
+**Tables (S-0001 through S-0011):**
 - `tenants` — id, slug (unique), name, status, timestamps
 - `users` — id, tenant_id (FK), email, full_name, role, status, timestamps
 - `audit_events` — id, tenant_id (FK), event_name, principal/subject info, correlation_id, created_at; indexes on `(tenant_id, created_at)` and `(tenant_id, subject_type, subject_id, created_at)`
@@ -173,9 +175,9 @@ PostgreSQL 17 via Docker Compose. Schema managed by Drizzle ORM with `db:push` f
 ## Testing
 
 ```bash
-pnpm test                # 137 unit tests
-pnpm test:integration    # 118 integration tests (needs Postgres)
-pnpm test:e2e            # 80 E2E tests, 54 run + 26 skipped (starts API + Web automatically)
+pnpm test                # 149 unit tests
+pnpm test:integration    # 128 integration tests (needs Postgres)
+pnpm test:e2e            # 88 E2E tests, 58 run + 30 skipped (starts API + Web automatically)
 ```
 
 Integration tests truncate tables between runs. E2E tests re-seed the database via `globalSetup` before each run.

@@ -124,7 +124,7 @@ Target:
 - Token resolves to: `(tenant_id, subject_type, subject_id, scopes, expires_at, revoked_at)`
 - External endpoints derive tenant solely from token (never from params).
 - Object binding is enforced (subject_id match or strict relationship).
-- Scope checks gate actions (`quote:approve`, `invoice:pay`, etc.).
+- Scope checks gate actions (`quote:respond`, `invoice:pay`, etc.).
 - Audit events are recorded for view/send/approve/pay.
 
 **Required tests:**
@@ -240,7 +240,7 @@ External pages are:
 - Verify that the production HMAC secret guard rejects startup when `SECURE_LINK_HMAC_SECRET` is missing or below the minimum length threshold. Test as a pure unit test against the config validation function (no Fastify boot needed).
 
 **E2E must cover:**
-- Quote view + approve flow (name capture + success state)
+- Quote view + approve/decline flow (S-0011: approve button, decline confirmation dialog, success banners, idempotent revisit)
 - Invoice view + pay CTA (can stub Stripe in test)
 - Client hub shows upcoming visits + open invoices
 - Token invalid/expired shows a safe error page with support contact

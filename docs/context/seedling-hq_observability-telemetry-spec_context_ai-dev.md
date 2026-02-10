@@ -57,7 +57,7 @@ Seedling-HQ uses three distinct signal types. Do not mix them.
 - `principal_type` (`internal` | `system` | `external`)
 - `principal_id` (user_id or token_id when known)
 
-> **External principal (S-0010):** Actions triggered via secure links (e.g., `quote.viewed`) use `principal_type: 'external'` and `principal_id: <token_id>`.
+> **External principal (S-0010/S-0011):** Actions triggered via secure links (e.g., `quote.viewed`, `quote.approved`, `quote.declined`) use `principal_type: 'external'` and `principal_id: <token_id>` (DB record ID, not raw token value).
 
 ### 3.2 Propagation rules
 - Web generates a `correlation_id` for each user interaction that triggers API calls.
@@ -149,6 +149,7 @@ These are counts and rates from core MVP spine:
 - `requests_created_total`
 - `quotes_sent_total`
 - `quotes_approved_total`
+- `quotes_declined_total`
 - `visits_completed_total`
 - `invoices_sent_total`
 - `invoices_paid_total`
@@ -189,7 +190,7 @@ Minimum audit events for MVP:
 - `business_settings.created`, `business_settings.updated` (S-0002) — derived from upsert result timestamps, not pre-read (race-safe)
 - `request.created`
 - `quote.created` (S-0008), `quote.updated` (S-0009)
-- `quote.sent` (S-0010), `quote.viewed` (S-0010), `quote.approved`
+- `quote.sent` (S-0010), `quote.viewed` (S-0010), `quote.approved` (S-0011), `quote.declined` (S-0011)
 - `visit.scheduled`, `visit.rescheduled`, `visit.completed`
 - `invoice.sent`, `invoice.viewed`, `invoice.paid`
 - `message.sent` (email/SMS) with outbox id linkage
@@ -226,6 +227,7 @@ Every telemetry event should contain:
 - `quote.sent`
 - `quote.viewed`
 - `quote.approved`
+- `quote.declined`
 - `job.created`
 - `visit.scheduled`
 - `visit.completed`

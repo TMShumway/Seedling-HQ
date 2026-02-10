@@ -3,7 +3,7 @@
 _Last updated: 2026-02-09 (America/Chihuahua)_
 
 > Purpose: Define consistent API behavior so agents and humans build endpoints the same way.
-> This doc captures conventions established in S-0001 through S-0009 and defines standards for future stories.
+> This doc captures conventions established in S-0001 through S-0011 and defines standards for future stories.
 
 ---
 
@@ -68,6 +68,7 @@ AppError (base)
 | Composite conversion | 200 | Multi-entity result | `POST /v1/requests/:id/convert` (S-0008) |
 | Send + create token | 200 | `{ quote, token, link }` | `POST /v1/quotes/:id/send` (S-0010) |
 | External token read | 200 | Quote view data | `GET /v1/ext/quotes/:token` (S-0010) |
+| External approve/decline | 200 | `{ quote: { id, status, approvedAt, declinedAt } }` | `POST /v1/ext/quotes/:token/approve` / `/decline` (S-0011) |
 
 ### Conventions
 
@@ -109,6 +110,8 @@ These endpoints skip internal auth (`requireAuth`):
 - `POST /v1/tenants` (signup)
 - `POST /v1/public/requests/:tenantSlug` (public request form, S-0006) — rate-limited + honeypot
 - `GET /v1/ext/quotes/:token` (external quote view, S-0010) — authenticated via secure link token, not Cognito/dev auth
+- `POST /v1/ext/quotes/:token/approve` (external quote approve, S-0011) — authenticated via secure link token
+- `POST /v1/ext/quotes/:token/decline` (external quote decline, S-0011) — authenticated via secure link token
 
 All other routes require auth via the `requireAuth` preHandler hook.
 
@@ -230,6 +233,13 @@ GET /v1/clients?limit=50&cursor=<opaque_string>
 | PUT | Yes | Full-replace semantics; singleton upsert via `onConflictDoUpdate` |
 | DELETE | Yes | Soft-delete sets `active = false`; repeated calls are no-ops |
 | POST | No | Creates a new entity each time |
+
+### External action idempotency (S-0011)
+
+External routes like `POST /v1/ext/quotes/:token/approve` and `/decline` are idempotent with special semantics:
+- **Same action repeated** (e.g., approve then approve again) → 200 with current state; no-op
+- **Cross-transition attempt** (e.g., approve then decline) → 400 `VALIDATION_ERROR` ("This quote has already been approved")
+- This prevents client double-clicks from causing state thrashing while blocking impossible transitions
 
 ### Future: Idempotency-Key header
 
