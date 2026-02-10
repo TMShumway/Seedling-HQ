@@ -1,4 +1,4 @@
-import { eq, and, or, ilike, sql, lt, desc } from 'drizzle-orm';
+import { eq, and, or, ilike, sql, lt, desc, inArray } from 'drizzle-orm';
 import type { RequestRepository, ListRequestsFilters } from '../../../application/ports/request-repository.js';
 import type { PaginatedResult } from '../../../application/ports/client-repository.js';
 import type { Request } from '../../../domain/entities/request.js';
@@ -107,11 +107,15 @@ export class DrizzleRequestRepository implements RequestRepository {
     return toEntity(row);
   }
 
-  async updateStatus(tenantId: string, id: string, status: string): Promise<Request | null> {
+  async updateStatus(tenantId: string, id: string, status: string, expectedStatuses?: string[]): Promise<Request | null> {
+    const conditions = [eq(requests.tenantId, tenantId), eq(requests.id, id)];
+    if (expectedStatuses?.length) {
+      conditions.push(inArray(requests.status, expectedStatuses));
+    }
     const rows = await this.db
       .update(requests)
       .set({ status, updatedAt: new Date() })
-      .where(and(eq(requests.tenantId, tenantId), eq(requests.id, id)))
+      .where(and(...conditions))
       .returning();
     return rows[0] ? toEntity(rows[0]) : null;
   }

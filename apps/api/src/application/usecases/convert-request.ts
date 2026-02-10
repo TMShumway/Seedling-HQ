@@ -139,12 +139,17 @@ export class ConvertRequestUseCase {
           correlationId,
         });
 
-        // Update request status to converted
+        // Update request status to converted (guard on expected status to prevent double-convert race)
         const updatedRequest = await requestRepo.updateStatus(
           input.tenantId,
           input.requestId,
           'converted',
+          CONVERTIBLE_STATUSES,
         );
+
+        if (!updatedRequest) {
+          throw new ConflictError('Request has already been converted');
+        }
 
         await auditRepo.record({
           id: randomUUID(),

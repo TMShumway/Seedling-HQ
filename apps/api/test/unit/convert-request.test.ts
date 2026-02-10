@@ -358,6 +358,20 @@ describe('ConvertRequestUseCase', () => {
     expect(eventNames).toContain('quote.created');
   });
 
+  it('throws ConflictError when concurrent convert races (updateStatus returns null)', async () => {
+    // Simulate a race: pre-check sees 'new', but by the time updateStatus runs
+    // another transaction already flipped it to 'converted', so 0 rows updated.
+    requestRepo = makeRequestRepo({
+      updateStatus: vi.fn(async () => null),
+    });
+    uow = makeUnitOfWork(clientRepo, propertyRepo, requestRepo, quoteRepo, auditRepo);
+    useCase = new ConvertRequestUseCase(requestRepo, clientRepo, uow);
+
+    await expect(
+      useCase.execute(makeInput(), correlationId),
+    ).rejects.toThrow(ConflictError);
+  });
+
   it('maps unique constraint violation to ConflictError', async () => {
     const dbError = Object.assign(new Error('duplicate key value violates unique constraint'), {
       code: '23505',
