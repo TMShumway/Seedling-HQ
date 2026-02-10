@@ -240,7 +240,7 @@ new → reviewed → converted
 
 **Public endpoint:** `POST /v1/public/requests/:tenantSlug` (no auth, rate-limited, honeypot)
 **Authenticated endpoints:** `GET /v1/requests` (paginated), `GET /v1/requests/:id`, `GET /v1/requests/count`, `POST /v1/requests/:id/convert` (S-0008)
-**Audit events:** `request.created` with `principalType: 'system'`, `principalId: 'public_form'`; `request.converted` with `principalType: 'internal_user'` (S-0008)
+**Audit events:** `request.created` with `principalType: 'system'`, `principalId: 'public_form'`; `request.converted` with `principalType: 'internal'` (S-0008)
 
 ### MessageOutbox
 
@@ -539,7 +539,7 @@ All audit events share this structure:
 {
   id: string;                // UUID
   tenantId: string;          // FK → tenants.id
-  principalType: string;     // 'internal_user' | 'external_token' | 'system'
+  principalType: string;     // 'internal' | 'system' | 'external' (future)
   principalId: string;       // user_id or token_id
   eventName: string;         // e.g., 'quote.approved'
   subjectType: string;       // e.g., 'quote'

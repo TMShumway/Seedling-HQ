@@ -164,9 +164,9 @@ PostgreSQL 17 via Docker Compose. Schema managed by Drizzle ORM with `db:push` f
 ## Testing
 
 ```bash
-pnpm test                # 99 unit tests
+pnpm test                # 100 unit tests
 pnpm test:integration    # 91 integration tests (needs Postgres)
-pnpm test:e2e            # 60 E2E tests, 43 run + 17 skipped (starts API + Web automatically)
+pnpm test:e2e            # 62 E2E tests, 43 run + 19 skipped (starts API + Web automatically)
 ```
 
 Integration tests truncate tables between runs. E2E tests re-seed the database via `globalSetup` before each run.

@@ -118,7 +118,7 @@
 | SMS outbox as queued | S-0007 | SMS outbox records created with `status: 'queued'`; actual sending deferred to S-0021 worker |
 | Atomic cross-entity conversion | S-0008 | `ConvertRequestUseCase` writes client + property + quote + request status update + 3-4 audit events inside single `uow.run()` |
 | Extended TransactionRepos | S-0008 | UoW provides `clientRepo`, `propertyRepo`, `requestRepo`, `quoteRepo` alongside original `tenantRepo`, `userRepo`, `auditRepo` |
-| Request `updateStatus` | S-0008 | `RequestRepository.updateStatus(tenantId, id, status)` for status transitions (e.g., `new` → `converted`) |
+| Request `updateStatus` with race guard | S-0008 | `RequestRepository.updateStatus(tenantId, id, status, expectedStatuses?)` adds `WHERE status IN (...)` to prevent concurrent double-convert; returns `null` (0 rows) if another transaction already transitioned the status → throw `ConflictError` to roll back |
 | Composite convert endpoint | S-0008 | `POST /v1/requests/:id/convert` returns 200 (not 201) with `{ request, client, property, quote, clientCreated }` |
 | Existing client match on convert | S-0008 | Optional `existingClientId` skips client creation; frontend searches by email with debounced query |
 
