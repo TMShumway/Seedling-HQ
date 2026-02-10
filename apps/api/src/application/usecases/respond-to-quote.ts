@@ -6,7 +6,7 @@ import type { MessageOutboxRepository } from '../ports/message-outbox-repository
 import type { EmailSender } from '../ports/email-sender.js';
 import type { AppConfig } from '../../shared/config.js';
 import type { RespondToQuoteInput, RespondToQuoteOutput } from '../dto/respond-quote-dto.js';
-import { NotFoundError, ValidationError, ConflictError } from '../../shared/errors.js';
+import { NotFoundError, ValidationError } from '../../shared/errors.js';
 
 export class RespondToQuoteUseCase {
   constructor(
@@ -57,7 +57,21 @@ export class RespondToQuoteUseCase {
       input.tenantId, input.quoteId, targetStatus, statusFields, ['sent'],
     );
     if (!updated) {
-      throw new ConflictError(`Quote has already been ${targetStatus}`);
+      // Race: another request transitioned first — re-fetch to determine outcome
+      const current = await this.quoteRepo.getById(input.tenantId, input.quoteId);
+      if (current?.status === targetStatus) {
+        // Same action won the race — return idempotent success
+        return {
+          quote: {
+            id: current.id,
+            status: current.status,
+            approvedAt: current.approvedAt?.toISOString() ?? null,
+            declinedAt: current.declinedAt?.toISOString() ?? null,
+          },
+        };
+      }
+      // Opposite action won, or unexpected state
+      throw new ValidationError(`This quote has already been ${current?.status ?? 'modified'}`);
     }
 
     // Best-effort audit

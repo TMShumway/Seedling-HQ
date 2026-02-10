@@ -263,6 +263,41 @@ describe('RespondToQuoteUseCase', () => {
     ).rejects.toThrow('This quote has already been approved');
   });
 
+  it('returns idempotent success when same-action race loses', async () => {
+    const approvedAt = new Date('2026-01-20');
+    // First getById returns sent (initial read)
+    // updateStatus returns null (race loser)
+    // Second getById returns approved (winner already transitioned)
+    (quoteRepo.getById as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(makeSentQuote())
+      .mockResolvedValueOnce(makeSentQuote({ status: 'approved', approvedAt }));
+    (quoteRepo.updateStatus as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+    const uc = makeUseCase();
+    const result = await uc.execute(
+      { tenantId: TENANT_ID, quoteId: QUOTE_ID, tokenId: TOKEN_ID, action: 'approve' },
+      'corr-1',
+    );
+
+    expect(result.quote.status).toBe('approved');
+    expect(result.quote.approvedAt).toBe(approvedAt.toISOString());
+  });
+
+  it('throws ValidationError when opposite-action race loses', async () => {
+    // First getById returns sent (initial read)
+    // updateStatus returns null (race loser)
+    // Second getById returns declined (opposite action won)
+    (quoteRepo.getById as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(makeSentQuote())
+      .mockResolvedValueOnce(makeSentQuote({ status: 'declined', declinedAt: new Date() }));
+    (quoteRepo.updateStatus as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+    const uc = makeUseCase();
+    await expect(
+      uc.execute({ tenantId: TENANT_ID, quoteId: QUOTE_ID, tokenId: TOKEN_ID, action: 'approve' }, 'corr-1'),
+    ).rejects.toThrow('This quote has already been declined');
+  });
+
   it('does not throw when notification fails', async () => {
     (emailSender.send as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('SMTP down'));
     const uc = makeUseCase();
