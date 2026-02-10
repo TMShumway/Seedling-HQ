@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,14 @@ export function PublicQuoteViewPage() {
   const [respondAction, setRespondAction] = useState<'approve' | 'decline' | null>(null);
   const [showDeclineConfirm, setShowDeclineConfirm] = useState(false);
   const [respondError, setRespondError] = useState<string | null>(null);
+
+  // Reset respond state when token changes (e.g. navigating between quotes)
+  useEffect(() => {
+    setRespondStatus('idle');
+    setRespondAction(null);
+    setShowDeclineConfirm(false);
+    setRespondError(null);
+  }, [token]);
 
   const quoteQuery = useQuery({
     queryKey: ['public-quote', token],
