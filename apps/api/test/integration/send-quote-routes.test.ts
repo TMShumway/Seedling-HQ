@@ -278,6 +278,31 @@ describe('GET /v1/ext/quotes/:token', () => {
     expect(after[0].lastUsedAt).not.toBeNull();
   });
 
+  it('returns 403 when token is valid but quote is missing', async () => {
+    const { app, tenant } = await createTenantAndGetApp();
+    const converted = await createQuoteViaConvert(app, tenant.slug);
+    await addLineItemsToQuote(app, converted.quote.id);
+
+    const sendRes = await app.inject({
+      method: 'POST',
+      url: `/v1/quotes/${converted.quote.id}/send`,
+    });
+    const { token } = sendRes.json();
+
+    // Delete the quote directly from DB to simulate missing data
+    const db = getDb();
+    await db.delete(quotes).where(eq(quotes.id, converted.quote.id));
+
+    const extApp = await buildTestApp();
+    const res = await extApp.inject({
+      method: 'GET',
+      url: `/v1/ext/quotes/${token}`,
+    });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.json().error.code).toBe('LINK_INVALID');
+  });
+
   it('enforces cross-tenant isolation', async () => {
     const { app: appA, tenant: tenantA } = await createTenantAndGetApp();
     const converted = await createQuoteViaConvert(appA, tenantA.slug);

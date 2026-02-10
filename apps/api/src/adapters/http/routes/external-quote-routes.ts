@@ -38,12 +38,14 @@ export function buildExternalQuoteRoutes(deps: {
           params: z.object({ token: z.string() }),
         },
       },
-      async (request) => {
+      async (request, reply) => {
         const ctx = request.externalAuthContext!;
 
         const quote = await deps.quoteRepo.getById(ctx.tenantId, ctx.subjectId);
         if (!quote) {
-          return { error: { code: 'LINK_INVALID', message: 'This link is no longer valid.' } };
+          return reply.status(403).send({
+            error: { code: 'LINK_INVALID', message: 'This link is no longer valid.' },
+          });
         }
 
         // Get tenant name
