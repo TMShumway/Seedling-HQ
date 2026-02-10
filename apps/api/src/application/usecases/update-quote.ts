@@ -43,7 +43,7 @@ export class UpdateQuoteUseCase {
           throw new ValidationError('Line item unit price cannot be negative');
         }
         item.description = item.description.trim();
-        item.total = item.quantity * item.unitPrice;
+        item.total = Math.round(item.quantity * item.unitPrice);
       }
       patch.lineItems = input.lineItems;
       patch.subtotal = input.lineItems.reduce((sum, item) => sum + item.total, 0);

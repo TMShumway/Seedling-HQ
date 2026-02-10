@@ -230,6 +230,24 @@ describe('UpdateQuoteUseCase', () => {
     ).rejects.toThrow(ValidationError);
   });
 
+  it('rounds totals for fractional quantities', async () => {
+    const lineItems: QuoteLineItem[] = [
+      { serviceItemId: null, description: 'Hourly labor', quantity: 1.5, unitPrice: 3333, total: 0 },
+    ];
+
+    await useCase.execute(
+      { tenantId: 'tenant-1', userId: 'user-1', id: 'quote-1', lineItems },
+      correlationId,
+    );
+
+    const call = vi.mocked(quoteRepo.update).mock.calls[0];
+    const patch = call[2];
+    // 1.5 * 3333 = 4999.5 → should round to 5000
+    expect(patch.lineItems![0].total).toBe(5000);
+    expect(Number.isInteger(patch.subtotal)).toBe(true);
+    expect(patch.subtotal).toBe(5000);
+  });
+
   it('allows partial update (title only)', async () => {
     await useCase.execute(
       { tenantId: 'tenant-1', userId: 'user-1', id: 'quote-1', title: 'Just Title' },
