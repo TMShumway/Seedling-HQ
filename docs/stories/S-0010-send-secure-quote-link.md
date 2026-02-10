@@ -54,6 +54,6 @@ Add the secure link system so owners can click "Send Quote" on a draft quote. Th
 _(Story complete — no active work)_
 
 ## Test summary
-- **Unit**: 132 total (17 new: 4 crypto + 13 send-quote)
-- **Integration**: 116 total (11 new: send-quote-routes)
+- **Unit**: 137 total (22 new: 4 crypto + 13 send-quote + 5 config)
+- **Integration**: 118 total (13 new: send-quote-routes)
 - **E2E**: 80 total (10 new: 5 desktop + 5 mobile-skipped; 54 run + 26 skipped)
