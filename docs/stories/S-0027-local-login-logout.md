@@ -27,13 +27,13 @@ Add a proper login/logout UX for `AUTH_MODE=local` so developers and testers see
 ## Phase 2: Frontend — Login page + AuthGuard + Logout
 **Goal:** Create login page, AuthGuard wrapper, logout buttons, signup cross-link, and API client method.
 
-- [ ] **Task 2.1: Add `localLogin` to API client**
-- [ ] **Task 2.2: Create AuthGuard component**
-- [ ] **Task 2.3: Create LoginPage component**
-- [ ] **Task 2.4: Wire LoginPage + AuthGuard into App.tsx**
-- [ ] **Task 2.5: Add logout button to Sidebar**
-- [ ] **Task 2.6: Add logout button to MobileDrawer**
-- [ ] **Task 2.7: Add cross-links between SignupPage and LoginPage**
+- [x] **Task 2.1: Add `localLogin` to API client**
+- [x] **Task 2.2: Create AuthGuard component**
+- [x] **Task 2.3: Create LoginPage component**
+- [x] **Task 2.4: Wire LoginPage + AuthGuard into App.tsx**
+- [x] **Task 2.5: Add logout button to Sidebar**
+- [x] **Task 2.6: Add logout button to MobileDrawer**
+- [x] **Task 2.7: Add cross-links between SignupPage and LoginPage**
 
 ## Phase 3: E2E Migration + New E2E Tests
 **Goal:** Fix existing E2E tests broken by AuthGuard, add new login/logout E2E tests.
@@ -52,15 +52,15 @@ Add a proper login/logout UX for `AUTH_MODE=local` so developers and testers see
 
 ## Resume context
 ### Last completed
-- Phase 1 complete: backend login endpoint with cross-tenant email lookup, rate limiting, AUTH_MODE guard
-- Files: `user-repository.ts` (port), `drizzle-user-repository.ts` (impl), `auth-routes.ts` (new), `app.ts` (registration)
-- Unit tests: `test/unit/auth-login.test.ts` (3 tests: cognito 404, invalid email 400, missing email 400)
-- Integration tests: `test/integration/auth-routes.test.ts` (8 tests: single match, multi-tenant, unknown 401, trim/lowercase, invalid 400, cognito 404, rate limit 429, disabled user)
-- Zod schema uses `.trim().toLowerCase()` before `.email()` to handle whitespace/casing
+- Phase 2 complete: Frontend login page, AuthGuard, logout buttons, cross-links
+- Files created: `AuthGuard.tsx`, `LoginPage.tsx`
+- Files modified: `api-client.ts` (localLogin), `App.tsx` (AuthGuard wrapping, /login route, catch-all redirect to /login), `Sidebar.tsx` (logout button), `MobileDrawer.tsx` (logout button), `SignupPage.tsx` (cross-link to login)
+- LoginPage: two-step flow (email → account picker for multi-tenant), auto-select for single account
+- Frontend builds cleanly
 ### In progress
-- Starting Phase 2: Frontend login page, AuthGuard, logout
+- Starting Phase 3: E2E migration + new E2E tests
 ### Next up
-- Task 2.1: Add `localLogin` to API client
+- Task 3.1: Create `e2e/helpers/auth.ts` helper
 ### Blockers / open questions
 - None
 

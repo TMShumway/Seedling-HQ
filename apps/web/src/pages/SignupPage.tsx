@@ -82,10 +82,16 @@ export function SignupPage() {
               />
             </div>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex-col gap-4">
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Creating account...' : 'Create Account'}
             </Button>
+            <p className="text-sm text-muted-foreground">
+              Already have an account?{' '}
+              <a href="/login" className="text-primary underline underline-offset-4 hover:text-primary/80">
+                Log in
+              </a>
+            </p>
           </CardFooter>
         </form>
       </Card>

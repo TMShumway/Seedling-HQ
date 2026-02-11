@@ -1,4 +1,4 @@
-import { useLocation } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import {
   LayoutDashboard,
   Wrench,
@@ -9,6 +9,7 @@ import {
   Briefcase,
   Receipt,
   Settings,
+  LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -26,6 +27,13 @@ const navItems = [
 
 export function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    localStorage.removeItem('dev_tenant_id');
+    localStorage.removeItem('dev_user_id');
+    navigate('/login');
+  }
 
   return (
     <aside className="hidden lg:flex lg:w-64 lg:flex-col border-r border-sidebar-border bg-sidebar-background">
@@ -56,6 +64,15 @@ export function Sidebar() {
           );
         })}
       </nav>
+      <div className="border-t border-sidebar-border px-3 py-3">
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        >
+          <LogOut className="h-4 w-4" />
+          Log out
+        </button>
+      </div>
     </aside>
   );
 }
