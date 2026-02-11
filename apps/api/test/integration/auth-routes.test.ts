@@ -204,6 +204,148 @@ describe('POST /v1/auth/local/login', () => {
   });
 });
 
+describe('POST /v1/auth/cognito/lookup', () => {
+  const cognitoConfig = {
+    AUTH_MODE: 'cognito' as const,
+    COGNITO_USER_POOL_ID: 'us-east-1_IntegTest',
+    COGNITO_CLIENT_ID: 'test-client-id',
+    COGNITO_REGION: 'us-east-1',
+  };
+  const noopVerifier: JwtVerifier = {
+    verify: async () => { throw new Error('not used'); },
+  };
+
+  beforeEach(async () => {
+    await truncateAll();
+    resetRateLimitStore();
+  });
+
+  it('returns single account with cognitoUsername', async () => {
+    // Create tenant via local-mode app
+    const localApp = await buildTestApp();
+    const createRes = await localApp.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Lookup Biz', ownerEmail: 'lookup@test.com', ownerFullName: 'Lookup Owner' },
+    });
+    const { tenant, user } = createRes.json();
+
+    const app = await buildTestApp(cognitoConfig, { jwtVerifier: noopVerifier });
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/cognito/lookup',
+      payload: { email: 'lookup@test.com' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.accounts).toHaveLength(1);
+    expect(body.accounts[0].cognitoUsername).toBe(user.id);
+    expect(body.accounts[0].tenantId).toBe(tenant.id);
+    expect(body.accounts[0].tenantName).toBe('Lookup Biz');
+    expect(body.accounts[0].fullName).toBe('Lookup Owner');
+    expect(body.accounts[0].role).toBe('owner');
+  });
+
+  it('returns multiple accounts for shared email', async () => {
+    const localApp = await buildTestApp();
+    await localApp.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Biz A', ownerEmail: 'shared@test.com', ownerFullName: 'Owner A' },
+    });
+    await localApp.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Biz B', ownerEmail: 'shared@test.com', ownerFullName: 'Owner B' },
+    });
+
+    const app = await buildTestApp(cognitoConfig, { jwtVerifier: noopVerifier });
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/cognito/lookup',
+      payload: { email: 'shared@test.com' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.accounts).toHaveLength(2);
+    const names = body.accounts.map((a: any) => a.tenantName).sort();
+    expect(names).toEqual(['Biz A', 'Biz B']);
+  });
+
+  it('returns 401 for unknown email', async () => {
+    const app = await buildTestApp(cognitoConfig, { jwtVerifier: noopVerifier });
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/cognito/lookup',
+      payload: { email: 'nobody@test.com' },
+    });
+
+    expect(res.statusCode).toBe(401);
+    const body = res.json();
+    expect(body.error.code).toBe('UNAUTHORIZED');
+  });
+
+  it('returns 404 when AUTH_MODE is local', async () => {
+    const app = await buildTestApp();
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/cognito/lookup',
+      payload: { email: 'test@test.com' },
+    });
+
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('trims and lowercases email', async () => {
+    const localApp = await buildTestApp();
+    await localApp.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Trim Cognito Biz', ownerEmail: 'trimcog@test.com', ownerFullName: 'Trim Owner' },
+    });
+
+    const app = await buildTestApp(cognitoConfig, { jwtVerifier: noopVerifier });
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/cognito/lookup',
+      payload: { email: '  TRIMCOG@TEST.COM  ' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().accounts).toHaveLength(1);
+  });
+
+  it('returns 429 when rate limited', async () => {
+    const localApp = await buildTestApp();
+    await localApp.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Rate Biz', ownerEmail: 'ratelookup@test.com', ownerFullName: 'Rate Owner' },
+    });
+
+    const app = await buildTestApp(cognitoConfig, { jwtVerifier: noopVerifier });
+
+    for (let i = 0; i < 10; i++) {
+      await app.inject({
+        method: 'POST',
+        url: '/v1/auth/cognito/lookup',
+        payload: { email: 'ratelookup@test.com' },
+      });
+    }
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/cognito/lookup',
+      payload: { email: 'ratelookup@test.com' },
+    });
+
+    expect(res.statusCode).toBe(429);
+    expect(res.json().error.code).toBe('RATE_LIMITED');
+  });
+});
+
 describe('Cognito mode (mock verifier)', () => {
   const cognitoConfig = {
     AUTH_MODE: 'cognito' as const,

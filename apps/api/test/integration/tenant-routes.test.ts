@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import { buildTestApp, truncateAll, getPool } from './setup.js';
+import type { JwtVerifier } from '../../src/application/ports/jwt-verifier.js';
 
 afterAll(async () => {
   await getPool().end();
@@ -62,6 +63,29 @@ describe('POST /v1/tenants', () => {
     expect(res.statusCode).toBe(409);
     const body = res.json();
     expect(body.error.code).toBe('CONFLICT');
+  });
+
+  it('returns 404 when AUTH_MODE is cognito', async () => {
+    const noopVerifier: JwtVerifier = {
+      verify: async () => { throw new Error('not used'); },
+    };
+    const app = await buildTestApp(
+      { AUTH_MODE: 'cognito', COGNITO_USER_POOL_ID: 'us-east-1_Test', COGNITO_CLIENT_ID: 'test', COGNITO_REGION: 'us-east-1' },
+      { jwtVerifier: noopVerifier },
+    );
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: {
+        businessName: 'Blocked Biz',
+        ownerEmail: 'blocked@test.com',
+        ownerFullName: 'Blocked Owner',
+      },
+    });
+
+    expect(res.statusCode).toBe(404);
+    expect(res.json().error.code).toBe('NOT_FOUND');
   });
 
   it('returns 400 for invalid body', async () => {

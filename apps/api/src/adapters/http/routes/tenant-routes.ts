@@ -54,10 +54,19 @@ export function buildTenantRoutes(deps: {
                 updatedAt: z.string(),
               }),
             }),
+            404: z.object({
+              error: z.object({ code: z.string(), message: z.string() }),
+            }),
           },
         },
       },
       async (request, reply) => {
+        if (deps.config.AUTH_MODE === 'cognito') {
+          return reply.status(404).send({
+            error: { code: 'NOT_FOUND', message: 'Not Found' },
+          });
+        }
+
         const result = await useCase.execute(request.body, request.correlationId);
         return reply.status(201).send({
           tenant: {
