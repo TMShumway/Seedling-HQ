@@ -5,6 +5,7 @@ import type { UserRepository } from '../../../application/ports/user-repository.
 import { UnauthorizedError } from '../../../shared/errors.js';
 import { buildRateLimiter } from '../middleware/rate-limit.js';
 import type { AppConfig } from '../../../shared/config.js';
+import { verifyPassword } from '../../../shared/password.js';
 
 interface AuthRoutesDeps {
   userRepo: UserRepository;
@@ -79,6 +80,66 @@ export function buildAuthRoutes({ userRepo, config }: AuthRoutesDeps) {
             fullName: user.fullName,
             role: user.role,
           })),
+        };
+      },
+    );
+
+    server.post(
+      '/v1/auth/local/verify',
+      {
+        preHandler: buildRateLimiter({ maxRequests: 10, key: 'auth:verify' }),
+        schema: {
+          body: z.object({
+            userId: z.string().uuid(),
+            password: z.string().min(1),
+          }),
+          response: {
+            200: z.object({
+              user: z.object({
+                id: z.string(),
+                tenantId: z.string(),
+                email: z.string(),
+                fullName: z.string(),
+                role: z.string(),
+              }),
+            }),
+            404: z.object({
+              error: z.object({ code: z.string(), message: z.string() }),
+            }),
+          },
+        },
+      },
+      async (request, reply) => {
+        if (config.AUTH_MODE !== 'local') {
+          return reply.status(404).send({
+            error: { code: 'NOT_FOUND', message: 'Not Found' },
+          });
+        }
+
+        const { userId, password } = request.body;
+        const user = await userRepo.getByIdGlobal(userId);
+
+        if (!user || user.status !== 'active') {
+          throw new UnauthorizedError('Invalid credentials');
+        }
+
+        if (!user.passwordHash) {
+          throw new UnauthorizedError('Invalid credentials');
+        }
+
+        const valid = await verifyPassword(password, user.passwordHash);
+        if (!valid) {
+          throw new UnauthorizedError('Invalid credentials');
+        }
+
+        return {
+          user: {
+            id: user.id,
+            tenantId: user.tenantId,
+            email: user.email,
+            fullName: user.fullName,
+            role: user.role,
+          },
         };
       },
     );

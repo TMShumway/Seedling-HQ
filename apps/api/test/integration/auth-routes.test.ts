@@ -17,6 +17,16 @@ async function createTenant(businessName: string, email: string, fullName: strin
   return res.json();
 }
 
+async function createTenantWithPassword(businessName: string, email: string, fullName: string, ownerPassword: string) {
+  const app = await buildTestApp();
+  const res = await app.inject({
+    method: 'POST',
+    url: '/v1/tenants',
+    payload: { businessName, ownerEmail: email, ownerFullName: fullName, ownerPassword },
+  });
+  return res.json();
+}
+
 describe('POST /v1/auth/local/login', () => {
   beforeEach(async () => {
     await truncateAll();
@@ -201,6 +211,121 @@ describe('POST /v1/auth/local/login', () => {
     // Create another tenant with same email, suspend the first
     // For now, just verify the positive case works
     expect(beforeRes.json().accounts).toHaveLength(1);
+  });
+});
+
+describe('POST /v1/auth/local/verify', () => {
+  beforeEach(async () => {
+    await truncateAll();
+    resetRateLimitStore();
+  });
+
+  it('returns user info for correct password', async () => {
+    const { user } = await createTenantWithPassword('Verify Biz', 'verify@test.com', 'Verify Owner', 'test-password-123');
+
+    const app = await buildTestApp();
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/local/verify',
+      payload: { userId: user.id, password: 'test-password-123' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.user.id).toBe(user.id);
+    expect(body.user.email).toBe('verify@test.com');
+    expect(body.user.fullName).toBe('Verify Owner');
+    expect(body.user.role).toBe('owner');
+  });
+
+  it('returns 401 for wrong password', async () => {
+    const { user } = await createTenantWithPassword('Wrong PW Biz', 'wrongpw@test.com', 'Wrong Owner', 'correct-password');
+
+    const app = await buildTestApp();
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/local/verify',
+      payload: { userId: user.id, password: 'wrong-password' },
+    });
+
+    expect(res.statusCode).toBe(401);
+    expect(res.json().error.code).toBe('UNAUTHORIZED');
+  });
+
+  it('returns 401 for unknown user ID', async () => {
+    const app = await buildTestApp();
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/local/verify',
+      payload: { userId: '00000000-0000-0000-0000-999999999999', password: 'anything' },
+    });
+
+    expect(res.statusCode).toBe(401);
+    expect(res.json().error.code).toBe('UNAUTHORIZED');
+  });
+
+  it('returns 401 for user without password hash', async () => {
+    // createTenant without password — user has no passwordHash
+    const { user } = await createTenant('No PW Biz', 'nopw@test.com', 'No PW Owner');
+
+    const app = await buildTestApp();
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/local/verify',
+      payload: { userId: user.id, password: 'anything' },
+    });
+
+    expect(res.statusCode).toBe(401);
+    expect(res.json().error.code).toBe('UNAUTHORIZED');
+  });
+
+  it('returns 404 when AUTH_MODE is cognito', async () => {
+    const noopVerifier = { verify: async () => { throw new Error('not used'); } };
+    const app = await buildTestApp(
+      { AUTH_MODE: 'cognito', COGNITO_USER_POOL_ID: 'us-east-1_Test', COGNITO_CLIENT_ID: 'test', COGNITO_REGION: 'us-east-1' },
+      { jwtVerifier: noopVerifier },
+    );
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/local/verify',
+      payload: { userId: '00000000-0000-0000-0000-000000000010', password: 'test' },
+    });
+
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('returns 400 for invalid userId format', async () => {
+    const app = await buildTestApp();
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/local/verify',
+      payload: { userId: 'not-a-uuid', password: 'test' },
+    });
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('returns 429 when rate limited', async () => {
+    const { user } = await createTenantWithPassword('Rate Verify Biz', 'rateverify@test.com', 'Rate Owner', 'test-password');
+
+    const app = await buildTestApp();
+
+    for (let i = 0; i < 10; i++) {
+      await app.inject({
+        method: 'POST',
+        url: '/v1/auth/local/verify',
+        payload: { userId: user.id, password: 'test-password' },
+      });
+    }
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/local/verify',
+      payload: { userId: user.id, password: 'test-password' },
+    });
+
+    expect(res.statusCode).toBe(429);
+    expect(res.json().error.code).toBe('RATE_LIMITED');
   });
 });
 
