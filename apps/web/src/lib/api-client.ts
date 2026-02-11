@@ -142,6 +142,7 @@ export interface CreateTenantRequest {
   businessName: string;
   ownerEmail: string;
   ownerFullName: string;
+  ownerPassword?: string;
 }
 
 export interface CreateTenantResponse {
@@ -350,6 +351,16 @@ export interface LoginResponse {
   accounts: LoginAccount[];
 }
 
+export interface LocalVerifyResponse {
+  user: {
+    id: string;
+    tenantId: string;
+    email: string;
+    fullName: string;
+    role: string;
+  };
+}
+
 interface CognitoLookupResponse {
   accounts: Array<{
     cognitoUsername: string;
@@ -363,6 +374,9 @@ interface CognitoLookupResponse {
 export const apiClient = {
   localLogin: (email: string) =>
     publicRequest<LoginResponse>('POST', '/v1/auth/local/login', { email }),
+
+  localVerify: (userId: string, password: string) =>
+    publicRequest<LocalVerifyResponse>('POST', '/v1/auth/local/verify', { userId, password }),
 
   cognitoLookup: async (email: string): Promise<LoginResponse> => {
     const raw = await publicRequest<CognitoLookupResponse>('POST', '/v1/auth/cognito/lookup', { email });

@@ -14,6 +14,8 @@ export function SignupPage() {
   const [businessName, setBusinessName] = useState('');
   const [ownerEmail, setOwnerEmail] = useState('');
   const [ownerFullName, setOwnerFullName] = useState('');
+  const [ownerPassword, setOwnerPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -46,11 +48,21 @@ export function SignupPage() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
+
+    if (ownerPassword.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
+    if (ownerPassword !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const result = await apiClient.createTenant({ businessName, ownerEmail, ownerFullName });
-      // Use auth context to set the user
+      const result = await apiClient.createTenant({ businessName, ownerEmail, ownerFullName, ownerPassword });
+      // Select account and authenticate with the password just created
       auth.selectAccount({
         tenantId: result.tenant.id,
         userId: result.user.id,
@@ -58,6 +70,7 @@ export function SignupPage() {
         role: result.user.role,
         tenantName: result.tenant.name,
       });
+      await auth.authenticate(ownerPassword);
       navigate('/dashboard');
     } catch (err) {
       if (err instanceof ApiClientError) {
@@ -114,6 +127,28 @@ export function SignupPage() {
                 onChange={(e) => setOwnerFullName(e.target.value)}
                 placeholder="Jane Doe"
                 required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ownerPassword">Password</Label>
+              <Input
+                id="ownerPassword"
+                type="password"
+                value={ownerPassword}
+                onChange={(e) => setOwnerPassword(e.target.value)}
+                required
+                minLength={8}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={8}
               />
             </div>
           </CardContent>

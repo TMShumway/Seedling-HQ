@@ -77,7 +77,9 @@ export function LoginPage() {
       }
       navigateToDashboard();
     } catch (err) {
-      if (err instanceof Error) {
+      if (err instanceof ApiClientError && err.status === 401) {
+        setError('Incorrect password. Please try again.');
+      } else if (err instanceof Error) {
         if (err.message.includes('Incorrect username or password')) {
           setError('Incorrect password. Please try again.');
         } else {
@@ -156,7 +158,7 @@ export function LoginPage() {
               </div>
               {isLocalMode() && (
                 <p className="text-xs text-muted-foreground">
-                  Hint: try owner@demo.local
+                  Hint: owner@demo.local / password
                 </p>
               )}
             </CardContent>

@@ -195,7 +195,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (mode === 'local') {
-        // Local mode: accept any password, set localStorage
+        // Local mode: verify password against backend
+        await apiClient.localVerify(account.userId, password);
         localStorage.setItem('dev_tenant_id', account.tenantId);
         localStorage.setItem('dev_user_id', account.userId);
         const authUser: AuthUser = {
