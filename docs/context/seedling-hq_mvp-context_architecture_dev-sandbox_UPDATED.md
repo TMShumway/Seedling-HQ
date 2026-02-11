@@ -113,7 +113,7 @@ flowchart LR
 #### Cognito architecture
 - **One Cognito User Pool per environment** (dev-sandbox, staging, prod).
 - **Custom attribute:** `custom:tenant_id` (required, immutable after creation). This is the tenancy binding — the JWT carries the tenant identity.
-- **Cognito Groups** map to application roles: `owner`, `admin`, `technician`. The `cognito:groups` claim appears in the Access token.
+- **Cognito Groups** map to application roles: `owner`, `admin`, `member`. The `cognito:groups` claim appears in the Access token.
 - **App Client:** single client per pool, configured for **PKCE flow** (no client secret; SPA-safe).
 - **Login UI:** custom React login page using Cognito SDK (`amazon-cognito-identity-js` or Amplify Auth). Cognito is a backend-only identity provider — we do **not** use the Hosted UI.
 
@@ -134,11 +134,13 @@ sequenceDiagram
 
 - React app authenticates via Cognito SDK; receives ID token, Access token, and Refresh token.
 - React app sends **Access token** as `Authorization: Bearer <token>` on API requests.
-- API middleware validates JWT signature using Cognito JWKS endpoint, checks `iss`, `aud`/`client_id`, `exp`, `token_use=access`.
+- API middleware validates JWT signature using Cognito JWKS endpoint (via `jose` library, `createRemoteJWKSet` with auto-caching), checks `iss`, `client_id` (NOT `aud` — Cognito access tokens use `client_id`), `exp`, `token_use=access`. **Implemented in S-0029.**
+- A **pre-token-generation V2 Lambda trigger** (CDK, S-0029) copies `custom:tenant_id` from user attributes into the access token, enabling access-token-only validation (security best practice).
 - Middleware extracts `authContext`:
   ```
-  { principal_type: "internal", tenant_id, user_id (sub), role (cognito:groups) }
+  { principal_type: "internal", tenant_id (custom:tenant_id), user_id (username, NOT sub), role (cognito:groups — exactly one) }
   ```
+- **Contract:** Cognito `username` must equal `users.id` from the database. This is enforced at user provisioning time (future story), not at JWT validation time.
 - React app stores tokens **in memory** (preferred) or `sessionStorage`. Do not use cookies.
 
 #### AUTH_MODE switch (local dev)
@@ -437,7 +439,7 @@ For `AUTH_MODE=cognito`:
 For `AUTH_MODE=local`:
 - `DEV_AUTH_TENANT_ID=...` (default: seeded dev tenant UUID)
 - `DEV_AUTH_USER_ID=...` (default: seeded dev user UUID)
-- `DEV_AUTH_ROLE=owner` (owner | admin | technician)
+- `DEV_AUTH_ROLE=owner` (owner | admin | member)
 - Optional per-request overrides via `X-Dev-Tenant-Id` / `X-Dev-User-Id` headers (frontend sends from localStorage after signup)
 
 ### Secure links (required as of S-0010)
@@ -472,7 +474,7 @@ Scheduler wiring:
 ### What it provisions
 - **Cognito User Pool + App Client (PKCE, no client secret) — Implemented (S-0028)**
   - Custom attribute: `custom:tenant_id` (immutable)
-  - Groups: `owner`, `admin`, `technician`
+  - Groups: `owner`, `admin`, `member`
   - UUID username (not email); email required but not unique/alias
   - Self-signup disabled; password: 8+ chars, upper+lower+digit+symbol, 7-day temp
   - Token TTLs: access 1h, ID 1h, refresh 30d
@@ -580,7 +582,7 @@ Hybrid mode (local code + real AWS messaging) is powerful but can cause:
 ### F) Auth decision — RESOLVED (Cognito chosen)
 **Decision:** AWS Cognito for internal user authentication.
 - One User Pool per environment, with `custom:tenant_id` for tenant binding.
-- Cognito Groups for role mapping (`owner`, `admin`, `technician`).
+- Cognito Groups for role mapping (`owner`, `admin`, `member`).
 - `AUTH_MODE=local` provides a mock middleware producing the same `authContext` shape for local dev.
 - See **Section 4.1** for full architecture.
 - The principal context model supports both internal RBAC (Cognito JWT) and external token scopes (secure links) as separate auth paths.

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import { buildTestApp, truncateAll, getPool } from './setup.js';
 import { resetRateLimitStore } from '../../src/adapters/http/middleware/rate-limit.js';
+import type { JwtVerifier, JwtVerifyResult } from '../../src/application/ports/jwt-verifier.js';
 
 afterAll(async () => {
   await getPool().end();
@@ -200,5 +201,82 @@ describe('POST /v1/auth/local/login', () => {
     // Create another tenant with same email, suspend the first
     // For now, just verify the positive case works
     expect(beforeRes.json().accounts).toHaveLength(1);
+  });
+});
+
+describe('Cognito mode (mock verifier)', () => {
+  const cognitoConfig = {
+    AUTH_MODE: 'cognito' as const,
+    COGNITO_USER_POOL_ID: 'us-east-1_IntegTest',
+    COGNITO_CLIENT_ID: 'test-client-id',
+    COGNITO_REGION: 'us-east-1',
+  };
+
+  beforeEach(async () => {
+    await truncateAll();
+    resetRateLimitStore();
+  });
+
+  it('returns 401 without Authorization header', async () => {
+    const rejectVerifier: JwtVerifier = {
+      verify: async () => { throw new Error('no token'); },
+    };
+    const app = await buildTestApp(cognitoConfig, { jwtVerifier: rejectVerifier });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/users/me',
+    });
+
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('returns 401 with invalid Bearer token', async () => {
+    const rejectVerifier: JwtVerifier = {
+      verify: async () => { throw new Error('invalid token'); },
+    };
+    const app = await buildTestApp(cognitoConfig, { jwtVerifier: rejectVerifier });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/users/me',
+      headers: { authorization: 'Bearer not-a-jwt' },
+    });
+
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('returns 200 with valid mock verifier matching seeded data', async () => {
+    // Create a real tenant + user via local-mode app
+    const localApp = await buildTestApp();
+    const createRes = await localApp.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: { businessName: 'Cognito Test Biz', ownerEmail: 'cognito@test.com', ownerFullName: 'Cognito Owner' },
+    });
+    const { tenant, user } = createRes.json();
+
+    // Build cognito-mode app with mock verifier that returns matching IDs
+    const mockResult: JwtVerifyResult = {
+      tenantId: tenant.id,
+      userId: user.id,
+      role: 'owner',
+    };
+    const validVerifier: JwtVerifier = {
+      verify: async () => mockResult,
+    };
+    const cognitoApp = await buildTestApp(cognitoConfig, { jwtVerifier: validVerifier });
+
+    const res = await cognitoApp.inject({
+      method: 'GET',
+      url: '/v1/users/me',
+      headers: { authorization: 'Bearer anything' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.id).toBe(user.id);
+    expect(body.tenantId).toBe(tenant.id);
+    expect(body.fullName).toBe('Cognito Owner');
   });
 });
