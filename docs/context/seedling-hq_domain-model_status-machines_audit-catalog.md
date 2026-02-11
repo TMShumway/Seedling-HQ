@@ -479,7 +479,7 @@ Tenant
 
 ## 5) Audit event catalog
 
-### Implemented events (S-0001 through S-0011)
+### Implemented events (S-0001 through S-0027)
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
@@ -595,6 +595,8 @@ All audit events share this structure:
 | S-0009 | Quote builder v1 | quotes | E-0004 |
 | S-0010 | Send quote link to customer (secure link) | quotes | E-0004 |
 | S-0011 | Customer approves quote | quotes | E-0004 |
+| S-0026 | Create standalone quote | quotes | E-0004 |
+| S-0027 | Local login/logout page | platform | E-0001 |
 
 ### Planned (MVP — Release R1)
 
@@ -619,4 +621,4 @@ All audit events share this structure:
 
 | Story | Title | Notes |
 |-------|-------|-------|
-| S-0026 | In-app notification center | Revisit when 3+ notification types exist |
+| S-0028 | In-app notification center | Revisit when 3+ notification types exist |

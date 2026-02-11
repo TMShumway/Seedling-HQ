@@ -350,6 +350,7 @@ When an AI agent adds UI:
    - Quote approve/decline — **DONE** (S-0011): approve button, decline with confirmation, success banners, read-only state for already-responded
    - Invoice view/pay — planned (S-0017+)
    - Client Hub — planned (future)
+7) Login page (local auth mode) — **DONE** (S-0027): `LoginPage` at `/login` outside AppShell, two-step flow (email → account picker), `AuthGuard` wraps authenticated routes, logout buttons in Sidebar + MobileDrawer
 
 ---
 

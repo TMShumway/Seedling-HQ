@@ -97,7 +97,8 @@ API middleware must validate Cognito Access tokens with the following checks:
 - Admin actions like "disable user" in Cognito take effect on the next token validation (after current token expires).
 
 **Local dev (`AUTH_MODE=local`):**
-- Skip all JWT validation. Mock middleware produces an `authContext` from env vars (defaults) or `X-Dev-Tenant-Id` / `X-Dev-User-Id` request headers (overrides, stored in localStorage after signup).
+- Skip all JWT validation. Mock middleware produces an `authContext` from env vars (defaults) or `X-Dev-Tenant-Id` / `X-Dev-User-Id` request headers (overrides, set via login page or signup and stored in localStorage).
+- Login endpoint (`POST /v1/auth/local/login`, S-0027): cross-tenant email lookup, rate-limited (10 req/min per IP), returns 404 when `AUTH_MODE !== 'local'`. Frontend `AuthGuard` redirects unauthenticated users to `/login`.
 - This is acceptable only for `NODE_ENV=development`. The mock middleware must refuse to activate if `NODE_ENV=production`.
 
 ---
@@ -220,6 +221,7 @@ Minimum audit events (MVP):
 
 Applies to:
 - public request form submissions
+- local dev login endpoint (`POST /v1/auth/local/login`, 10 req/min, S-0027)
 - any unauthenticated endpoints
 
 Required controls:

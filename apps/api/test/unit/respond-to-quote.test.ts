@@ -92,6 +92,7 @@ describe('RespondToQuoteUseCase', () => {
       create: vi.fn(),
       getById: vi.fn(),
       getByEmail: vi.fn(),
+      listActiveByEmail: vi.fn().mockResolvedValue([]),
     };
 
     outboxRepo = {

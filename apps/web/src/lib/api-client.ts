@@ -271,7 +271,22 @@ export interface TimelineEvent {
   createdAt: string;
 }
 
+export interface LoginAccount {
+  tenantId: string;
+  tenantName: string;
+  userId: string;
+  fullName: string;
+  role: string;
+}
+
+export interface LoginResponse {
+  accounts: LoginAccount[];
+}
+
 export const apiClient = {
+  localLogin: (email: string) =>
+    publicRequest<LoginResponse>('POST', '/v1/auth/local/login', { email }),
+
   createTenant: (input: CreateTenantRequest) =>
     request<CreateTenantResponse>('POST', '/v1/tenants', input),
 

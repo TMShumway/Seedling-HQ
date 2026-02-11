@@ -45,6 +45,8 @@ function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     SMTP_HOST: 'localhost',
     SMTP_PORT: 1025,
     SMTP_FROM: 'noreply@seedling.local',
+    APP_BASE_URL: 'http://localhost:5173',
+    SECURE_LINK_HMAC_SECRET: 'test-secret-for-unit-tests',
     ...overrides,
   };
 }
@@ -55,6 +57,7 @@ function makeUserRepo(overrides: Partial<UserRepository> = {}): UserRepository {
     getById: vi.fn(async () => null),
     getByEmail: vi.fn(async () => null),
     getOwnerByTenantId: vi.fn(async () => OWNER),
+    listActiveByEmail: vi.fn(async () => []),
     ...overrides,
   };
 }
