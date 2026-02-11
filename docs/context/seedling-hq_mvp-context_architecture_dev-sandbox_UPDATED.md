@@ -151,7 +151,12 @@ sequenceDiagram
   - **Per-request override** via headers (added in S-0002):
     - `X-Dev-Tenant-Id` — overrides `DEV_AUTH_TENANT_ID` for this request
     - `X-Dev-User-Id` — overrides `DEV_AUTH_USER_ID` for this request
-    - The frontend stores newly created tenant/user IDs in `localStorage` after signup and sends them on all subsequent requests. This allows testing the full signup → onboarding flow as the actual new tenant.
+    - The frontend stores tenant/user IDs in `localStorage` after login or signup and sends them as headers on all subsequent requests.
+  - **Login page** (added in S-0027):
+    - `POST /v1/auth/local/login` — cross-tenant email lookup (joins users + tenants, case-insensitive via `ilike`); returns 404 when `AUTH_MODE !== 'local'`; rate-limited (10 req/min per IP)
+    - Frontend `LoginPage` at `/login` — email input → API call → auto-select (single account) or account picker (multi-tenant) → sets localStorage → redirect to `/dashboard`
+    - `AuthGuard` wraps all authenticated routes — checks localStorage, redirects to `/login` if missing
+    - Logout buttons in Sidebar + MobileDrawer clear localStorage + React Query cache, redirect to `/login`
   - The `AuthContext` interface is **identical** in both modes — use cases and domain logic never know which mode produced it.
   - The mock middleware must refuse to activate if `NODE_ENV=production`.
 

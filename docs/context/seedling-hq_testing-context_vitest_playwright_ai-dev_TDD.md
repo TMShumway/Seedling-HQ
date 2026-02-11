@@ -146,6 +146,27 @@ Target:
 
 ## 5) Test design patterns by subsystem
 
+### 5.0 E2E auth helper pattern (S-0027)
+
+All E2E tests that access authenticated routes must set demo localStorage before page navigation. The `setDemoAuth` helper uses `page.addInitScript()` to inject demo tenant/user IDs into `localStorage` before every page load in the browser context.
+
+```typescript
+// e2e/helpers/auth.ts
+import type { Page } from '@playwright/test';
+export async function setDemoAuth(page: Page) {
+  await page.addInitScript(() => {
+    localStorage.setItem('dev_tenant_id', '00000000-0000-0000-0000-000000000001');
+    localStorage.setItem('dev_user_id', '00000000-0000-0000-0000-000000000010');
+  });
+}
+```
+
+Usage: `test.beforeEach(async ({ page }) => { await setDemoAuth(page); })` in every test file that navigates to authenticated routes.
+
+**Caveat:** `addInitScript` persists across navigations, so logout tests must use `page.evaluate()` instead of `setDemoAuth` to set localStorage only once (not re-set after logout redirect).
+
+**Unaffected tests:** `signup.spec.ts` (sets its own localStorage), public page tests that never navigate to authenticated routes.
+
 ## 5.1 API (Fastify) test pattern
 **Preferred approach:**
 - Build the Fastify app in-memory

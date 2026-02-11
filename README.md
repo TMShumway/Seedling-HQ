@@ -13,6 +13,7 @@ Seedling HQ is under active development. Here's what's working today:
 | Feature | Status | Description |
 |---------|--------|-------------|
 | Signup + onboarding | Done | Create a business account, configure profile, hours, and service defaults |
+| Login + logout | Done | Local dev login page with email lookup, account picker, AuthGuard, logout |
 | Service catalog | Done | Two-level catalog (categories and items) with pricing in dollars |
 | Client management | Done | Client records with properties (service addresses), activity timeline |
 | Public request form | Done | Embeddable form for customers to request service — with spam protection |
@@ -52,8 +53,9 @@ Once running, open:
 
 | URL | What |
 |-----|------|
+| http://localhost:5173/login | Login page (hint: try `owner@demo.local`) |
 | http://localhost:5173/signup | Create a new business account |
-| http://localhost:5173/dashboard | Dashboard (uses demo tenant by default) |
+| http://localhost:5173/dashboard | Dashboard (requires login) |
 | http://localhost:4000/docs | Swagger UI — browse and test API endpoints |
 | http://localhost:8025 | Mailpit — see captured emails (request notifications, quote sends) |
 
@@ -183,9 +185,9 @@ pnpm exec playwright test e2e/tests/quotes.spec.ts --project=desktop-chrome
 ### Test Coverage
 
 ```
-Unit:        163 tests
-Integration: 137 tests (requires Postgres)
-E2E:          94 tests (62 run + 32 skipped on non-desktop projects)
+Unit:        166 tests
+Integration: 145 tests (requires Postgres)
+E2E:         108 tests (74 run + 34 skipped on non-desktop projects)
 ```
 
 ## Multi-Tenancy
@@ -194,9 +196,11 @@ Every database query is scoped by `tenant_id`. The same email address can exist 
 
 ### Auth (Local Dev)
 
-In development, `AUTH_MODE=local` injects auth context from environment variables. No real JWT validation happens. The `.env` file points to the demo tenant by default.
+In development, `AUTH_MODE=local` provides a login page at `/login`. Enter an email address (hint: `owner@demo.local` for the demo tenant) to log in. If the email is associated with multiple tenants, you'll see an account picker.
 
-The frontend stores tenant/user IDs in `localStorage` after signup, sending them as headers on every request. To switch back to the demo tenant after signing up a new one:
+An `AuthGuard` wraps all authenticated routes — unauthenticated visits redirect to `/login`. Logout buttons in the sidebar and mobile drawer clear the session and redirect back to `/login`.
+
+Under the hood, the frontend stores tenant/user IDs in `localStorage` and sends them as `X-Dev-Tenant-Id` / `X-Dev-User-Id` headers on every request. No real JWT validation happens. To manually reset auth state:
 
 ```js
 // Run in browser console
@@ -220,6 +224,12 @@ Customers access quotes (and eventually invoices) via secure links like `http://
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/health` | None | Health check |
+
+### Auth
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/v1/auth/local/login` | None | Local dev login: cross-tenant email lookup (rate-limited, `AUTH_MODE=local` only) |
 
 ### Tenants + Users
 
