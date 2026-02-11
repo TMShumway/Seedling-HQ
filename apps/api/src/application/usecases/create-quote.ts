@@ -66,16 +66,20 @@ export class CreateStandaloneQuoteUseCase {
     });
 
     // Best-effort audit
-    await this.auditRepo.record({
-      id: randomUUID(),
-      tenantId: input.tenantId,
-      principalType: 'internal',
-      principalId: input.userId,
-      eventName: 'quote.created',
-      subjectType: 'quote',
-      subjectId: quote.id,
-      correlationId,
-    });
+    try {
+      await this.auditRepo.record({
+        id: randomUUID(),
+        tenantId: input.tenantId,
+        principalType: 'internal',
+        principalId: input.userId,
+        eventName: 'quote.created',
+        subjectType: 'quote',
+        subjectId: quote.id,
+        correlationId,
+      });
+    } catch {
+      // best-effort — don't fail quote creation if audit write fails
+    }
 
     return { quote };
   }

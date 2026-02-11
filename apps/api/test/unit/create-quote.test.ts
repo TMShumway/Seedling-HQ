@@ -255,4 +255,18 @@ describe('CreateStandaloneQuoteUseCase', () => {
 
     expect(propertyRepo.getById).not.toHaveBeenCalled();
   });
+
+  it('still returns quote when audit recording fails (best-effort)', async () => {
+    auditRepo.record = vi.fn(async () => { throw new Error('DB connection lost'); });
+    useCase = new CreateStandaloneQuoteUseCase(quoteRepo, clientRepo, propertyRepo, auditRepo);
+
+    const result = await useCase.execute(
+      { tenantId: 'tenant-1', userId: 'user-1', clientId: 'client-1', title: 'Resilient Quote' },
+      correlationId,
+    );
+
+    expect(result.quote).toBeDefined();
+    expect(result.quote.title).toBe('Resilient Quote');
+    expect(quoteRepo.create).toHaveBeenCalledOnce();
+  });
 });
