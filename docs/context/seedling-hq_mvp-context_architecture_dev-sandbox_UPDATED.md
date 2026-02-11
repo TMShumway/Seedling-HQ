@@ -496,9 +496,10 @@ infra/cdk/
 ```
 
 ### Deploy (example)
-From `infra/cdk`:
+From `infra/cdk/` (standalone workspace — not in pnpm-workspace.yaml):
 ```bash
-pnpm i
+cd infra/cdk
+pnpm install --ignore-workspace
 pnpm dlx aws-cdk@2 bootstrap
 pnpm dlx aws-cdk@2 deploy --context env=dev --context owner=tim
 ```
