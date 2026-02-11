@@ -3,7 +3,7 @@
 _Last updated: 2026-02-09 (America/Chihuahua)_
 
 > Purpose: Define consistent API behavior so agents and humans build endpoints the same way.
-> This doc captures conventions established in S-0001 through S-0011 and defines standards for future stories.
+> This doc captures conventions established in S-0001 through S-0029 and defines standards for future stories.
 
 ---
 

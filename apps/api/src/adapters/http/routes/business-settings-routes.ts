@@ -7,6 +7,7 @@ import { UpsertBusinessSettingsUseCase } from '../../../application/usecases/ups
 import { GetBusinessSettingsUseCase } from '../../../application/usecases/get-business-settings.js';
 import { buildAuthMiddleware } from '../middleware/auth-middleware.js';
 import type { AppConfig } from '../../../shared/config.js';
+import type { JwtVerifier } from '../../../application/ports/jwt-verifier.js';
 
 const dayScheduleSchema = z.object({
   open: z.string().nullable(),
@@ -60,10 +61,11 @@ export function buildBusinessSettingsRoutes(deps: {
   settingsRepo: BusinessSettingsRepository;
   auditRepo: AuditEventRepository;
   config: AppConfig;
+  jwtVerifier?: JwtVerifier;
 }) {
   const upsertUseCase = new UpsertBusinessSettingsUseCase(deps.settingsRepo, deps.auditRepo);
   const getUseCase = new GetBusinessSettingsUseCase(deps.settingsRepo);
-  const authMiddleware = buildAuthMiddleware(deps.config);
+  const authMiddleware = buildAuthMiddleware({ config: deps.config, jwtVerifier: deps.jwtVerifier });
 
   return async function businessSettingsRoutes(app: FastifyInstance) {
     const typedApp = app.withTypeProvider<ZodTypeProvider>();

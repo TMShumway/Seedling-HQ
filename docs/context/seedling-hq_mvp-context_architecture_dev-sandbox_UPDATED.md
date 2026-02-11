@@ -113,7 +113,7 @@ flowchart LR
 #### Cognito architecture
 - **One Cognito User Pool per environment** (dev-sandbox, staging, prod).
 - **Custom attribute:** `custom:tenant_id` (required, immutable after creation). This is the tenancy binding — the JWT carries the tenant identity.
-- **Cognito Groups** map to application roles: `owner`, `admin`, `technician`. The `cognito:groups` claim appears in the Access token.
+- **Cognito Groups** map to application roles: `owner`, `admin`, `member`. The `cognito:groups` claim appears in the Access token.
 - **App Client:** single client per pool, configured for **PKCE flow** (no client secret; SPA-safe).
 - **Login UI:** custom React login page using Cognito SDK (`amazon-cognito-identity-js` or Amplify Auth). Cognito is a backend-only identity provider — we do **not** use the Hosted UI.
 
@@ -134,11 +134,13 @@ sequenceDiagram
 
 - React app authenticates via Cognito SDK; receives ID token, Access token, and Refresh token.
 - React app sends **Access token** as `Authorization: Bearer <token>` on API requests.
-- API middleware validates JWT signature using Cognito JWKS endpoint, checks `iss`, `aud`/`client_id`, `exp`, `token_use=access`.
+- API middleware validates JWT signature using Cognito JWKS endpoint (via `jose` library, `createRemoteJWKSet` with auto-caching), checks `iss`, `client_id` (NOT `aud` — Cognito access tokens use `client_id`), `exp`, `token_use=access`. **Implemented in S-0029.**
+- A **pre-token-generation V2 Lambda trigger** (CDK, S-0029) copies `custom:tenant_id` from user attributes into the access token, enabling access-token-only validation (security best practice).
 - Middleware extracts `authContext`:
   ```
-  { principal_type: "internal", tenant_id, user_id (sub), role (cognito:groups) }
+  { principal_type: "internal", tenant_id (custom:tenant_id), user_id (username, NOT sub), role (cognito:groups — exactly one) }
   ```
+- **Contract:** Cognito `username` must equal `users.id` from the database. This is enforced at user provisioning time (future story), not at JWT validation time.
 - React app stores tokens **in memory** (preferred) or `sessionStorage`. Do not use cookies.
 
 #### AUTH_MODE switch (local dev)
@@ -206,7 +208,7 @@ Seedling-HQ has two “customer” concepts:
 You have at least **two principal types**:
 
 **A) Internal principals (Seedling users)**
-- Owners/office staff/technicians that log into Seedling-HQ.
+- Owners/office staff/members that log into Seedling-HQ.
 - Auth context includes: `tenant_id`, `user_id`, `role`.
 - Authorization style: tenant-scoped RBAC.
 
@@ -409,12 +411,9 @@ Apply to all resources:
 ### Local baseline
 API:
 - `API_PORT=4000`
-- `DB_URL=postgres://fsa:fsa@localhost:5432/fsa`
-- `AWS_REGION=us-east-1`
-- `AWS_ENDPOINT=http://localhost:4566` (LocalStack only)
+- `DATABASE_URL=postgresql://fsa:fsa@localhost:5432/fsa`
 - `NODE_ENV=development`
 - `AUTH_MODE=local`  # mock auth for local dev; see Cognito section below
-- `DEV_TOOLS_ENABLED=true`
 
 Web:
 - `VITE_API_BASE_URL=http://localhost:4000`
@@ -432,19 +431,19 @@ Email / notifications (local sink via Mailpit):
 For `AUTH_MODE=cognito`:
 - `COGNITO_USER_POOL_ID=...`
 - `COGNITO_CLIENT_ID=...`
-- `COGNITO_JWKS_URL=...` (or derived from pool ID + region)
+- `COGNITO_REGION=...` (JWKS URL derived from region + pool ID at runtime)
 
 For `AUTH_MODE=local`:
 - `DEV_AUTH_TENANT_ID=...` (default: seeded dev tenant UUID)
 - `DEV_AUTH_USER_ID=...` (default: seeded dev user UUID)
-- `DEV_AUTH_ROLE=owner` (owner | admin | technician)
+- `DEV_AUTH_ROLE=owner` (owner | admin | member)
 - Optional per-request overrides via `X-Dev-Tenant-Id` / `X-Dev-User-Id` headers (frontend sends from localStorage after signup)
 
 ### Secure links (required as of S-0010)
 - `SECURE_LINK_HMAC_SECRET=...` (required; HMAC key used to generate and validate token hashes; minimum 16 characters enforced in production (`loadConfig()` throws); 32+ bytes recommended for optimal security)
 - `APP_BASE_URL=http://localhost:5173` (required; base URL for constructing secure link URLs sent to external customers)
-- `SECURE_LINK_TOKEN_TTL_SECONDS=604800` (7 days default; adjust per type)
-- optional: `SECURE_LINK_ROTATION_SALT=...` (if you want a versioned hash scheme)
+- (Planned) `SECURE_LINK_TOKEN_TTL_SECONDS=604800` (7 days default; not yet configurable — TTL hardcoded in use case)
+- (Planned) `SECURE_LINK_ROTATION_SALT=...` (versioned hash scheme — not yet implemented)
 
 ### SMS / queues / scheduler (MVP)
 - `SMS_PROVIDER=outbox` (default local)
@@ -472,17 +471,17 @@ Scheduler wiring:
 ### What it provisions
 - **Cognito User Pool + App Client (PKCE, no client secret) — Implemented (S-0028)**
   - Custom attribute: `custom:tenant_id` (immutable)
-  - Groups: `owner`, `admin`, `technician`
+  - Groups: `owner`, `admin`, `member`
   - UUID username (not email); email required but not unique/alias
   - Self-signup disabled; password: 8+ chars, upper+lower+digit+symbol, 7-day temp
   - Token TTLs: access 1h, ID 1h, refresh 30d
   - `preventUserExistenceErrors: true`, `enableTokenRevocation: true`
-- S3 uploads bucket
-- SQS:
-  - message jobs + DLQ
-  - domain events + DLQ
-- EventBridge bus
-- Scheduler execution role with permission to `sqs:SendMessage` to message-jobs
+  - `featurePlan: ESSENTIALS` (required for access token customization)
+  - Pre-token-generation V2 Lambda trigger copies `custom:tenant_id` into access tokens (S-0029)
+- (Planned) S3 uploads bucket
+- (Planned) SQS: message jobs + DLQ, domain events + DLQ
+- (Planned) EventBridge bus
+- (Planned) Scheduler execution role with permission to `sqs:SendMessage` to message-jobs
 - Outputs to paste into `.env.dev`
 
 ### Recommended folder structure
@@ -506,22 +505,20 @@ pnpm dlx aws-cdk@2 deploy --context env=dev --context owner=tim
 
 ### Paste outputs into `.env.dev` (example)
 ```dotenv
-AWS_REGION=us-east-1
-
-S3_UPLOADS_BUCKET=fsa-dev-tim-uploads-123456789012
-
-SQS_MESSAGE_QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789012/fsa-dev-tim-message-jobs
-SQS_MESSAGE_QUEUE_ARN=arn:aws:sqs:us-east-1:123456789012:fsa-dev-tim-message-jobs
-
-SCHEDULER_ROLE_ARN=arn:aws:iam::123456789012:role/fsa-dev-tim-scheduler-role
-
-DOMAIN_EVENTS_QUEUE_URL=...
-DOMAIN_EVENTS_QUEUE_ARN=...
-EVENT_BUS_NAME=fsa-dev-tim-bus
-
+# Cognito (currently provisioned)
+AUTH_MODE=cognito
 COGNITO_USER_POOL_ID=us-east-1_AbCdEfGhI
 COGNITO_CLIENT_ID=1a2b3c4d5e6f7g8h9i0j
-AUTH_MODE=cognito
+COGNITO_REGION=us-east-1
+
+# Planned (not yet provisioned by CDK)
+# S3_UPLOADS_BUCKET=fsa-dev-tim-uploads-123456789012
+# SQS_MESSAGE_QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789012/fsa-dev-tim-message-jobs
+# SQS_MESSAGE_QUEUE_ARN=arn:aws:sqs:us-east-1:123456789012:fsa-dev-tim-message-jobs
+# SCHEDULER_ROLE_ARN=arn:aws:iam::123456789012:role/fsa-dev-tim-scheduler-role
+# DOMAIN_EVENTS_QUEUE_URL=...
+# DOMAIN_EVENTS_QUEUE_ARN=...
+# EVENT_BUS_NAME=fsa-dev-tim-bus
 ```
 
 ### Code integration points
@@ -580,7 +577,7 @@ Hybrid mode (local code + real AWS messaging) is powerful but can cause:
 ### F) Auth decision — RESOLVED (Cognito chosen)
 **Decision:** AWS Cognito for internal user authentication.
 - One User Pool per environment, with `custom:tenant_id` for tenant binding.
-- Cognito Groups for role mapping (`owner`, `admin`, `technician`).
+- Cognito Groups for role mapping (`owner`, `admin`, `member`).
 - `AUTH_MODE=local` provides a mock middleware producing the same `authContext` shape for local dev.
 - See **Section 4.1** for full architecture.
 - The principal context model supports both internal RBAC (Cognito JWT) and external token scopes (secure links) as separate auth paths.

@@ -11,6 +11,7 @@ import { DeactivateServiceCategoryUseCase } from '../../../application/usecases/
 import { NotFoundError } from '../../../shared/errors.js';
 import { buildAuthMiddleware } from '../middleware/auth-middleware.js';
 import type { AppConfig } from '../../../shared/config.js';
+import type { JwtVerifier } from '../../../application/ports/jwt-verifier.js';
 
 const categoryResponseSchema = z.object({
   id: z.string(),
@@ -53,11 +54,12 @@ export function buildServiceCategoryRoutes(deps: {
   serviceItemRepo: ServiceItemRepository;
   auditRepo: AuditEventRepository;
   config: AppConfig;
+  jwtVerifier?: JwtVerifier;
 }) {
   const createUseCase = new CreateServiceCategoryUseCase(deps.categoryRepo, deps.auditRepo);
   const updateUseCase = new UpdateServiceCategoryUseCase(deps.categoryRepo, deps.auditRepo);
   const deactivateUseCase = new DeactivateServiceCategoryUseCase(deps.categoryRepo, deps.serviceItemRepo, deps.auditRepo);
-  const authMiddleware = buildAuthMiddleware(deps.config);
+  const authMiddleware = buildAuthMiddleware({ config: deps.config, jwtVerifier: deps.jwtVerifier });
 
   return async function serviceCategoryRoutes(app: FastifyInstance) {
     const typedApp = app.withTypeProvider<ZodTypeProvider>();

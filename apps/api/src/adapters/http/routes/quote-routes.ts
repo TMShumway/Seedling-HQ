@@ -15,6 +15,7 @@ import { SendQuoteUseCase } from '../../../application/usecases/send-quote.js';
 import { NotFoundError } from '../../../shared/errors.js';
 import { buildAuthMiddleware } from '../middleware/auth-middleware.js';
 import type { AppConfig } from '../../../shared/config.js';
+import type { JwtVerifier } from '../../../application/ports/jwt-verifier.js';
 
 const quoteLineItemSchema = z.object({
   serviceItemId: z.string().uuid().nullable().optional(),
@@ -90,13 +91,14 @@ export function buildQuoteRoutes(deps: {
   clientRepo: ClientRepository;
   propertyRepo: PropertyRepository;
   config: AppConfig;
+  jwtVerifier?: JwtVerifier;
 }) {
   const createUseCase = new CreateStandaloneQuoteUseCase(deps.quoteRepo, deps.clientRepo, deps.propertyRepo, deps.auditRepo);
   const updateUseCase = new UpdateQuoteUseCase(deps.quoteRepo, deps.auditRepo);
   const sendUseCase = new SendQuoteUseCase(
     deps.quoteRepo, deps.uow, deps.emailSender, deps.outboxRepo, deps.clientRepo, deps.config,
   );
-  const authMiddleware = buildAuthMiddleware(deps.config);
+  const authMiddleware = buildAuthMiddleware({ config: deps.config, jwtVerifier: deps.jwtVerifier });
 
   return async function quoteRoutes(app: FastifyInstance) {
     const typedApp = app.withTypeProvider<ZodTypeProvider>();

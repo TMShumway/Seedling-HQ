@@ -3,9 +3,10 @@ import type { UserRepository } from '../../../application/ports/user-repository.
 import { NotFoundError } from '../../../shared/errors.js';
 import { buildAuthMiddleware } from '../middleware/auth-middleware.js';
 import type { AppConfig } from '../../../shared/config.js';
+import type { JwtVerifier } from '../../../application/ports/jwt-verifier.js';
 
-export function buildUserRoutes(deps: { userRepo: UserRepository; config: AppConfig }) {
-  const authMiddleware = buildAuthMiddleware(deps.config);
+export function buildUserRoutes(deps: { userRepo: UserRepository; config: AppConfig; jwtVerifier?: JwtVerifier }) {
+  const authMiddleware = buildAuthMiddleware({ config: deps.config, jwtVerifier: deps.jwtVerifier });
 
   return async function userRoutes(app: FastifyInstance) {
     // GET /v1/users/me — authenticated

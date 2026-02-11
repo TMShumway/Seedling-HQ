@@ -7,6 +7,7 @@ import type { UnitOfWork } from '../../../application/ports/unit-of-work.js';
 import { NotFoundError } from '../../../shared/errors.js';
 import { buildAuthMiddleware } from '../middleware/auth-middleware.js';
 import type { AppConfig } from '../../../shared/config.js';
+import type { JwtVerifier } from '../../../application/ports/jwt-verifier.js';
 
 const createTenantBodySchema = z.object({
   businessName: z.string().min(1, 'Business name is required').max(255),
@@ -18,9 +19,10 @@ export function buildTenantRoutes(deps: {
   tenantRepo: TenantRepository;
   uow: UnitOfWork;
   config: AppConfig;
+  jwtVerifier?: JwtVerifier;
 }) {
   const useCase = new CreateTenantUseCase(deps.tenantRepo, deps.uow);
-  const authMiddleware = buildAuthMiddleware(deps.config);
+  const authMiddleware = buildAuthMiddleware({ config: deps.config, jwtVerifier: deps.jwtVerifier });
 
   return async function tenantRoutes(app: FastifyInstance) {
     const typedApp = app.withTypeProvider<ZodTypeProvider>();

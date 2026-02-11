@@ -47,6 +47,9 @@ function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     SMTP_FROM: 'noreply@seedling.local',
     APP_BASE_URL: 'http://localhost:5173',
     SECURE_LINK_HMAC_SECRET: 'test-secret-for-unit-tests',
+    COGNITO_USER_POOL_ID: '',
+    COGNITO_CLIENT_ID: '',
+    COGNITO_REGION: '',
     ...overrides,
   };
 }

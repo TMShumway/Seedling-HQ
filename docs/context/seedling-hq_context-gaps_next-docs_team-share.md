@@ -44,8 +44,8 @@ Seedling-HQ currently has ten context packs:
    - Secure-link token storage, outbox data model, S3 keying rules
 
 9) **Domain model + status machines + audit catalog**
-   - Implemented entity definitions (through S-0011) and planned entity definitions with status machines
-   - Audit event catalog (22 implemented + 12 planned), entity relationships
+   - Implemented entity definitions (through S-0029) and planned entity definitions with status machines
+   - Audit event catalog (22 implemented + 17 planned), entity relationships
 
 10) **API standards (errors, pagination, idempotency)**
     - Error shape and codes, response conventions, auth context contract
@@ -65,6 +65,7 @@ This foundation is strong. What remains are the "rails" that prevent agents (and
 - **S-0009 implemented (2026-02-10):** Quote builder v1. Extends `QuoteRepository` with `list` and `update` methods. `UpdateQuoteUseCase` with draft-only edit guard, line item validation, and total recomputation. 4 new API endpoints: `GET /v1/quotes` (paginated list with status/search filters), `GET /v1/quotes/count`, `GET /v1/quotes/:id`, `PUT /v1/quotes/:id`. Frontend: `QuotesPage` with status filter pills and debounced search, `QuoteDetailPage` with inline line-item builder, `ServiceItemPicker` from catalog, editable tax. Convert redirect changed from `/clients/:id` to `/quotes/:id`. 115 unit, 105 integration, 48+22 skipped E2E tests passing.
 - **S-0010 implemented (2026-02-10):** Send secure quote link. HMAC-SHA256 token hashing, `/v1/ext/` routes with `buildExternalTokenMiddleware()`, `externalAuthContext` request decorator, `SecureLinkToken` entity + `SecureLinkTokenRepository` port and Drizzle implementation. Quote status transition: `draft` → `sent`.
 - **S-0011 implemented (2026-02-10):** Customer approves/declines quote. `RespondToQuoteUseCase` (single class, parameterized by action). Token scopes expanded: `['quote:read']` → `['quote:read', 'quote:respond']`. `principalType: 'external'` in audit events. Idempotent external actions (same-action → 200 no-op, cross-transition → 400). Best-effort owner notification. Frontend approve/decline buttons on `PublicQuoteViewPage`, timestamps on `QuoteDetailPage`. 151 unit, 128 integration, 88 E2E tests passing.
+- **S-0029 implemented (2026-02-11):** Cognito JWT validation. `JwtVerifier` port + `CognitoJwtVerifier` impl using `jose` library. Validates access tokens (not ID tokens) via JWKS, `client_id`, `token_use=access`, `custom:tenant_id`, `username`, exactly-one `cognito:groups`. CDK pre-token-generation V2 Lambda copies `custom:tenant_id` into access token. Group renamed `technician` → `member`. `AUTH_MODE` runtime validation, Cognito config vars conditionally required. Fail-fast verifier creation at startup. UUID format validation for `custom:tenant_id` and `username` claims. 194 unit, 150 integration tests passing.
 
 ---
 
@@ -91,7 +92,7 @@ This foundation is strong. What remains are the "rails" that prevent agents (and
 > Remaining sub-gaps: formatting/linting tool config, UI component location conventions.
 
 ### 6) CI/CD + environments matrix
-CDK dev-sandbox infra delivered in S-0028 (Cognito User Pool + App Client). Missing: CI/CD pipeline, staging/prod environment matrix, and deployment strategy.
+CDK dev-sandbox infra delivered in S-0028 (Cognito User Pool + App Client). JWT validation implemented in S-0029. Missing: CI/CD pipeline, staging/prod environment matrix, and deployment strategy.
 
 Document:
 - CI pipeline steps (exact commands) for:

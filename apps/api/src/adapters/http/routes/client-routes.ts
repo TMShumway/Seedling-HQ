@@ -12,6 +12,7 @@ import { getEventLabel } from '../../../application/dto/timeline-dto.js';
 import { NotFoundError } from '../../../shared/errors.js';
 import { buildAuthMiddleware } from '../middleware/auth-middleware.js';
 import type { AppConfig } from '../../../shared/config.js';
+import type { JwtVerifier } from '../../../application/ports/jwt-verifier.js';
 
 const clientResponseSchema = z.object({
   id: z.string(),
@@ -92,11 +93,12 @@ export function buildClientRoutes(deps: {
   propertyRepo: PropertyRepository;
   auditRepo: AuditEventRepository;
   config: AppConfig;
+  jwtVerifier?: JwtVerifier;
 }) {
   const createUseCase = new CreateClientUseCase(deps.clientRepo, deps.auditRepo);
   const updateUseCase = new UpdateClientUseCase(deps.clientRepo, deps.auditRepo);
   const deactivateUseCase = new DeactivateClientUseCase(deps.clientRepo, deps.propertyRepo, deps.auditRepo);
-  const authMiddleware = buildAuthMiddleware(deps.config);
+  const authMiddleware = buildAuthMiddleware({ config: deps.config, jwtVerifier: deps.jwtVerifier });
 
   return async function clientRoutes(app: FastifyInstance) {
     const typedApp = app.withTypeProvider<ZodTypeProvider>();

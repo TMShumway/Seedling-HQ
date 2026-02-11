@@ -11,6 +11,7 @@ import { DeactivatePropertyUseCase } from '../../../application/usecases/deactiv
 import { NotFoundError } from '../../../shared/errors.js';
 import { buildAuthMiddleware } from '../middleware/auth-middleware.js';
 import type { AppConfig } from '../../../shared/config.js';
+import type { JwtVerifier } from '../../../application/ports/jwt-verifier.js';
 
 const propertyResponseSchema = z.object({
   id: z.string(),
@@ -67,11 +68,12 @@ export function buildPropertyRoutes(deps: {
   clientRepo: ClientRepository;
   auditRepo: AuditEventRepository;
   config: AppConfig;
+  jwtVerifier?: JwtVerifier;
 }) {
   const createUseCase = new CreatePropertyUseCase(deps.propertyRepo, deps.clientRepo, deps.auditRepo);
   const updateUseCase = new UpdatePropertyUseCase(deps.propertyRepo, deps.auditRepo);
   const deactivateUseCase = new DeactivatePropertyUseCase(deps.propertyRepo, deps.auditRepo);
-  const authMiddleware = buildAuthMiddleware(deps.config);
+  const authMiddleware = buildAuthMiddleware({ config: deps.config, jwtVerifier: deps.jwtVerifier });
 
   return async function propertyRoutes(app: FastifyInstance) {
     const typedApp = app.withTypeProvider<ZodTypeProvider>();

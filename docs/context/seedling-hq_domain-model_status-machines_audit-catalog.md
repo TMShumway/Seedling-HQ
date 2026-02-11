@@ -9,7 +9,7 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 
 ## 1) Entity overview
 
-### 1.1 Implemented entities (S-0001 through S-0011)
+### 1.1 Implemented entities (S-0001 through S-0011, plus S-0026–S-0029)
 
 | Entity | Story | Tenant-scoped | Singleton | Soft delete |
 |--------|-------|---------------|-----------|-------------|
@@ -370,8 +370,8 @@ scheduled → en_route → started → completed
 ```
 
 - `scheduled`: visit created with date/time
-- `en_route`: technician heading to site (optional)
-- `started`: technician on-site, work in progress
+- `en_route`: member heading to site (optional)
+- `started`: member on-site, work in progress
 - `completed`: work done, notes/photos captured
 - `cancelled`: visit cancelled
 
@@ -479,7 +479,7 @@ Tenant
 
 ## 5) Audit event catalog
 
-### Implemented events (S-0001 through S-0028)
+### Implemented events (S-0001 through S-0029)
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
@@ -598,6 +598,7 @@ All audit events share this structure:
 | S-0026 | Create standalone quote | quotes | E-0004 |
 | S-0027 | Local login/logout page | platform | E-0001 |
 | S-0028 | Cognito User Pool infrastructure (CDK) | platform | E-0001 |
+| S-0029 | Cognito JWT validation | platform | E-0001 |
 
 ### Planned (MVP — Release R1)
 

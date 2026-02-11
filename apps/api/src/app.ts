@@ -8,6 +8,8 @@ import {
 } from 'fastify-type-provider-zod';
 import type { AppConfig } from './shared/config.js';
 import type { Database } from './infra/db/client.js';
+import type { JwtVerifier } from './application/ports/jwt-verifier.js';
+import { CognitoJwtVerifier } from './infra/auth/cognito-jwt-verifier.js';
 import { loggerConfig } from './shared/logging.js';
 import { registerRequestContext } from './adapters/http/middleware/request-context.js';
 import { registerAuthDecorator } from './adapters/http/middleware/auth-middleware.js';
@@ -43,9 +45,16 @@ import { NodemailerEmailSender } from './infra/email/nodemailer-email-sender.js'
 export interface CreateAppOptions {
   config: AppConfig;
   db: Database;
+  jwtVerifier?: JwtVerifier;
 }
 
-export async function createApp({ config, db }: CreateAppOptions) {
+export async function createApp({ config, db, jwtVerifier: jwtVerifierOverride }: CreateAppOptions) {
+  // Fail fast: create Cognito JWT verifier at startup when AUTH_MODE=cognito
+  let jwtVerifier: JwtVerifier | undefined = jwtVerifierOverride;
+  if (config.AUTH_MODE === 'cognito' && !jwtVerifier) {
+    jwtVerifier = new CognitoJwtVerifier(config);
+  }
+
   const app = Fastify({ logger: loggerConfig, trustProxy: true });
 
   // Zod type provider
@@ -91,15 +100,15 @@ export async function createApp({ config, db }: CreateAppOptions) {
 
   // Routes
   await app.register(healthRoutes);
-  await app.register(buildTenantRoutes({ tenantRepo, uow, config }));
-  await app.register(buildUserRoutes({ userRepo, config }));
-  await app.register(buildBusinessSettingsRoutes({ settingsRepo, auditRepo, config }));
-  await app.register(buildServiceCategoryRoutes({ categoryRepo, serviceItemRepo, auditRepo, config }));
-  await app.register(buildServiceItemRoutes({ serviceItemRepo, categoryRepo, auditRepo, config }));
-  await app.register(buildClientRoutes({ clientRepo, propertyRepo, auditRepo, config }));
-  await app.register(buildPropertyRoutes({ propertyRepo, clientRepo, auditRepo, config }));
-  await app.register(buildRequestRoutes({ requestRepo, tenantRepo, auditRepo, userRepo, outboxRepo, emailSender, clientRepo, uow, config }));
-  await app.register(buildQuoteRoutes({ quoteRepo, auditRepo, uow, emailSender, outboxRepo, clientRepo, propertyRepo, config }));
+  await app.register(buildTenantRoutes({ tenantRepo, uow, config, jwtVerifier }));
+  await app.register(buildUserRoutes({ userRepo, config, jwtVerifier }));
+  await app.register(buildBusinessSettingsRoutes({ settingsRepo, auditRepo, config, jwtVerifier }));
+  await app.register(buildServiceCategoryRoutes({ categoryRepo, serviceItemRepo, auditRepo, config, jwtVerifier }));
+  await app.register(buildServiceItemRoutes({ serviceItemRepo, categoryRepo, auditRepo, config, jwtVerifier }));
+  await app.register(buildClientRoutes({ clientRepo, propertyRepo, auditRepo, config, jwtVerifier }));
+  await app.register(buildPropertyRoutes({ propertyRepo, clientRepo, auditRepo, config, jwtVerifier }));
+  await app.register(buildRequestRoutes({ requestRepo, tenantRepo, auditRepo, userRepo, outboxRepo, emailSender, clientRepo, uow, config, jwtVerifier }));
+  await app.register(buildQuoteRoutes({ quoteRepo, auditRepo, uow, emailSender, outboxRepo, clientRepo, propertyRepo, config, jwtVerifier }));
   await app.register(buildExternalQuoteRoutes({ secureLinkTokenRepo, quoteRepo, clientRepo, tenantRepo, propertyRepo, auditRepo, userRepo, outboxRepo, emailSender, config }));
   await app.register(buildAuthRoutes({ userRepo, config }));
 

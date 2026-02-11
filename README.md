@@ -125,7 +125,7 @@ Built with React 19, Vite, Tailwind CSS v4, and TanStack Query. Responsive layou
 | Database | PostgreSQL 17, Drizzle ORM |
 | Frontend | React 19, Vite 6, Tailwind CSS v4, TanStack Query |
 | Testing | Vitest (unit + integration), Playwright (E2E), axe-core (a11y) |
-| Auth | AWS Cognito (User Pool provisioned), `AUTH_MODE=local` mock for dev |
+| Auth | AWS Cognito (User Pool + JWT validation), `AUTH_MODE=local` mock for dev |
 | Email | Nodemailer + Mailpit (local), SES (planned) |
 | Infra | Docker Compose (local), AWS CDK (Cognito deployed) |
 
@@ -186,8 +186,8 @@ pnpm exec playwright test e2e/tests/quotes.spec.ts --project=desktop-chrome
 ### Test Coverage
 
 ```
-Unit:        166 tests
-Integration: 147 tests (requires Postgres)
+Unit:        194 tests
+Integration: 150 tests (requires Postgres)
 E2E:         108 tests (74 run + 34 skipped on non-desktop projects)
 ```
 
@@ -311,6 +311,9 @@ Copy `.env.example` to `.env` before starting. Key variables:
 | `SMTP_HOST` / `SMTP_PORT` | `localhost` / `1025` | Mailpit SMTP (local email capture) |
 | `APP_BASE_URL` | `http://localhost:5173` | Base URL for secure quote links |
 | `SECURE_LINK_HMAC_SECRET` | `dev-secret-...` | HMAC secret for token hashing (change in production) |
+| `COGNITO_USER_POOL_ID` | _(none)_ | Required when `AUTH_MODE=cognito` |
+| `COGNITO_CLIENT_ID` | _(none)_ | Required when `AUTH_MODE=cognito` |
+| `COGNITO_REGION` | _(none)_ | Required when `AUTH_MODE=cognito` |
 
 ## AI Context
 

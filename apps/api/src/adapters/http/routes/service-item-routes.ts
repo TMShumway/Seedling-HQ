@@ -11,6 +11,7 @@ import { DeactivateServiceItemUseCase } from '../../../application/usecases/deac
 import { NotFoundError } from '../../../shared/errors.js';
 import { buildAuthMiddleware } from '../middleware/auth-middleware.js';
 import type { AppConfig } from '../../../shared/config.js';
+import type { JwtVerifier } from '../../../application/ports/jwt-verifier.js';
 
 const unitTypeSchema = z.enum(['flat', 'hourly', 'per_sqft', 'per_unit', 'per_visit']);
 
@@ -70,11 +71,12 @@ export function buildServiceItemRoutes(deps: {
   categoryRepo: ServiceCategoryRepository;
   auditRepo: AuditEventRepository;
   config: AppConfig;
+  jwtVerifier?: JwtVerifier;
 }) {
   const createUseCase = new CreateServiceItemUseCase(deps.serviceItemRepo, deps.categoryRepo, deps.auditRepo);
   const updateUseCase = new UpdateServiceItemUseCase(deps.serviceItemRepo, deps.auditRepo);
   const deactivateUseCase = new DeactivateServiceItemUseCase(deps.serviceItemRepo, deps.auditRepo);
-  const authMiddleware = buildAuthMiddleware(deps.config);
+  const authMiddleware = buildAuthMiddleware({ config: deps.config, jwtVerifier: deps.jwtVerifier });
 
   return async function serviceItemRoutes(app: FastifyInstance) {
     const typedApp = app.withTypeProvider<ZodTypeProvider>();

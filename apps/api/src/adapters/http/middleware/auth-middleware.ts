@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import type { InternalAuthContext } from '@seedling/shared';
 import type { AppConfig } from '../../../shared/config.js';
+import type { JwtVerifier } from '../../../application/ports/jwt-verifier.js';
 import { UnauthorizedError } from '../../../shared/errors.js';
 import { getLocalAuthContext } from '../../../infra/auth/local-auth-provider.js';
 
@@ -10,7 +11,9 @@ declare module 'fastify' {
   }
 }
 
-export function buildAuthMiddleware(config: AppConfig) {
+export function buildAuthMiddleware(deps: { config: AppConfig; jwtVerifier?: JwtVerifier }) {
+  const { config, jwtVerifier } = deps;
+
   return async function authMiddleware(request: FastifyRequest, _reply: FastifyReply) {
     if (config.AUTH_MODE === 'local') {
       if (config.NODE_ENV === 'production') {
@@ -23,8 +26,30 @@ export function buildAuthMiddleware(config: AppConfig) {
       return;
     }
 
-    // AUTH_MODE=cognito — not implemented in S-0001
-    throw new UnauthorizedError('Cognito auth not yet implemented');
+    // AUTH_MODE=cognito
+    if (!jwtVerifier) {
+      throw new Error('AUTH_MODE=cognito requires a JwtVerifier instance');
+    }
+
+    const authHeader = request.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new UnauthorizedError('Missing or malformed Authorization header');
+    }
+
+    const token = authHeader.slice(7);
+
+    try {
+      const result = await jwtVerifier.verify(token);
+      request.authContext = {
+        tenant_id: result.tenantId,
+        user_id: result.userId,
+        role: result.role,
+        principal_type: 'internal',
+      };
+    } catch (err) {
+      request.log.warn({ err }, 'JWT verification failed');
+      throw new UnauthorizedError('Invalid or expired token');
+    }
   };
 }
 

@@ -56,7 +56,7 @@ _Last updated: 2026-02-08 (America/Chihuahua)_
 - Authenticated via **AWS Cognito** (JWT-based).
 - Auth context derived from Cognito Access token:
   - `tenant_id` (from `custom:tenant_id` claim)
-  - `user_id` (from `sub` claim)
+  - `user_id` (from `username` claim — NOT `sub`; contract: Cognito `username` = `users.id`)
   - `role` (from `cognito:groups` claim)
 - Local dev uses `AUTH_MODE=local` mock middleware producing the identical auth context shape.
 
@@ -76,16 +76,20 @@ _Last updated: 2026-02-08 (America/Chihuahua)_
 
 Do not shoehorn secure-link checks into internal RBAC logic.
 
-### 3.4 Cognito JWT validation rules (internal auth)
+### 3.4 Cognito JWT validation rules (internal auth) — Implemented in S-0029
 
-API middleware must validate Cognito Access tokens with the following checks:
+API middleware validates Cognito Access tokens using `jose` library (`CognitoJwtVerifier` in `infra/auth/cognito-jwt-verifier.ts`):
 
-1. **Signature verification:** Validate against the Cognito JWKS endpoint for the User Pool. Cache JWKS keys with a reasonable TTL (e.g., 1 hour).
+1. **Signature verification:** Validated via `jose.jwtVerify()` + `createRemoteJWKSet()` (auto-caches JWKS keys, re-fetches on unknown `kid`).
 2. **Issuer (`iss`):** Must match `https://cognito-idp.<region>.amazonaws.com/<userPoolId>`.
 3. **Token use (`token_use`):** Must be `access` (reject ID tokens on API routes).
-4. **Audience/client (`client_id`):** Must match the configured App Client ID.
+4. **Client ID (`client_id`):** Must match the configured App Client ID. **Note:** Cognito access tokens use `client_id`, NOT `aud` — do NOT pass `audience` to `jose.jwtVerify()`.
 5. **Expiration (`exp`):** Reject expired tokens. Do not extend or refresh server-side.
-6. **Custom claims:** Extract `custom:tenant_id` and `cognito:groups` from the token.
+6. **Custom claims:**
+   - `custom:tenant_id` → `authContext.tenant_id` (added to access token by pre-token-generation V2 Lambda trigger, S-0029)
+   - `username` → `authContext.user_id` (NOT `sub` — contract: Cognito `username` must equal `users.id`)
+   - `cognito:groups` → `authContext.role` (enforce exactly one group; validate against `ROLES` from `roles.ts`)
+7. **UUID format validation:** Both `custom:tenant_id` and `username` must be valid UUIDs (regex check). Rejects non-UUID values at the verifier layer before building `authContext`, preventing DB UUID-cast failures (500) downstream.
 
 **Token refresh:**
 - The React app is responsible for refreshing tokens using the Cognito refresh token before expiry.
