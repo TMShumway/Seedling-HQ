@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { LogOut } from 'lucide-react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { navItems } from './Sidebar';
@@ -12,10 +13,12 @@ interface MobileDrawerProps {
 export function MobileDrawer({ open, onOpenChange }: MobileDrawerProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   function handleLogout() {
     localStorage.removeItem('dev_tenant_id');
     localStorage.removeItem('dev_user_id');
+    queryClient.clear();
     onOpenChange(false);
     navigate('/login');
   }

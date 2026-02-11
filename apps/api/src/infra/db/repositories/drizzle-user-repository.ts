@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, ilike } from 'drizzle-orm';
 import type { UserRepository, UserWithTenant } from '../../../application/ports/user-repository.js';
 import type { User } from '../../../domain/entities/user.js';
 import type { Role } from '../../../domain/types/roles.js';
@@ -72,7 +72,7 @@ export class DrizzleUserRepository implements UserRepository {
       .innerJoin(tenants, eq(users.tenantId, tenants.id))
       .where(
         and(
-          eq(users.email, email),
+          ilike(users.email, email),
           eq(users.status, 'active'),
           eq(tenants.status, 'active'),
         ),

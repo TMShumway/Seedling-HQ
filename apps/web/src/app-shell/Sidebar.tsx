@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   LayoutDashboard,
   Wrench,
@@ -28,10 +29,12 @@ const navItems = [
 export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   function handleLogout() {
     localStorage.removeItem('dev_tenant_id');
     localStorage.removeItem('dev_user_id');
+    queryClient.clear();
     navigate('/login');
   }
 
