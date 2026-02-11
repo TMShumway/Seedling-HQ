@@ -96,6 +96,9 @@
 | External principal type | `principalType: 'external'`, `principalId: tokenId` | S-0011 | Distinguishes token-based actions from `internal` (user) and `system` (automation) |
 | Quote response status machine | `sent` → `approved` / `declined` | S-0011 | Only `sent` quotes can be responded to; draft/expired/already-terminal blocked |
 | Standalone quote creation | `POST /v1/quotes` | S-0026 | Standalone quotes without a request; validates client (exists, active) and property (exists, active, belongs to client); `requestId: null` |
+| Local login endpoint | `POST /v1/auth/local/login` | S-0027 | Cross-tenant email lookup; returns accounts array; 404 when `AUTH_MODE !== 'local'`; rate limited 10 req/min |
+| AuthGuard | React component wrapping `<AppShell>` | S-0027 | Checks localStorage `dev_tenant_id`/`dev_user_id`; redirects to `/login` if missing |
+| Catch-all redirect | `/login` (was `/dashboard`) | S-0027 | Unknown routes redirect to login instead of dashboard |
 
 ---
 
@@ -150,6 +153,10 @@
 | Quote response notification | S-0011 | Best-effort email to owner via outbox; `buildQuoteResponseEmail()` inline HTML builder; type `quote_approved`/`quote_declined` in outbox |
 | CreateStandaloneQuoteUseCase (no UoW) | S-0026 | Direct repo + best-effort audit; validates client (exists, active), property (optional: exists, active, belongs to client); creates draft with empty line items |
 | POST /v1/quotes route | S-0026 | Body: `{ clientId, propertyId?, title }`; returns 201; `propertyRepo` added to `buildQuoteRoutes` deps |
+| AUTH_MODE route guard | S-0027 | Return 404 when `config.AUTH_MODE !== 'local'` to hide dev-only endpoints in cognito mode |
+| Cross-tenant user lookup | S-0027 | `listActiveByEmail(email)` joins users+tenants, filters both active; used by login endpoint |
+| Auth routes (separate file) | S-0027 | `buildAuthRoutes({ userRepo, config })` in `auth-routes.ts`; public (no auth middleware), rate-limited |
+| Zod trim+lowercase before email | S-0027 | `z.string().trim().toLowerCase().email()` ensures normalization happens before validation |
 
 ### Frontend
 
@@ -181,6 +188,10 @@
 | Quote detail timestamps | S-0011 | Below status badge: green "Approved on {date}" or red "Declined on {date}" from `quote.approvedAt`/`declinedAt` |
 | CreateQuotePage with client search | S-0026 | Debounced search → radio select → property dropdown → auto-title → redirect to `/quotes/:id`; route `/quotes/new` before `/:id` |
 | New Quote button on QuotesPage | S-0026 | `data-testid="new-quote-btn"` in header; updated empty state text |
+| AuthGuard wrapping AppShell | S-0027 | `<AuthGuard><AppShell /></AuthGuard>` in Route element; checks localStorage, redirects to `/login` |
+| Login page two-step flow | S-0027 | Step 1: email input → `localLogin(email)` via `publicRequest()`; Step 2: account picker (if multiple); auto-select if single account |
+| Logout in Sidebar + MobileDrawer | S-0027 | Clear `dev_tenant_id`/`dev_user_id` from localStorage, `navigate('/login')`; drawer also calls `onOpenChange(false)` |
+| Login/Signup cross-links | S-0027 | LoginPage → "Don't have an account? Sign up"; SignupPage → "Already have an account? Log in" |
 
 ### Testing
 
@@ -189,6 +200,8 @@
 | E2E DB isolation | S-0002 | `db:reset` → `db:push` → `db:seed` in globalSetup |
 | Cross-project skip | S-0002 | `test.skip(testInfo.project.name !== 'desktop-chrome', 'reason')` inside test body |
 | Integration DB sharing | S-0001 | `pool: 'forks'` + `singleFork: true` in vitest config |
+| `setDemoAuth` E2E helper | S-0027 | `e2e/helpers/auth.ts` — `page.addInitScript()` sets demo localStorage before every page load; add to `test.beforeEach` in all authenticated E2E tests |
+| Logout E2E uses `page.evaluate` | S-0027 | Don't use `addInitScript` when testing logout — it re-sets localStorage on navigation; use `page.evaluate(() => localStorage.setItem(...))` instead |
 
 ---
 

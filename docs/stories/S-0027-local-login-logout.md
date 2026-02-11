@@ -1,6 +1,6 @@
 # S-0027: Local Login/Logout Page
 
-## Status: In Progress
+## Status: Complete
 
 ## Overview
 Add a proper login/logout UX for `AUTH_MODE=local` so developers and testers see a real auth flow. Includes a backend login endpoint with cross-tenant email lookup, a frontend login page with account picker, AuthGuard wrapping authenticated routes, and logout buttons in the sidebar/drawer.
@@ -46,25 +46,14 @@ Add a proper login/logout UX for `AUTH_MODE=local` so developers and testers see
 ## Phase 4: Documentation + CLAUDE.md Updates
 **Goal:** Update CLAUDE.md with new patterns and decisions, run full test suite.
 
-- [ ] **Task 4.1: Update CLAUDE.md key decisions table**
-- [ ] **Task 4.2: Update CLAUDE.md patterns tables**
-- [ ] **Task 4.3: Run full test suite and verify**
+- [x] **Task 4.1: Update CLAUDE.md key decisions table**
+- [x] **Task 4.2: Update CLAUDE.md patterns tables**
+- [x] **Task 4.3: Run full test suite and verify**
 
 ## Resume context
-### Last completed
-- Phase 3 complete: E2E migration + new login/logout/a11y tests
-- Created `e2e/helpers/auth.ts` with `setDemoAuth()` using `page.addInitScript()`
-- Added `setDemoAuth` beforeEach to 8 existing E2E files
-- Created `e2e/tests/login.spec.ts` (7 tests: redirect, login, unknown email, logout, hint, cross-link, a11y)
-- Logout test uses `page.evaluate()` to set localStorage (not `addInitScript`) to properly test cleanup
-### In progress
-- Starting Phase 4: CLAUDE.md updates and final verification
-### Next up
-- Task 4.1: Update CLAUDE.md key decisions table
-### Blockers / open questions
-- None
+All phases complete. No resume context needed.
 
 ## Test summary
-- **Unit**: 166 total (3 new)
-- **Integration**: 145 total (8 new)
-- **E2E**: 108 total (74 run + 34 skipped) — 20 new
+- **Unit**: 166 total (3 new in `auth-login.test.ts`)
+- **Integration**: 145 total (8 new in `auth-routes.test.ts`)
+- **E2E**: 108 total (74 run + 34 skipped) — 20 new (7 in `login.spec.ts` × 2 projects + 6 skipped non-desktop)
