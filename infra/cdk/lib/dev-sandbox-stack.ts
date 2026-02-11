@@ -1,5 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
 import type { Construct } from 'constructs';
 
 export interface DevSandboxStackProps extends cdk.StackProps {
@@ -53,12 +54,45 @@ export class DevSandboxStack extends cdk.Stack {
 
       accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
+
+      // Essentials plan required for access token customization via pre-token-generation V2 trigger
+      featurePlan: cognito.FeaturePlan.ESSENTIALS,
     });
+
+    // -------------------------------------------------------------------
+    // Pre-token-generation V2 Lambda trigger
+    // Copies custom:tenant_id into the access token so API can validate
+    // access tokens (security best practice) instead of ID tokens.
+    // -------------------------------------------------------------------
+    const preTokenFn = new lambda.Function(this, 'PreTokenGenerationFn', {
+      functionName: `${prefix}-pre-token-gen`,
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromInline(`
+exports.handler = async (event) => {
+  const tenantId = event.request?.userAttributes?.['custom:tenant_id'] ?? '';
+  event.response ??= {};
+  event.response.claimsAndScopeOverrideDetails ??= {};
+  event.response.claimsAndScopeOverrideDetails.accessTokenGeneration ??= {};
+  event.response.claimsAndScopeOverrideDetails.accessTokenGeneration.claimsToAddOrOverride = {
+    ...event.response.claimsAndScopeOverrideDetails.accessTokenGeneration.claimsToAddOrOverride,
+    'custom:tenant_id': tenantId,
+  };
+  return event;
+};
+      `.trim()),
+    });
+
+    this.userPool.addTrigger(
+      cognito.UserPoolOperation.PRE_TOKEN_GENERATION_CONFIG,
+      preTokenFn,
+      cognito.LambdaVersion.V2_0,
+    );
 
     // -------------------------------------------------------------------
     // Cognito Groups (maps to application roles via cognito:groups claim)
     // -------------------------------------------------------------------
-    const roles = ['owner', 'admin', 'technician'] as const;
+    const roles = ['owner', 'admin', 'member'] as const;
     for (const role of roles) {
       new cognito.CfnUserPoolGroup(this, `Group-${role}`, {
         userPoolId: this.userPool.userPoolId,
