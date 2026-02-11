@@ -16,6 +16,7 @@ async function createTenantAndGetApp() {
       businessName: 'Quote Test Biz',
       ownerEmail: 'quote-test@test.com',
       ownerFullName: 'Quote Owner',
+      ownerPassword: 'test-password',
     },
   });
   const created = createRes.json();
@@ -254,6 +255,7 @@ describe('GET /v1/quotes/:id', () => {
         businessName: 'Tenant B Biz',
         ownerEmail: 'b@test.com',
         ownerFullName: 'Owner B',
+        ownerPassword: 'test-password',
       },
     });
     const tenantB = createBRes.json();
@@ -349,6 +351,7 @@ describe('PUT /v1/quotes/:id', () => {
         businessName: 'Tenant B Biz',
         ownerEmail: 'b2@test.com',
         ownerFullName: 'Owner B',
+        ownerPassword: 'test-password',
       },
     });
     const tenantB = createBRes.json();
@@ -549,6 +552,7 @@ describe('POST /v1/quotes', () => {
         businessName: 'Tenant B Quote Biz',
         ownerEmail: 'b-quote@test.com',
         ownerFullName: 'Owner B',
+        ownerPassword: 'test-password',
       },
     });
     const tenantB = createBRes.json();

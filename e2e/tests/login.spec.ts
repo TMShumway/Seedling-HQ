@@ -15,12 +15,8 @@ test.describe('Login Flow', () => {
     await page.goto('/login');
     await expect(page.getByText('Sign in to your account')).toBeVisible({ timeout: 10000 });
 
-    // Enter demo email
+    // Fill email and password on same form
     await page.getByLabel('Email').fill('owner@demo.local');
-    await page.getByRole('button', { name: 'Continue' }).click();
-
-    // Single account → auto-select → password step
-    await expect(page.getByLabel('Password')).toBeVisible({ timeout: 10000 });
     await page.getByLabel('Password').fill('password');
     await page.getByRole('button', { name: 'Sign In' }).click();
 
@@ -34,7 +30,8 @@ test.describe('Login Flow', () => {
     await expect(page.getByText('Sign in to your account')).toBeVisible({ timeout: 10000 });
 
     await page.getByLabel('Email').fill('nobody@nonexistent.com');
-    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.getByLabel('Password').fill('anything');
+    await page.getByRole('button', { name: 'Sign In' }).click();
 
     await expect(page.getByText('No account found for that email')).toBeVisible({ timeout: 10000 });
   });

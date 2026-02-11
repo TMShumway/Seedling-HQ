@@ -4,7 +4,7 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { CreateTenantUseCase } from '../../../application/usecases/create-tenant.js';
 import type { TenantRepository } from '../../../application/ports/tenant-repository.js';
 import type { UnitOfWork } from '../../../application/ports/unit-of-work.js';
-import { NotFoundError } from '../../../shared/errors.js';
+import { NotFoundError, ValidationError } from '../../../shared/errors.js';
 import { buildAuthMiddleware } from '../middleware/auth-middleware.js';
 import type { AppConfig } from '../../../shared/config.js';
 import type { JwtVerifier } from '../../../application/ports/jwt-verifier.js';
@@ -66,6 +66,10 @@ export function buildTenantRoutes(deps: {
           return reply.status(404).send({
             error: { code: 'NOT_FOUND', message: 'Not Found' },
           });
+        }
+
+        if (!request.body.ownerPassword) {
+          throw new ValidationError('Password is required for account creation');
         }
 
         const result = await useCase.execute(request.body, request.correlationId);

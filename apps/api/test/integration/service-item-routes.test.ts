@@ -15,6 +15,7 @@ async function createTenantCategoryAndGetApp() {
       businessName: 'Service Test Biz',
       ownerEmail: 'svc@test.com',
       ownerFullName: 'Service Owner',
+      ownerPassword: 'test-password',
     },
   });
   const created = createRes.json();

@@ -18,6 +18,7 @@ async function createTenantWithNotifications() {
       businessName: 'Notif Test Biz',
       ownerEmail: 'notif-owner@test.com',
       ownerFullName: 'Notif Owner',
+      ownerPassword: 'test-password',
     },
   });
   const created = createRes.json();
@@ -116,6 +117,7 @@ describe('Notification integration: POST /v1/public/requests/:tenantSlug', () =>
         businessName: 'SMTP Fail Biz',
         ownerEmail: 'smtp-fail@test.com',
         ownerFullName: 'SMTP Fail Owner',
+        ownerPassword: 'test-password',
       },
     });
     const created = createRes.json();
@@ -162,6 +164,7 @@ describe('Notification integration: POST /v1/public/requests/:tenantSlug', () =>
         businessName: 'Disabled Notif Biz',
         ownerEmail: 'disabled@test.com',
         ownerFullName: 'Disabled Owner',
+        ownerPassword: 'test-password',
       },
     });
     const created = createRes.json();

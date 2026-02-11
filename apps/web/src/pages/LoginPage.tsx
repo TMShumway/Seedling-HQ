@@ -4,17 +4,17 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { useAuth, isLocalMode, isCognitoMode } from '@/lib/auth';
+import { useAuth, isLocalMode } from '@/lib/auth';
 import { ApiClientError } from '@/lib/api-client';
 import type { LoginAccount } from '@/lib/api-client';
 
-type Step = 'email' | 'accounts' | 'password' | 'new-password';
+type Step = 'login' | 'accounts' | 'new-password';
 
 export function LoginPage() {
   const navigate = useNavigate();
   const auth = useAuth();
 
-  const [step, setStep] = useState<Step>('email');
+  const [step, setStep] = useState<Step>('login');
   const [email, setEmail] = useState('');
   const [accounts, setAccounts] = useState<LoginAccount[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -28,66 +28,81 @@ export function LoginPage() {
     navigate('/dashboard');
   }
 
-  async function handleEmailSubmit(e: FormEvent) {
+  async function authenticateAccount(account: LoginAccount) {
+    auth.selectAccount(account);
+    const result = await auth.authenticate(password);
+    if (result.newPasswordRequired) {
+      setStep('new-password');
+      return;
+    }
+    navigateToDashboard();
+  }
+
+  function handlePasswordError(err: unknown) {
+    if (err instanceof ApiClientError && err.status === 401) {
+      setError('Incorrect password. Please try again.');
+    } else if (err instanceof Error) {
+      if (err.message.includes('Incorrect username or password')) {
+        setError('Incorrect password. Please try again.');
+      } else {
+        setError(err.message);
+      }
+    } else {
+      setError('Authentication failed. Please try again.');
+    }
+  }
+
+  async function handleLoginSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
     setLoading(true);
 
+    let lookupResult: LoginAccount[];
     try {
-      const result = await auth.lookupEmail(email);
-
-      if (result.length === 1) {
-        auth.selectAccount(result[0]);
-        setAccounts(result);
-        setStep('password');
-        return;
-      }
-
-      setAccounts(result);
-      setSelectedIndex(0);
-      setStep('accounts');
+      lookupResult = await auth.lookupEmail(email);
     } catch (err) {
       if (err instanceof ApiClientError && err.status === 401) {
         setError('No account found for that email');
       } else {
         setError('Something went wrong. Please try again.');
       }
+      setLoading(false);
+      return;
+    }
+
+    if (lookupResult.length === 0) {
+      setError('No account found for that email');
+      setLoading(false);
+      return;
+    }
+
+    if (lookupResult.length > 1) {
+      setAccounts(lookupResult);
+      setSelectedIndex(0);
+      setStep('accounts');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      await authenticateAccount(lookupResult[0]);
+    } catch (err) {
+      handlePasswordError(err);
     } finally {
       setLoading(false);
     }
   }
 
-  function handleAccountSelect(e: FormEvent) {
-    e.preventDefault();
-    const account = accounts[selectedIndex];
-    auth.selectAccount(account);
-    setStep('password');
-  }
-
-  async function handlePasswordSubmit(e: FormEvent) {
+  async function handleAccountSelect(e: FormEvent) {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const result = await auth.authenticate(password);
-      if (result.newPasswordRequired) {
-        setStep('new-password');
-        return;
-      }
-      navigateToDashboard();
+      const account = accounts[selectedIndex];
+      await authenticateAccount(account);
     } catch (err) {
-      if (err instanceof ApiClientError && err.status === 401) {
-        setError('Incorrect password. Please try again.');
-      } else if (err instanceof Error) {
-        if (err.message.includes('Incorrect username or password')) {
-          setError('Incorrect password. Please try again.');
-        } else {
-          setError(err.message);
-        }
-      } else {
-        setError('Authentication failed. Please try again.');
-      }
+      handlePasswordError(err);
     } finally {
       setLoading(false);
     }
@@ -121,9 +136,6 @@ export function LoginPage() {
     }
   }
 
-  // Check pendingNewPassword after authenticate call (state may have updated)
-  // This is handled by the step state machine above
-
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <Card className="w-full max-w-md">
@@ -136,8 +148,8 @@ export function LoginPage() {
           </CardDescription>
         </CardHeader>
 
-        {step === 'email' && (
-          <form onSubmit={handleEmailSubmit}>
+        {step === 'login' && (
+          <form onSubmit={handleLoginSubmit}>
             <CardContent className="space-y-4">
               {error && (
                 <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive" role="alert">
@@ -156,6 +168,16 @@ export function LoginPage() {
                   autoFocus
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
               {isLocalMode() && (
                 <p className="text-xs text-muted-foreground">
                   Hint: owner@demo.local / password
@@ -164,7 +186,7 @@ export function LoginPage() {
             </CardContent>
             <CardFooter className="flex-col gap-4">
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Signing in...' : 'Continue'}
+                {loading ? 'Signing in...' : 'Sign In'}
               </Button>
               <p className="text-sm text-muted-foreground">
                 Don't have an account?{' '}
@@ -179,8 +201,13 @@ export function LoginPage() {
         {step === 'accounts' && (
           <form onSubmit={handleAccountSelect}>
             <CardContent className="space-y-4">
+              {error && (
+                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive" role="alert">
+                  {error}
+                </div>
+              )}
               <p className="text-sm text-muted-foreground">
-                Multiple accounts found. Choose one:
+                Multiple accounts found for <span className="font-medium">{email}</span>. Choose one:
               </p>
               <fieldset className="space-y-2">
                 <legend className="sr-only">Select account</legend>
@@ -212,50 +239,6 @@ export function LoginPage() {
               </fieldset>
             </CardContent>
             <CardFooter className="flex-col gap-4">
-              <Button type="submit" className="w-full">
-                {isCognitoMode() ? 'Continue' : 'Log In'}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full"
-                onClick={() => {
-                  setStep('email');
-                  setAccounts([]);
-                  setError('');
-                }}
-              >
-                Back
-              </Button>
-            </CardFooter>
-          </form>
-        )}
-
-        {step === 'password' && (
-          <form onSubmit={handlePasswordSubmit}>
-            <CardContent className="space-y-4">
-              {error && (
-                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive" role="alert">
-                  {error}
-                </div>
-              )}
-              <p className="text-sm text-muted-foreground">
-                Signing in as <span className="font-medium">{accounts[selectedIndex]?.fullName}</span>
-                {' '}at <span className="font-medium">{accounts[selectedIndex]?.tenantName}</span>
-              </p>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoFocus
-                />
-              </div>
-            </CardContent>
-            <CardFooter className="flex-col gap-4">
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Signing in...' : 'Sign In'}
               </Button>
@@ -264,8 +247,8 @@ export function LoginPage() {
                 variant="ghost"
                 className="w-full"
                 onClick={() => {
-                  setStep(accounts.length > 1 ? 'accounts' : 'email');
-                  setPassword('');
+                  setStep('login');
+                  setAccounts([]);
                   setError('');
                 }}
               >

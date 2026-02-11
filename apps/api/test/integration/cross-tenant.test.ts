@@ -21,6 +21,7 @@ describe('Cross-tenant isolation', () => {
         businessName: 'Tenant A',
         ownerEmail: 'a@test.com',
         ownerFullName: 'Owner A',
+        ownerPassword: 'test-password',
       },
     });
     const tenantA = resA.json();
@@ -33,6 +34,7 @@ describe('Cross-tenant isolation', () => {
         businessName: 'Tenant B',
         ownerEmail: 'b@test.com',
         ownerFullName: 'Owner B',
+        ownerPassword: 'test-password',
       },
     });
     const tenantB = resB.json();
@@ -67,6 +69,7 @@ describe('Cross-tenant isolation', () => {
         businessName: 'Tenant A Settings',
         ownerEmail: 'a-settings@test.com',
         ownerFullName: 'Owner A',
+        ownerPassword: 'test-password',
       },
     });
     const tenantA = resA.json();
@@ -79,6 +82,7 @@ describe('Cross-tenant isolation', () => {
         businessName: 'Tenant B Settings',
         ownerEmail: 'b-settings@test.com',
         ownerFullName: 'Owner B',
+        ownerPassword: 'test-password',
       },
     });
     const tenantB = resB.json();
@@ -131,6 +135,7 @@ describe('Cross-tenant isolation', () => {
         businessName: 'Tenant A Overwrite',
         ownerEmail: 'a-overwrite@test.com',
         ownerFullName: 'Owner A',
+        ownerPassword: 'test-password',
       },
     });
     const tenantA = resA.json();
@@ -143,6 +148,7 @@ describe('Cross-tenant isolation', () => {
         businessName: 'Tenant B Overwrite',
         ownerEmail: 'b-overwrite@test.com',
         ownerFullName: 'Owner B',
+        ownerPassword: 'test-password',
       },
     });
     const tenantB = resB.json();
@@ -215,7 +221,7 @@ describe('Cross-tenant isolation', () => {
     const resA = await app.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Tenant A Categories', ownerEmail: 'a-cat@test.com', ownerFullName: 'Owner A' },
+      payload: { businessName: 'Tenant A Categories', ownerEmail: 'a-cat@test.com', ownerFullName: 'Owner A', ownerPassword: 'test-password' },
     });
     const tenantA = resA.json();
 
@@ -223,7 +229,7 @@ describe('Cross-tenant isolation', () => {
     const resB = await app.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Tenant B Categories', ownerEmail: 'b-cat@test.com', ownerFullName: 'Owner B' },
+      payload: { businessName: 'Tenant B Categories', ownerEmail: 'b-cat@test.com', ownerFullName: 'Owner B', ownerPassword: 'test-password' },
     });
     const tenantB = resB.json();
 
@@ -257,14 +263,14 @@ describe('Cross-tenant isolation', () => {
     const resA = await app.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Tenant A Cat Update', ownerEmail: 'a-cat-u@test.com', ownerFullName: 'Owner A' },
+      payload: { businessName: 'Tenant A Cat Update', ownerEmail: 'a-cat-u@test.com', ownerFullName: 'Owner A', ownerPassword: 'test-password' },
     });
     const tenantA = resA.json();
 
     const resB = await app.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Tenant B Cat Update', ownerEmail: 'b-cat-u@test.com', ownerFullName: 'Owner B' },
+      payload: { businessName: 'Tenant B Cat Update', ownerEmail: 'b-cat-u@test.com', ownerFullName: 'Owner B', ownerPassword: 'test-password' },
     });
     const tenantB = resB.json();
 
@@ -299,14 +305,14 @@ describe('Cross-tenant isolation', () => {
     const resA = await app.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Tenant A Services', ownerEmail: 'a-svc@test.com', ownerFullName: 'Owner A' },
+      payload: { businessName: 'Tenant A Services', ownerEmail: 'a-svc@test.com', ownerFullName: 'Owner A', ownerPassword: 'test-password' },
     });
     const tenantA = resA.json();
 
     const resB = await app.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Tenant B Services', ownerEmail: 'b-svc@test.com', ownerFullName: 'Owner B' },
+      payload: { businessName: 'Tenant B Services', ownerEmail: 'b-svc@test.com', ownerFullName: 'Owner B', ownerPassword: 'test-password' },
     });
     const tenantB = resB.json();
 
@@ -345,14 +351,14 @@ describe('Cross-tenant isolation', () => {
     const resA = await app.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Tenant A Svc Del', ownerEmail: 'a-svc-d@test.com', ownerFullName: 'Owner A' },
+      payload: { businessName: 'Tenant A Svc Del', ownerEmail: 'a-svc-d@test.com', ownerFullName: 'Owner A', ownerPassword: 'test-password' },
     });
     const tenantA = resA.json();
 
     const resB = await app.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Tenant B Svc Del', ownerEmail: 'b-svc-d@test.com', ownerFullName: 'Owner B' },
+      payload: { businessName: 'Tenant B Svc Del', ownerEmail: 'b-svc-d@test.com', ownerFullName: 'Owner B', ownerPassword: 'test-password' },
     });
     const tenantB = resB.json();
 
@@ -391,14 +397,14 @@ describe('Cross-tenant isolation', () => {
     const resA = await app.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Tenant A Clients', ownerEmail: 'a-cli@test.com', ownerFullName: 'Owner A' },
+      payload: { businessName: 'Tenant A Clients', ownerEmail: 'a-cli@test.com', ownerFullName: 'Owner A', ownerPassword: 'test-password' },
     });
     const tenantA = resA.json();
 
     const resB = await app.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Tenant B Clients', ownerEmail: 'b-cli@test.com', ownerFullName: 'Owner B' },
+      payload: { businessName: 'Tenant B Clients', ownerEmail: 'b-cli@test.com', ownerFullName: 'Owner B', ownerPassword: 'test-password' },
     });
     const tenantB = resB.json();
 
@@ -432,14 +438,14 @@ describe('Cross-tenant isolation', () => {
     const resA = await app.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Tenant A Cli Update', ownerEmail: 'a-cli-u@test.com', ownerFullName: 'Owner A' },
+      payload: { businessName: 'Tenant A Cli Update', ownerEmail: 'a-cli-u@test.com', ownerFullName: 'Owner A', ownerPassword: 'test-password' },
     });
     const tenantA = resA.json();
 
     const resB = await app.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Tenant B Cli Update', ownerEmail: 'b-cli-u@test.com', ownerFullName: 'Owner B' },
+      payload: { businessName: 'Tenant B Cli Update', ownerEmail: 'b-cli-u@test.com', ownerFullName: 'Owner B', ownerPassword: 'test-password' },
     });
     const tenantB = resB.json();
 
@@ -472,14 +478,14 @@ describe('Cross-tenant isolation', () => {
     const resA = await app.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Tenant A Cli Del', ownerEmail: 'a-cli-d@test.com', ownerFullName: 'Owner A' },
+      payload: { businessName: 'Tenant A Cli Del', ownerEmail: 'a-cli-d@test.com', ownerFullName: 'Owner A', ownerPassword: 'test-password' },
     });
     const tenantA = resA.json();
 
     const resB = await app.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Tenant B Cli Del', ownerEmail: 'b-cli-d@test.com', ownerFullName: 'Owner B' },
+      payload: { businessName: 'Tenant B Cli Del', ownerEmail: 'b-cli-d@test.com', ownerFullName: 'Owner B', ownerPassword: 'test-password' },
     });
     const tenantB = resB.json();
 
@@ -511,14 +517,14 @@ describe('Cross-tenant isolation', () => {
     const resA = await app.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Tenant A Props', ownerEmail: 'a-prop@test.com', ownerFullName: 'Owner A' },
+      payload: { businessName: 'Tenant A Props', ownerEmail: 'a-prop@test.com', ownerFullName: 'Owner A', ownerPassword: 'test-password' },
     });
     const tenantA = resA.json();
 
     const resB = await app.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Tenant B Props', ownerEmail: 'b-prop@test.com', ownerFullName: 'Owner B' },
+      payload: { businessName: 'Tenant B Props', ownerEmail: 'b-prop@test.com', ownerFullName: 'Owner B', ownerPassword: 'test-password' },
     });
     const tenantB = resB.json();
 
@@ -562,6 +568,7 @@ describe('Cross-tenant isolation', () => {
         businessName: 'Tenant A Users',
         ownerEmail: 'a@test.com',
         ownerFullName: 'Owner A',
+        ownerPassword: 'test-password',
       },
     });
     const tenantA = resA.json();
@@ -574,6 +581,7 @@ describe('Cross-tenant isolation', () => {
         businessName: 'Tenant B Users',
         ownerEmail: 'b@test.com',
         ownerFullName: 'Owner B',
+        ownerPassword: 'test-password',
       },
     });
     const tenantB = resB.json();

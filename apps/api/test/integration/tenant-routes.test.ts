@@ -21,6 +21,7 @@ describe('POST /v1/tenants', () => {
         businessName: 'Acme Landscaping',
         ownerEmail: 'owner@acme.test',
         ownerFullName: 'Jane Doe',
+        ownerPassword: 'test-password',
       },
     });
 
@@ -46,6 +47,7 @@ describe('POST /v1/tenants', () => {
         businessName: 'Acme Landscaping',
         ownerEmail: 'owner1@acme.test',
         ownerFullName: 'Jane Doe',
+        ownerPassword: 'test-password',
       },
     });
 
@@ -57,6 +59,7 @@ describe('POST /v1/tenants', () => {
         businessName: 'Acme Landscaping',
         ownerEmail: 'owner2@acme.test',
         ownerFullName: 'John Doe',
+        ownerPassword: 'test-password',
       },
     });
 
@@ -86,6 +89,23 @@ describe('POST /v1/tenants', () => {
 
     expect(res.statusCode).toBe(404);
     expect(res.json().error.code).toBe('NOT_FOUND');
+  });
+
+  it('returns 400 when ownerPassword is missing in local mode', async () => {
+    const app = await buildTestApp();
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: {
+        businessName: 'No Password Biz',
+        ownerEmail: 'nopw@test.com',
+        ownerFullName: 'No PW Owner',
+      },
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error.code).toBe('VALIDATION_ERROR');
   });
 
   it('returns 400 for invalid body', async () => {
@@ -121,6 +141,7 @@ describe('GET /v1/tenants/me', () => {
         businessName: 'My Business',
         ownerEmail: 'owner@test.com',
         ownerFullName: 'Owner',
+        ownerPassword: 'test-password',
       },
     });
 
@@ -132,6 +153,7 @@ describe('GET /v1/tenants/me', () => {
         businessName: 'Auth Tenant',
         ownerEmail: 'auth@test.com',
         ownerFullName: 'Auth Owner',
+        ownerPassword: 'test-password',
       },
     });
     const created = createRes.json();
@@ -169,6 +191,7 @@ describe('GET /v1/users/me', () => {
         businessName: 'User Tenant',
         ownerEmail: 'user@test.com',
         ownerFullName: 'Test User',
+        ownerPassword: 'test-password',
       },
     });
     const created = createRes.json();

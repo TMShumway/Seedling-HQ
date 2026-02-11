@@ -12,7 +12,7 @@ async function createTenant(businessName: string, email: string, fullName: strin
   const res = await app.inject({
     method: 'POST',
     url: '/v1/tenants',
-    payload: { businessName, ownerEmail: email, ownerFullName: fullName },
+    payload: { businessName, ownerEmail: email, ownerFullName: fullName, ownerPassword: 'test-password' },
   });
   return res.json();
 }
@@ -264,19 +264,15 @@ describe('POST /v1/auth/local/verify', () => {
     expect(res.json().error.code).toBe('UNAUTHORIZED');
   });
 
-  it('returns 401 for user without password hash', async () => {
-    // createTenant without password — user has no passwordHash
-    const { user } = await createTenant('No PW Biz', 'nopw@test.com', 'No PW Owner');
-
+  it('returns 400 for missing password on verify (userId must be valid)', async () => {
     const app = await buildTestApp();
     const res = await app.inject({
       method: 'POST',
       url: '/v1/auth/local/verify',
-      payload: { userId: user.id, password: 'anything' },
+      payload: { userId: '00000000-0000-0000-0000-000000000001' },
     });
 
-    expect(res.statusCode).toBe(401);
-    expect(res.json().error.code).toBe('UNAUTHORIZED');
+    expect(res.statusCode).toBe(400);
   });
 
   it('returns 404 when AUTH_MODE is cognito', async () => {
@@ -351,7 +347,7 @@ describe('POST /v1/auth/cognito/lookup', () => {
     const createRes = await localApp.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Lookup Biz', ownerEmail: 'lookup@test.com', ownerFullName: 'Lookup Owner' },
+      payload: { businessName: 'Lookup Biz', ownerEmail: 'lookup@test.com', ownerFullName: 'Lookup Owner', ownerPassword: 'test-password' },
     });
     const { tenant, user } = createRes.json();
 
@@ -377,12 +373,12 @@ describe('POST /v1/auth/cognito/lookup', () => {
     await localApp.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Biz A', ownerEmail: 'shared@test.com', ownerFullName: 'Owner A' },
+      payload: { businessName: 'Biz A', ownerEmail: 'shared@test.com', ownerFullName: 'Owner A', ownerPassword: 'test-password' },
     });
     await localApp.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Biz B', ownerEmail: 'shared@test.com', ownerFullName: 'Owner B' },
+      payload: { businessName: 'Biz B', ownerEmail: 'shared@test.com', ownerFullName: 'Owner B', ownerPassword: 'test-password' },
     });
 
     const app = await buildTestApp(cognitoConfig, { jwtVerifier: noopVerifier });
@@ -428,7 +424,7 @@ describe('POST /v1/auth/cognito/lookup', () => {
     await localApp.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Trim Cognito Biz', ownerEmail: 'trimcog@test.com', ownerFullName: 'Trim Owner' },
+      payload: { businessName: 'Trim Cognito Biz', ownerEmail: 'trimcog@test.com', ownerFullName: 'Trim Owner', ownerPassword: 'test-password' },
     });
 
     const app = await buildTestApp(cognitoConfig, { jwtVerifier: noopVerifier });
@@ -447,7 +443,7 @@ describe('POST /v1/auth/cognito/lookup', () => {
     await localApp.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Rate Biz', ownerEmail: 'ratelookup@test.com', ownerFullName: 'Rate Owner' },
+      payload: { businessName: 'Rate Biz', ownerEmail: 'ratelookup@test.com', ownerFullName: 'Rate Owner', ownerPassword: 'test-password' },
     });
 
     const app = await buildTestApp(cognitoConfig, { jwtVerifier: noopVerifier });
@@ -519,7 +515,7 @@ describe('Cognito mode (mock verifier)', () => {
     const createRes = await localApp.inject({
       method: 'POST',
       url: '/v1/tenants',
-      payload: { businessName: 'Cognito Test Biz', ownerEmail: 'cognito@test.com', ownerFullName: 'Cognito Owner' },
+      payload: { businessName: 'Cognito Test Biz', ownerEmail: 'cognito@test.com', ownerFullName: 'Cognito Owner', ownerPassword: 'test-password' },
     });
     const { tenant, user } = createRes.json();
 
