@@ -56,7 +56,7 @@ _Last updated: 2026-02-08 (America/Chihuahua)_
 - Authenticated via **AWS Cognito** (JWT-based).
 - Auth context derived from Cognito Access token:
   - `tenant_id` (from `custom:tenant_id` claim)
-  - `user_id` (from `sub` claim)
+  - `user_id` (from `username` claim — NOT `sub`; contract: Cognito `username` = `users.id`)
   - `role` (from `cognito:groups` claim)
 - Local dev uses `AUTH_MODE=local` mock middleware producing the identical auth context shape.
 

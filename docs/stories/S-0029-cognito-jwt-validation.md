@@ -73,6 +73,7 @@ Implements JWT validation for `AUTH_MODE=cognito` so the API can authenticate re
 - [x] Task 4.4: Update context docs:
   - Architecture doc §4.1: marked JWT validation implemented, noted jose library, client_id not aud, username not sub, pre-token-generation Lambda, fixed technician→member in 3 places
   - Security doc §3.4: marked implemented, documented all 6 validation checks with implementation details
+  - Security doc §3.2: fixed `user_id (from 'sub' claim)` → `user_id (from 'username' claim)` to match §3.4 (missed in initial pass)
   - Context-gaps doc: added S-0029 to recently resolved decisions
 
 ## Resume context
@@ -91,6 +92,11 @@ Implements JWT validation for `AUTH_MODE=cognito` so the API can authenticate re
 - **DB CHECK constraint or enum for `role` column** — tracked but deferred
 - **Frontend Cognito SDK** (PKCE flow, token storage, refresh) — separate story
 - **Live Cognito E2E test** — deferred until user provisioning story provides real pool users
+
+### Implementation gotchas encountered
+- **jose v6 removed `KeyLike` export** — Unit tests needed `CryptoKey` type instead of `KeyLike` for RSA key pair typing
+- **Fail-fast breaks existing `AUTH_MODE: 'cognito'` tests** — Two existing tests (`auth-login.test.ts`, integration `auth-routes.test.ts`) set `AUTH_MODE: 'cognito'` without a verifier. After fail-fast wiring in `createApp()`, they needed a no-op mock `jwtVerifier` + fake Cognito config values to avoid startup crash.
+- **Integration tests require `pnpm test:integration`** — Direct `vitest run test/integration/...` uses the default unit test include pattern; must use the script which points to `vitest.integration.config.ts`
 
 ## Test summary
 - **Unit**: 192 total (26 new: 6 config + 15 verifier + 5 middleware)
