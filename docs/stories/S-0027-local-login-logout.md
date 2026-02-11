@@ -55,5 +55,5 @@ All phases complete. No resume context needed.
 
 ## Test summary
 - **Unit**: 166 total (3 new in `auth-login.test.ts`)
-- **Integration**: 145 total (8 new in `auth-routes.test.ts`)
+- **Integration**: 147 total (10 new in `auth-routes.test.ts`)
 - **E2E**: 108 total (74 run + 34 skipped) — 20 new (7 in `login.spec.ts` × 2 projects + 6 skipped non-desktop)

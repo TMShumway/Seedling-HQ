@@ -154,7 +154,7 @@
 | CreateStandaloneQuoteUseCase (no UoW) | S-0026 | Direct repo + best-effort audit; validates client (exists, active), property (optional: exists, active, belongs to client); creates draft with empty line items |
 | POST /v1/quotes route | S-0026 | Body: `{ clientId, propertyId?, title }`; returns 201; `propertyRepo` added to `buildQuoteRoutes` deps |
 | AUTH_MODE route guard | S-0027 | Return 404 when `config.AUTH_MODE !== 'local'` to hide dev-only endpoints in cognito mode |
-| Cross-tenant user lookup | S-0027 | `listActiveByEmail(email)` joins users+tenants, filters both active; used by login endpoint |
+| Cross-tenant user lookup | S-0027 | `listActiveByEmail(email)` joins users+tenants, case-insensitive via `lower()` (not `ilike` — avoids `_`/`%` wildcard leaks), filters both active; used by login endpoint |
 | Auth routes (separate file) | S-0027 | `buildAuthRoutes({ userRepo, config })` in `auth-routes.ts`; public (no auth middleware), rate-limited |
 | Zod trim+lowercase before email | S-0027 | `z.string().trim().toLowerCase().email()` ensures normalization happens before validation |
 

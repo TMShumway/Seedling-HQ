@@ -186,7 +186,7 @@ pnpm exec playwright test e2e/tests/quotes.spec.ts --project=desktop-chrome
 
 ```
 Unit:        166 tests
-Integration: 145 tests (requires Postgres)
+Integration: 147 tests (requires Postgres)
 E2E:         108 tests (74 run + 34 skipped on non-desktop projects)
 ```
 

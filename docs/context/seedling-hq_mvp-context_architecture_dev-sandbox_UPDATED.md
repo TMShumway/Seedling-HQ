@@ -153,7 +153,7 @@ sequenceDiagram
     - `X-Dev-User-Id` — overrides `DEV_AUTH_USER_ID` for this request
     - The frontend stores tenant/user IDs in `localStorage` after login or signup and sends them as headers on all subsequent requests.
   - **Login page** (added in S-0027):
-    - `POST /v1/auth/local/login` — cross-tenant email lookup (joins users + tenants, case-insensitive via `ilike`); returns 404 when `AUTH_MODE !== 'local'`; rate-limited (10 req/min per IP)
+    - `POST /v1/auth/local/login` — cross-tenant email lookup (joins users + tenants, case-insensitive via `lower()`); returns 404 when `AUTH_MODE !== 'local'`; rate-limited (10 req/min per IP)
     - Frontend `LoginPage` at `/login` — email input → API call → auto-select (single account) or account picker (multi-tenant) → sets localStorage → redirect to `/dashboard`
     - `AuthGuard` wraps all authenticated routes — checks localStorage, redirects to `/login` if missing
     - Logout buttons in Sidebar + MobileDrawer clear localStorage + React Query cache, redirect to `/login`
