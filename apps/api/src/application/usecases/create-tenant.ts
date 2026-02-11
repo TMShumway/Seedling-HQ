@@ -47,6 +47,7 @@ export class CreateTenantUseCase {
           email: input.ownerEmail,
           fullName: input.ownerFullName,
           role: 'owner',
+          passwordHash: null,
           status: 'active',
         });
 

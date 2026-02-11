@@ -2,6 +2,7 @@ import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { tenants, users, auditEvents, serviceCategories, serviceItems, clients, properties, requests, quotes, secureLinkTokens } from './schema.js';
 import { sql } from 'drizzle-orm';
+import { hashPassword } from '../../shared/password.js';
 
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 const DEMO_USER_ID = '00000000-0000-0000-0000-000000000010';
@@ -33,7 +34,8 @@ async function seed() {
       set: { name: 'Demo Business', slug: 'demo', status: 'active' },
     });
 
-  // Upsert demo owner user
+  // Upsert demo owner user (password: "password")
+  const demoPasswordHash = await hashPassword('password');
   await db
     .insert(users)
     .values({
@@ -42,11 +44,12 @@ async function seed() {
       email: 'owner@demo.local',
       fullName: 'Demo Owner',
       role: 'owner',
+      passwordHash: demoPasswordHash,
       status: 'active',
     })
     .onConflictDoUpdate({
       target: users.id,
-      set: { email: 'owner@demo.local', fullName: 'Demo Owner', role: 'owner', status: 'active' },
+      set: { email: 'owner@demo.local', fullName: 'Demo Owner', role: 'owner', passwordHash: demoPasswordHash, status: 'active' },
     });
 
   // Note: business_settings intentionally NOT seeded — onboarding flow

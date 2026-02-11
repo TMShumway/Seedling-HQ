@@ -179,8 +179,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (account: LoginAccount): boolean => {
       setError(null);
       selectedAccountRef.current = account;
+      // Always require password step (mirrors cognito flow in local mode too)
+      return false;
+    },
+    [],
+  );
+
+  const authenticate = useCallback(
+    async (password: string): Promise<{ newPasswordRequired: boolean }> => {
+      setError(null);
+      const account = selectedAccountRef.current;
+      if (!account) {
+        setError('No account selected');
+        return { newPasswordRequired: false };
+      }
 
       if (mode === 'local') {
+        // Local mode: accept any password, set localStorage
         localStorage.setItem('dev_tenant_id', account.tenantId);
         localStorage.setItem('dev_user_id', account.userId);
         const authUser: AuthUser = {
@@ -192,23 +207,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
         setUser(authUser);
         setIsAuthenticated(true);
-        return true; // Auth complete in local mode
-      }
-
-      // Cognito mode: selection stored, password still needed
-      return false;
-    },
-    [mode],
-  );
-
-  const authenticate = useCallback(
-    async (password: string): Promise<{ newPasswordRequired: boolean }> => {
-      setError(null);
-      const account = selectedAccountRef.current;
-      if (!account) {
-        setError('No account selected');
         return { newPasswordRequired: false };
       }
+
       const client = cognitoClientRef.current;
       if (!client) {
         setError('Auth client not initialized');
@@ -248,7 +249,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [mode],
   );
 
   const handleNewPassword = useCallback(

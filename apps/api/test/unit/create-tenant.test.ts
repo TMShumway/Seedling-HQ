@@ -22,6 +22,7 @@ function makeUserRepo(overrides: Partial<UserRepository> = {}): UserRepository {
   return {
     create: vi.fn(async (u) => ({ ...u, createdAt: new Date(), updatedAt: new Date() })),
     getById: vi.fn(async () => null),
+    getByIdGlobal: vi.fn(async () => null),
     getByEmail: vi.fn(async () => null),
     getOwnerByTenantId: vi.fn(async () => null),
     listActiveByEmail: vi.fn(async () => []),

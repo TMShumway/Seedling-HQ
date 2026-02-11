@@ -4,8 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/lib/auth';
-import { isLocalMode, isCognitoMode } from '@/lib/auth';
+import { useAuth, isLocalMode, isCognitoMode } from '@/lib/auth';
 import { ApiClientError } from '@/lib/api-client';
 import type { LoginAccount } from '@/lib/api-client';
 
@@ -38,12 +37,7 @@ export function LoginPage() {
       const result = await auth.lookupEmail(email);
 
       if (result.length === 1) {
-        const done = auth.selectAccount(result[0]);
-        if (done) {
-          navigateToDashboard();
-          return;
-        }
-        // Cognito mode: need password
+        auth.selectAccount(result[0]);
         setAccounts(result);
         setStep('password');
         return;
@@ -66,12 +60,7 @@ export function LoginPage() {
   function handleAccountSelect(e: FormEvent) {
     e.preventDefault();
     const account = accounts[selectedIndex];
-    const done = auth.selectAccount(account);
-    if (done) {
-      navigateToDashboard();
-      return;
-    }
-    // Cognito mode: need password
+    auth.selectAccount(account);
     setStep('password');
   }
 
