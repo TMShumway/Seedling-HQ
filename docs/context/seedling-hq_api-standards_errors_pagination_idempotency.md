@@ -108,8 +108,10 @@ interface AuthContext {
 
 These endpoints skip internal auth (`requireAuth`):
 - `GET /health`
-- `POST /v1/tenants` (signup)
+- `POST /v1/tenants` (signup) — `ownerPassword` required (min 8, max 128 chars); returns 404 when `AUTH_MODE=cognito`
 - `POST /v1/auth/local/login` (local dev login, S-0027) — rate-limited (10 req/min), returns 404 when `AUTH_MODE !== 'local'`
+- `POST /v1/auth/local/verify` (local password verify, S-0030) — rate-limited (10 req/min), returns 404 when `AUTH_MODE !== 'local'`
+- `POST /v1/auth/cognito/lookup` (cognito email→username, S-0030) — rate-limited (10 req/min), returns 404 when `AUTH_MODE !== 'cognito'`
 - `POST /v1/public/requests/:tenantSlug` (public request form, S-0006) — rate-limited + honeypot
 - `GET /v1/ext/quotes/:token` (external quote view, S-0010) — authenticated via secure link token, not Cognito/dev auth
 - `POST /v1/ext/quotes/:token/approve` (external quote approve, S-0011) — authenticated via secure link token

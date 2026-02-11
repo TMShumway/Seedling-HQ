@@ -6,7 +6,7 @@ function uniqueName(prefix: string) {
 }
 
 test.describe('Signup Flow', () => {
-  test('fills form, submits, and lands on dashboard', async ({ page }) => {
+  test('fills form with password, submits, and lands on dashboard', async ({ page }) => {
     const bizName = uniqueName('PW Biz');
 
     await page.goto('/signup');
@@ -14,13 +14,14 @@ test.describe('Signup Flow', () => {
     await page.getByLabel('Business Name').fill(bizName);
     await page.getByLabel('Your Email').fill(`pw${Date.now()}@test.com`);
     await page.getByLabel('Your Full Name').fill('PW Tester');
+    await page.getByLabel('Password', { exact: true }).fill('test-password-123');
+    await page.getByLabel('Confirm Password').fill('test-password-123');
 
     await page.getByRole('button', { name: 'Create Account' }).click();
 
     // Verify redirect to dashboard
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
 
-    // In AUTH_MODE=local, dashboard fetches the demo tenant/user from env.
     // Verify dashboard loaded successfully with data visible.
     await expect(page.getByTestId('tenant-name')).toBeVisible();
     await expect(page.getByTestId('user-name')).toBeVisible();
@@ -43,6 +44,8 @@ test.describe('Mobile viewport', () => {
     await expect(page.getByLabel('Business Name')).toBeVisible();
     await expect(page.getByLabel('Your Email')).toBeVisible();
     await expect(page.getByLabel('Your Full Name')).toBeVisible();
+    await expect(page.getByLabel('Password', { exact: true })).toBeVisible();
+    await expect(page.getByLabel('Confirm Password')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Create Account' })).toBeVisible();
   });
 });
@@ -63,6 +66,8 @@ test.describe('Accessibility', () => {
     await page.getByLabel('Business Name').fill(bizName);
     await page.getByLabel('Your Email').fill(`a11y${Date.now()}@test.com`);
     await page.getByLabel('Your Full Name').fill('A11y Tester');
+    await page.getByLabel('Password', { exact: true }).fill('test-password-123');
+    await page.getByLabel('Confirm Password').fill('test-password-123');
     await page.getByRole('button', { name: 'Create Account' }).click();
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
 

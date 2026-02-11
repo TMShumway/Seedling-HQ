@@ -3,6 +3,7 @@ import type { TenantRepository } from '../ports/tenant-repository.js';
 import type { UnitOfWork } from '../ports/unit-of-work.js';
 import type { CreateTenantInput, CreateTenantOutput } from '../dto/create-tenant-dto.js';
 import { ConflictError, ValidationError, isUniqueViolation } from '../../shared/errors.js';
+import { hashPassword } from '../../shared/password.js';
 
 export function slugify(name: string): string {
   return name
@@ -31,6 +32,7 @@ export class CreateTenantUseCase {
 
     const tenantId = randomUUID();
     const userId = randomUUID();
+    const passwordHash = await hashPassword(input.ownerPassword);
 
     try {
       return await this.uow.run(async ({ tenantRepo, userRepo, auditRepo }) => {
@@ -47,6 +49,7 @@ export class CreateTenantUseCase {
           email: input.ownerEmail,
           fullName: input.ownerFullName,
           role: 'owner',
+          passwordHash,
           status: 'active',
         });
 

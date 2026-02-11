@@ -15,6 +15,26 @@ class ApiClientError extends Error {
   }
 }
 
+// --- Auth provider for Cognito mode token injection ---
+
+export interface AuthTokenProvider {
+  getToken: () => Promise<string>;
+  forceRefresh: () => Promise<string>;
+  onAuthFailure: () => Promise<void> | void;
+}
+
+let authProvider: AuthTokenProvider | null = null;
+
+export function setAuthProvider(provider: AuthTokenProvider): void {
+  authProvider = provider;
+}
+
+export function clearAuthProvider(): void {
+  authProvider = null;
+}
+
+// --- Request helpers ---
+
 function getDevAuthHeaders(): Record<string, string> {
   const tenantId = localStorage.getItem('dev_tenant_id');
   const userId = localStorage.getItem('dev_user_id');
@@ -24,18 +44,69 @@ function getDevAuthHeaders(): Record<string, string> {
   };
 }
 
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  if (authProvider) {
+    const token = await authProvider.getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+  return getDevAuthHeaders();
+}
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const correlationId = crypto.randomUUID();
+  let authHeaders: Record<string, string>;
+  try {
+    authHeaders = await getAuthHeaders();
+  } catch (err) {
+    // Token retrieval failed (e.g., refresh token expired) — trigger auth failure
+    if (authProvider) {
+      await authProvider.onAuthFailure();
+    }
+    throw err;
+  }
 
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers: {
-      ...(body ? { 'Content-Type': 'application/json' } : {}),
-      'X-Correlation-Id': correlationId,
-      ...getDevAuthHeaders(),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const doFetch = async (headers: Record<string, string>) => {
+    const res = await fetch(`${BASE_URL}${path}`, {
+      method,
+      headers: {
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+        'X-Correlation-Id': correlationId,
+        ...headers,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    return res;
+  };
+
+  let res = await doFetch(authHeaders);
+
+  // 401 retry for cognito mode
+  if (res.status === 401 && authProvider) {
+    let newToken: string;
+    try {
+      newToken = await authProvider.forceRefresh();
+    } catch {
+      // Refresh token expired or revoked — session is unrecoverable
+      await authProvider.onAuthFailure();
+      const err: ApiError = await res.json().catch(() => ({
+        error: { code: 'UNAUTHORIZED', message: res.statusText },
+      }));
+      throw new ApiClientError(res.status, err.error.code, err.error.message);
+    }
+
+    // Retry the request with the fresh token — network errors propagate
+    // to the caller without logging out (session is still valid)
+    res = await doFetch(newToken ? { Authorization: `Bearer ${newToken}` } : {});
+
+    if (res.status === 401) {
+      // Server rejected the fresh token — session is invalid
+      await authProvider.onAuthFailure();
+      const err: ApiError = await res.json().catch(() => ({
+        error: { code: 'UNAUTHORIZED', message: res.statusText },
+      }));
+      throw new ApiClientError(res.status, err.error.code, err.error.message);
+    }
+  }
 
   if (!res.ok) {
     const err: ApiError = await res.json().catch(() => ({
@@ -75,6 +146,7 @@ export interface CreateTenantRequest {
   businessName: string;
   ownerEmail: string;
   ownerFullName: string;
+  ownerPassword: string;
 }
 
 export interface CreateTenantResponse {
@@ -283,9 +355,46 @@ export interface LoginResponse {
   accounts: LoginAccount[];
 }
 
+export interface LocalVerifyResponse {
+  user: {
+    id: string;
+    tenantId: string;
+    email: string;
+    fullName: string;
+    role: string;
+  };
+}
+
+interface CognitoLookupResponse {
+  accounts: Array<{
+    cognitoUsername: string;
+    tenantId: string;
+    tenantName: string;
+    fullName: string;
+    role: string;
+  }>;
+}
+
 export const apiClient = {
   localLogin: (email: string) =>
     publicRequest<LoginResponse>('POST', '/v1/auth/local/login', { email }),
+
+  localVerify: (userId: string, password: string) =>
+    publicRequest<LocalVerifyResponse>('POST', '/v1/auth/local/verify', { userId, password }),
+
+  cognitoLookup: async (email: string): Promise<LoginResponse> => {
+    const raw = await publicRequest<CognitoLookupResponse>('POST', '/v1/auth/cognito/lookup', { email });
+    // Map cognitoUsername → userId so downstream code uses a unified LoginAccount shape
+    return {
+      accounts: raw.accounts.map((a) => ({
+        tenantId: a.tenantId,
+        tenantName: a.tenantName,
+        userId: a.cognitoUsername,
+        fullName: a.fullName,
+        role: a.role,
+      })),
+    };
+  },
 
   createTenant: (input: CreateTenantRequest) =>
     request<CreateTenantResponse>('POST', '/v1/tenants', input),

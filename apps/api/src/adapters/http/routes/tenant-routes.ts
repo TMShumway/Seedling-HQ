@@ -13,6 +13,7 @@ const createTenantBodySchema = z.object({
   businessName: z.string().min(1, 'Business name is required').max(255),
   ownerEmail: z.string().email('Invalid email address').max(255),
   ownerFullName: z.string().min(1, 'Full name is required').max(255),
+  ownerPassword: z.string().min(8, 'Password must be at least 8 characters').max(128),
 });
 
 export function buildTenantRoutes(deps: {
@@ -54,10 +55,19 @@ export function buildTenantRoutes(deps: {
                 updatedAt: z.string(),
               }),
             }),
+            404: z.object({
+              error: z.object({ code: z.string(), message: z.string() }),
+            }),
           },
         },
       },
       async (request, reply) => {
+        if (deps.config.AUTH_MODE === 'cognito') {
+          return reply.status(404).send({
+            error: { code: 'NOT_FOUND', message: 'Not Found' },
+          });
+        }
+
         const result = await useCase.execute(request.body, request.correlationId);
         return reply.status(201).send({
           tenant: {

@@ -1,9 +1,9 @@
 import { useLocation, useNavigate } from 'react-router';
-import { useQueryClient } from '@tanstack/react-query';
 import { LogOut } from 'lucide-react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { navItems } from './Sidebar';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/auth';
 
 interface MobileDrawerProps {
   open: boolean;
@@ -13,12 +13,10 @@ interface MobileDrawerProps {
 export function MobileDrawer({ open, onOpenChange }: MobileDrawerProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const { logout } = useAuth();
 
-  function handleLogout() {
-    localStorage.removeItem('dev_tenant_id');
-    localStorage.removeItem('dev_user_id');
-    queryClient.clear();
+  async function handleLogout() {
+    await logout();
     onOpenChange(false);
     navigate('/login');
   }

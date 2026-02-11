@@ -30,7 +30,7 @@ Examples (implemented):
 - `RequestRepository` (includes `updateStatus(tenantId, id, status, expectedStatuses?)` with optional race guard via `WHERE status IN (...)`, S-0008)
 - `QuoteRepository` (S-0008/S-0009/S-0011 — `create`, `getById`, `list`, `update`, `count`, `countByStatus`, `updateStatus(tenantId, id, status, statusFields?, expectedStatuses?)` with optional race guard via `WHERE status IN (...)` for idempotent external actions)
 - `MessageOutboxRepository` (S-0007 — `create`, `updateStatus`)
-- `UserRepository` (includes `getOwnerByTenantId` for notification recipient lookup, `listActiveByEmail` for cross-tenant login, S-0027)
+- `UserRepository` (includes `getOwnerByTenantId` for notification recipient lookup, `listActiveByEmail` for cross-tenant login, `getByIdGlobal(id)` for cross-tenant user lookup by ID, S-0027/S-0030)
 - `TenantRepository` (`create`, `getById`, `getBySlug`)
 - `AuditEventRepository` (`create`, `listBySubjects`)
 - `EmailSender` (port for SMTP — implemented by `NodemailerEmailSender`)

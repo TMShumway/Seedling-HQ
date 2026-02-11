@@ -66,6 +66,7 @@ interface User {
   email: string;
   fullName: string;
   role: Role;           // 'owner' | 'admin' | 'member'
+  passwordHash: string | null; // Nullable — cognito-mode users don't store passwords locally
   status: UserStatus;   // 'active' | 'disabled'
   createdAt: Date;
   updatedAt: Date;
@@ -623,4 +624,6 @@ All audit events share this structure:
 
 | Story | Title | Notes |
 |-------|-------|-------|
-| S-0030 | In-app notification center | Revisit when 3+ notification types exist |
+| S-0030 | Frontend Cognito SDK integration | Completed — dual-mode auth (local/cognito), token storage, refresh, NEW_PASSWORD_REQUIRED |
+| S-0031 | Cognito user provisioning | Admin creates Cognito users via backend API; `username = users.id` enforcement |
+| S-0032 | In-app notification center | Revisit when 3+ notification types exist |

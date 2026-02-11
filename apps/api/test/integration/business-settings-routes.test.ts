@@ -38,6 +38,7 @@ async function createTenantAndGetApp() {
       businessName: 'Settings Test Biz',
       ownerEmail: 'settings@test.com',
       ownerFullName: 'Settings Owner',
+      ownerPassword: 'test-password',
     },
   });
   const created = createRes.json();

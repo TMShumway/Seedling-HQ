@@ -13,6 +13,7 @@ function toEntity(row: typeof users.$inferSelect): User {
     email: row.email,
     fullName: row.fullName,
     role: row.role as Role,
+    passwordHash: row.passwordHash,
     status: row.status as UserStatus,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -31,6 +32,7 @@ export class DrizzleUserRepository implements UserRepository {
         email: user.email,
         fullName: user.fullName,
         role: user.role,
+        passwordHash: user.passwordHash,
         status: user.status,
       })
       .returning();
@@ -42,6 +44,14 @@ export class DrizzleUserRepository implements UserRepository {
       .select()
       .from(users)
       .where(and(eq(users.tenantId, tenantId), eq(users.id, id)));
+    return rows[0] ? toEntity(rows[0]) : null;
+  }
+
+  async getByIdGlobal(id: string): Promise<User | null> {
+    const rows = await this.db
+      .select()
+      .from(users)
+      .where(eq(users.id, id));
     return rows[0] ? toEntity(rows[0]) : null;
   }
 

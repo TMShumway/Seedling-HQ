@@ -9,17 +9,18 @@ test.describe('Login Flow', () => {
     await expect(page.getByText('Sign in to your account')).toBeVisible({ timeout: 10000 });
   });
 
-  test('logs in with demo email and reaches dashboard', async ({ page }, testInfo) => {
+  test('logs in with demo email + password and reaches dashboard', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop-chrome', 'Stateful login test runs only on desktop-chrome');
 
     await page.goto('/login');
     await expect(page.getByText('Sign in to your account')).toBeVisible({ timeout: 10000 });
 
-    // Enter demo email
+    // Fill email and password on same form
     await page.getByLabel('Email').fill('owner@demo.local');
-    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.getByLabel('Password').fill('password');
+    await page.getByRole('button', { name: 'Sign In' }).click();
 
-    // Single account → auto-select → dashboard (look for tenant name)
+    // Dashboard loaded
     await expect(page.getByTestId('tenant-name')).toBeVisible({ timeout: 15000 });
     await expect(page).toHaveURL(/\/dashboard/);
   });
@@ -29,7 +30,8 @@ test.describe('Login Flow', () => {
     await expect(page.getByText('Sign in to your account')).toBeVisible({ timeout: 10000 });
 
     await page.getByLabel('Email').fill('nobody@nonexistent.com');
-    await page.getByRole('button', { name: 'Continue' }).click();
+    await page.getByLabel('Password').fill('anything');
+    await page.getByRole('button', { name: 'Sign In' }).click();
 
     await expect(page.getByText('No account found for that email')).toBeVisible({ timeout: 10000 });
   });
@@ -60,9 +62,9 @@ test.describe('Login Flow', () => {
     expect(userId).toBeNull();
   });
 
-  test('shows hint text for demo email', async ({ page }) => {
+  test('shows hint text for demo credentials', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.getByText('Hint: try owner@demo.local')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Hint: owner@demo.local / password')).toBeVisible({ timeout: 10000 });
   });
 
   test('has cross-link to signup', async ({ page }) => {

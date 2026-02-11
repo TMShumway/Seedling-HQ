@@ -1,5 +1,4 @@
 import { useLocation, useNavigate } from 'react-router';
-import { useQueryClient } from '@tanstack/react-query';
 import {
   LayoutDashboard,
   Wrench,
@@ -13,6 +12,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/auth';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', active: true },
@@ -29,12 +29,10 @@ const navItems = [
 export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+  const { logout } = useAuth();
 
-  function handleLogout() {
-    localStorage.removeItem('dev_tenant_id');
-    localStorage.removeItem('dev_user_id');
-    queryClient.clear();
+  async function handleLogout() {
+    await logout();
     navigate('/login');
   }
 

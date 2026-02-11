@@ -8,6 +8,8 @@ interface RateLimitEntry {
 export interface RateLimitConfig {
   windowMs?: number;
   maxRequests?: number;
+  /** Optional key prefix to isolate rate-limit budgets per route */
+  key?: string;
 }
 
 const DEFAULT_WINDOW_MS = 60_000;
@@ -33,17 +35,19 @@ function ensureCleanup(windowMs: number) {
 export function buildRateLimiter(config: RateLimitConfig = {}) {
   const windowMs = config.windowMs ?? DEFAULT_WINDOW_MS;
   const maxRequests = config.maxRequests ?? DEFAULT_MAX_REQUESTS;
+  const keyPrefix = config.key ?? '';
 
   ensureCleanup(windowMs);
 
   return async function rateLimitHandler(request: FastifyRequest, reply: FastifyReply) {
     const ip = request.ip;
+    const storeKey = keyPrefix ? `${keyPrefix}:${ip}` : ip;
     const now = Date.now();
 
-    const entry = store.get(ip);
+    const entry = store.get(storeKey);
 
     if (!entry || now - entry.windowStart > windowMs) {
-      store.set(ip, { count: 1, windowStart: now });
+      store.set(storeKey, { count: 1, windowStart: now });
       return;
     }
 

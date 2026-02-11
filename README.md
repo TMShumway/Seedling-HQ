@@ -53,7 +53,7 @@ Once running, open:
 
 | URL | What |
 |-----|------|
-| http://localhost:5173/login | Login page (hint: try `owner@demo.local`) |
+| http://localhost:5173/login | Login page (hint: `owner@demo.local` / `password`) |
 | http://localhost:5173/signup | Create a new business account |
 | http://localhost:5173/dashboard | Dashboard (requires login) |
 | http://localhost:4000/docs | Swagger UI — browse and test API endpoints |
@@ -186,8 +186,8 @@ pnpm exec playwright test e2e/tests/quotes.spec.ts --project=desktop-chrome
 ### Test Coverage
 
 ```
-Unit:        194 tests
-Integration: 150 tests (requires Postgres)
+Unit:        251 tests (201 API + 50 web)
+Integration: 165 tests (requires Postgres)
 E2E:         108 tests (74 run + 34 skipped on non-desktop projects)
 ```
 
@@ -197,7 +197,7 @@ Every database query is scoped by `tenant_id`. The same email address can exist 
 
 ### Auth (Local Dev)
 
-In development, `AUTH_MODE=local` provides a login page at `/login`. Enter an email address (hint: `owner@demo.local` for the demo tenant) to log in. If the email is associated with multiple tenants, you'll see an account picker.
+In development, `AUTH_MODE=local` provides a login page at `/login`. Enter an email address and password (hint: `owner@demo.local` / `password` for the demo tenant) to log in. If the email is associated with multiple tenants, you'll see an account picker.
 
 An `AuthGuard` wraps all authenticated routes — unauthenticated visits redirect to `/login`. Logout buttons in the sidebar and mobile drawer clear the session and redirect back to `/login`.
 
@@ -231,6 +231,8 @@ Customers access quotes (and eventually invoices) via secure links like `http://
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | POST | `/v1/auth/local/login` | None | Local dev login: cross-tenant email lookup (rate-limited, `AUTH_MODE=local` only) |
+| POST | `/v1/auth/local/verify` | None | Local dev password verify (rate-limited, `AUTH_MODE=local` only) |
+| POST | `/v1/auth/cognito/lookup` | None | Cognito email→username lookup (rate-limited, `AUTH_MODE=cognito` only) |
 
 ### Tenants + Users
 

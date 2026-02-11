@@ -16,6 +16,7 @@ async function createTenantAndGetApp() {
       businessName: 'Convert Test Biz',
       ownerEmail: 'convert-test@test.com',
       ownerFullName: 'Convert Owner',
+      ownerPassword: 'test-password',
     },
   });
   const created = createRes.json();
@@ -188,6 +189,7 @@ describe('POST /v1/requests/:id/convert', () => {
         businessName: 'Tenant B Convert',
         ownerEmail: 'b-convert@test.com',
         ownerFullName: 'Owner B',
+        ownerPassword: 'test-password',
       },
     });
     const tenantB = createBRes.json();

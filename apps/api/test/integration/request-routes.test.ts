@@ -16,6 +16,7 @@ async function createTenantAndGetApp() {
       businessName: 'Request Test Biz',
       ownerEmail: 'request-test@test.com',
       ownerFullName: 'Request Owner',
+      ownerPassword: 'test-password',
     },
   });
   const created = createRes.json();
@@ -280,6 +281,7 @@ describe('GET /v1/requests/:id', () => {
         businessName: 'Tenant B Biz',
         ownerEmail: 'b@test.com',
         ownerFullName: 'Owner B',
+        ownerPassword: 'test-password',
       },
     });
     const tenantB = createBRes.json();

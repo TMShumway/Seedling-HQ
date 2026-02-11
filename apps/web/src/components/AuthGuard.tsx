@@ -1,15 +1,19 @@
 import { Navigate } from 'react-router';
 import type { ReactNode } from 'react';
+import { useAuth } from '@/lib/auth';
 
 interface AuthGuardProps {
   children: ReactNode;
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const tenantId = localStorage.getItem('dev_tenant_id');
-  const userId = localStorage.getItem('dev_user_id');
+  const { isAuthenticated, isLoading } = useAuth();
 
-  if (!tenantId || !userId) {
+  if (isLoading) {
+    return null;
+  }
+
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 

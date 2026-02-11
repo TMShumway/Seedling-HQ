@@ -97,7 +97,7 @@
 | Quote response status machine | `sent` → `approved` / `declined` | S-0011 | Only `sent` quotes can be responded to; draft/expired/already-terminal blocked |
 | Standalone quote creation | `POST /v1/quotes` | S-0026 | Standalone quotes without a request; validates client (exists, active) and property (exists, active, belongs to client); `requestId: null` |
 | Local login endpoint | `POST /v1/auth/local/login` | S-0027 | Cross-tenant email lookup; returns accounts array; 404 when `AUTH_MODE !== 'local'`; rate limited 10 req/min |
-| AuthGuard | React component wrapping `<AppShell>` | S-0027 | Checks localStorage `dev_tenant_id`/`dev_user_id`; redirects to `/login` if missing |
+| AuthGuard | React component wrapping `<AppShell>` | S-0027/S-0030 | Uses `useAuth()` context (isLoading/isAuthenticated); redirects to `/login` if not authenticated |
 | Catch-all redirect | `/login` (was `/dashboard`) | S-0027 | Unknown routes redirect to login instead of dashboard |
 | CDK workspace | Standalone `infra/cdk/` with own `package.json` | S-0028 | NOT in `pnpm-workspace.yaml`; CDK has different deps/toolchain; `pnpm install --ignore-workspace` |
 | Cognito User Pool | UUID username, email required (not unique/alias), `custom:tenant_id` immutable | S-0028 | Same-email-across-tenants; login via custom React page + lookup endpoint, not Cognito's email login |
@@ -111,6 +111,20 @@
 | Cognito group rename | `member` (not `technician`) | S-0029 | Product-neutral role name; CDK updated |
 | AUTH_MODE validation | Runtime validation in `loadConfig()` | S-0029 | Rejects invalid values like `'cogntio'`; Cognito env vars required only when `AUTH_MODE=cognito` |
 | CDK pre-token-generation trigger | V2_0 Lambda + `FeaturePlan.ESSENTIALS` | S-0029 | Lambda copies `custom:tenant_id` into access token; `Code.fromInline()` (no build step) |
+| Frontend Cognito SDK | `amazon-cognito-identity-js` + `buffer` polyfill | S-0030 | ~18KB gzipped; `USER_PASSWORD_AUTH` flow; `global: 'globalThis'` in vite.config.ts for SDK browser compat |
+| Frontend auth state | `AuthProvider` React context + `useAuth()` hook | S-0030 | Dual-mode: local (localStorage) or cognito (sessionStorage via SDK); wraps app inside `QueryClientProvider`, outside `BrowserRouter` |
+| Frontend token storage | sessionStorage via custom `ICognitoStorage` | S-0030 | Survives page refresh, cleared on tab close; `SessionCognitoStorage` in `lib/auth/cognito-storage.ts` |
+| Frontend auth mode | `VITE_AUTH_MODE` env var (build-time) | S-0030 | Defaults to `'local'` when unset; Vite reads from root `.env` via `envDir: '../../'` |
+| Cognito email-to-username lookup | `POST /v1/auth/cognito/lookup` | S-0030 | Public, rate-limited 10 req/min; returns `cognitoUsername` (= `users.id`); 404 when `AUTH_MODE !== 'cognito'` |
+| Tenant creation gate | `POST /v1/tenants` returns 404 in cognito mode | S-0030 | Self-signup disabled in Cognito; backend prevents direct API calls |
+| Token refresh on-demand | `getToken()` checks expiry, refreshes if <5min remaining | S-0030 | Simpler than background timer; `forceRefresh()` for 401 retry |
+| 401 retry with auth failure | Single retry via `forceRefresh()` with 3 failure paths | S-0030 | (1) `forceRefresh()` rejects → `onAuthFailure()` → logout; (2) retry returns 401 → `onAuthFailure()` → logout; (3) retry fetch throws network error → propagate error, NO logout (transient failure) |
+| NEW_PASSWORD_REQUIRED | Inline form in LoginPage step machine | S-0030 | `authenticate()` returns `{ newPasswordRequired }` for synchronous step detection |
+| Local password hashing | `node:crypto` scrypt in `shared/password.ts` | S-0030 | Zero deps; self-describing format `scrypt:N:r:p:salt:hash`; timing-safe compare |
+| Local password verify endpoint | `POST /v1/auth/local/verify` | S-0030 | Accepts `{ userId, password }`; rate limited 10/min; 404 in cognito mode; returns user info |
+| Password column | Nullable `password_hash` varchar(255) on users | S-0030 | Cognito-mode users don't store passwords locally; 401 if hash missing |
+| Signup password | `ownerPassword` required on `POST /v1/tenants` | S-0030 | Min 8 chars, max 128; required in Zod schema + DTO; hashed before storage; seed demo user with `password` |
+| Demo credentials | `owner@demo.local` / `password` | S-0030 | Hint text updated on login page |
 
 ---
 
@@ -177,6 +191,11 @@
 | Cognito config conditional validation | S-0029 | `COGNITO_USER_POOL_ID`, `COGNITO_CLIENT_ID`, `COGNITO_REGION` required via `required()` when `AUTH_MODE=cognito`, default to `''` via `optional()` when `local` |
 | Fail-fast verifier creation | S-0029 | `createApp()` creates `CognitoJwtVerifier` at startup when `AUTH_MODE=cognito`; throws immediately if config is invalid |
 | CDK pre-token-generation Lambda | S-0029 | `Code.fromInline()` JS function copies `custom:tenant_id` into access token; wired via `userPool.addTrigger(PRE_TOKEN_GENERATION_CONFIG, fn, LambdaVersion.V2_0)` |
+| Cognito lookup route | S-0030 | `POST /v1/auth/cognito/lookup` — public, rate-limited, returns `cognitoUsername` (= `users.id`); reuses `listActiveByEmail()` and `loginBodySchema`; 404 when `AUTH_MODE !== 'cognito'` |
+| Tenant creation gate | S-0030 | `POST /v1/tenants` returns 404 in cognito mode — early return before use case execution; 404 response schema added |
+| Local password verify route | S-0030 | `POST /v1/auth/local/verify` — public, rate-limited 10/min; accepts `{ userId, password }`, returns `{ user }` or 401; 404 in cognito mode |
+| Password hashing utility | S-0030 | `hashPassword()` / `verifyPassword()` in `shared/password.ts` — scrypt via `node:crypto`, self-describing stored format, timing-safe compare |
+| getByIdGlobal on UserRepository | S-0030 | Cross-tenant user lookup by ID (no tenantId filter); used by verify endpoint to find user regardless of tenant |
 
 ### Frontend
 
@@ -209,9 +228,19 @@
 | CreateQuotePage with client search | S-0026 | Debounced search → radio select → property dropdown → auto-title → redirect to `/quotes/:id`; route `/quotes/new` before `/:id` |
 | New Quote button on QuotesPage | S-0026 | `data-testid="new-quote-btn"` in header; updated empty state text |
 | AuthGuard wrapping AppShell | S-0027 | `<AuthGuard><AppShell /></AuthGuard>` in Route element; checks localStorage, redirects to `/login` |
-| Login page two-step flow | S-0027 | Step 1: email input → `localLogin(email)` via `publicRequest()`; Step 2: account picker (if multiple); auto-select if single account |
+| Login page combined form | S-0027 | Email + password on single form → lookup → auto-select (single account) or account picker (multiple); cognito mode uses SDK `authenticateUser`; local mode calls `localVerify` |
 | Logout in Sidebar + MobileDrawer | S-0027 | Clear `dev_tenant_id`/`dev_user_id` from localStorage, `navigate('/login')`; drawer also calls `onOpenChange(false)` |
 | Login/Signup cross-links | S-0027 | LoginPage → "Don't have an account? Sign up"; SignupPage → "Already have an account? Log in" |
+| AuthProvider wraps BrowserRouter | S-0030 | `<QueryClientProvider><AuthProvider><BrowserRouter>` — AuthProvider needs QueryClient for cache clear on logout; outside BrowserRouter intentionally |
+| AuthGuard uses useAuth() | S-0030 | `isLoading` → render null; `!isAuthenticated` → `<Navigate to="/login">`; replaces direct localStorage check |
+| Dual-mode LoginPage | S-0030 | Step machine: `login` (email + password) → `accounts` (multi-tenant picker) → `new-password` (cognito challenge); single account auto-selects in both modes |
+| Signup disabled in cognito mode | S-0030 | `isCognitoMode()` → "Contact admin" card with link to login; local mode unchanged |
+| Sidebar/Drawer useAuth().logout() | S-0030 | Replaces manual `localStorage.removeItem` + `queryClient.clear()` + `navigate('/login')` |
+| api-client setAuthProvider | S-0030 | Module-level `authProvider` enables Bearer token injection + 401 retry; `clearAuthProvider()` on logout/auth failure |
+| cognitoLookup DTO normalization | S-0030 | `apiClient.cognitoLookup()` maps `cognitoUsername` → `userId` so LoginPage uses unified `LoginAccount` type |
+| Buffer polyfill for Cognito SDK | S-0030 | `buffer` npm package + `define: { global: 'globalThis' }` in vite.config.ts — SDK uses Node's `Buffer` |
+| Local mode password verify | S-0030 | `authenticate()` calls `apiClient.localVerify(userId, password)` — real password check instead of accepting any password |
+| Signup with password | S-0030 | SignupPage adds password + confirm fields; calls `createTenant({ ownerPassword })` then `authenticate(password)` for auto-login |
 
 ### Testing
 
@@ -230,7 +259,7 @@
 | Item | Deferred to | Reason |
 |------|-------------|--------|
 | Cognito user provisioning (`username = users.id`) | Post-S-0029 | S-0029 documents the contract; provisioning story must enforce `AdminCreateUser` sets `username` to `users.id` |
-| Frontend Cognito SDK (PKCE flow, token storage, refresh) | Post-S-0029 | Separate story; backend JWT validation complete |
+| ~~Frontend Cognito SDK~~ | ~~S-0030~~ | ~~Completed in S-0030~~ |
 | DB CHECK constraint or enum for `role` column | Post-S-0029 | Role safety from TS `Role` type + Zod + Cognito groups; DB constraint deferred |
 | SMS worker (send from outbox) | S-0021 | `message_outbox` table exists; SMS records queued but not sent |
 | LocalStack in docker-compose | S-0007+ | Not needed until async/queue stories |
