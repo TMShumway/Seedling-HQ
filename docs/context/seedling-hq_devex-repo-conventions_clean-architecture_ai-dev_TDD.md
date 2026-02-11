@@ -132,13 +132,14 @@ apps/api/src/
       repositories/
       migrations/
     queue/
-    comms/
+    email/
     storage/
     payments/
   shared/
-    logging/
-    errors/
-    config/
+    config.ts
+    crypto.ts
+    errors.ts
+    logging.ts
 ```
 
 Web app can mirror the idea more lightly:
@@ -177,14 +178,14 @@ Prefer:
 
 **Internal routes (`/v1/...`) — Cognito JWT auth:**
 - Middleware reads `Authorization: Bearer <token>` header.
-- `AUTH_MODE=cognito`: validates JWT signature (JWKS), issuer, audience, expiry, `token_use`. Extracts claims.
+- `AUTH_MODE=cognito`: validates JWT signature (JWKS), issuer, `client_id` (NOT `audience` — Cognito access tokens use `client_id`), expiry, `token_use=access`. Extracts claims.
 - `AUTH_MODE=local`: skips JWT validation; builds authContext from env vars (`DEV_AUTH_TENANT_ID`, `DEV_AUTH_USER_ID`, `DEV_AUTH_ROLE`).
 - Produces `authContext`:
   ```ts
   {
     principal_type: 'internal',
     tenant_id: string,   // from custom:tenant_id claim (or DEV_AUTH_TENANT_ID)
-    user_id: string,     // from sub claim (or DEV_AUTH_USER_ID)
+    user_id: string,     // from username claim — NOT sub (or DEV_AUTH_USER_ID)
     role: string,        // from cognito:groups claim (or DEV_AUTH_ROLE)
   }
   ```
