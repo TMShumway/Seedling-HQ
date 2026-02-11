@@ -99,6 +99,10 @@
 | Local login endpoint | `POST /v1/auth/local/login` | S-0027 | Cross-tenant email lookup; returns accounts array; 404 when `AUTH_MODE !== 'local'`; rate limited 10 req/min |
 | AuthGuard | React component wrapping `<AppShell>` | S-0027 | Checks localStorage `dev_tenant_id`/`dev_user_id`; redirects to `/login` if missing |
 | Catch-all redirect | `/login` (was `/dashboard`) | S-0027 | Unknown routes redirect to login instead of dashboard |
+| CDK workspace | Standalone `infra/cdk/` with own `package.json` | S-0028 | NOT in `pnpm-workspace.yaml`; CDK has different deps/toolchain; `pnpm install --ignore-workspace` |
+| Cognito User Pool | UUID username, email required (not unique/alias), `custom:tenant_id` immutable | S-0028 | Same-email-across-tenants; login via custom React page + lookup endpoint, not Cognito's email login |
+| Cognito App Client | PKCE (no secret), access 1h, ID 1h, refresh 30d | S-0028 | Self-signup disabled; groups: owner, admin, technician |
+| CDK resource naming | `fsa-<env>-<owner>-<resource>` | S-0028 | Tags: `app=fsa`, `env`, `owner` on all resources |
 
 ---
 
@@ -157,6 +161,9 @@
 | Cross-tenant user lookup | S-0027 | `listActiveByEmail(email)` joins users+tenants, case-insensitive via `lower()` (not `ilike` — avoids `_`/`%` wildcard leaks), filters both active; used by login endpoint |
 | Auth routes (separate file) | S-0027 | `buildAuthRoutes({ userRepo, config })` in `auth-routes.ts`; public (no auth middleware), rate-limited |
 | Zod trim+lowercase before email | S-0027 | `z.string().trim().toLowerCase().email()` ensures normalization happens before validation |
+| CDK standalone workspace | S-0028 | `infra/cdk/` with own `package.json`; install with `pnpm install --ignore-workspace`; deploy with `pnpm dlx aws-cdk@2 deploy --context env=dev --context owner=<name>` |
+| CDK resource naming + tags | S-0028 | Prefix `fsa-${env}-${owner}` on all resources; tags: `app=fsa`, `env`, `owner`; `RemovalPolicy.DESTROY` for dev sandbox |
+| DevSandboxStack construct | S-0028 | `lib/dev-sandbox-stack.ts` takes `env_name`, `owner`, `allowedOrigin`; provisions User Pool + Groups + App Client; outputs UserPoolId, UserPoolArn, AppClientId, JwksUrl, AllowedCorsOrigin |
 
 ### Frontend
 
@@ -209,7 +216,7 @@
 
 | Item | Deferred to | Reason |
 |------|-------------|--------|
-| Cognito JWT validation (`AUTH_MODE=cognito`) | S-0007+ | S-0001–S-0010 use `AUTH_MODE=local` |
+| Cognito JWT validation (`AUTH_MODE=cognito`) | S-0029+ | User Pool provisioned in S-0028; JWT middleware next |
 | SMS worker (send from outbox) | S-0021 | `message_outbox` table exists; SMS records queued but not sent |
 | LocalStack in docker-compose | S-0007+ | Not needed until async/queue stories |
 | EventBridge bus + Scheduler | S-0022+ | Not needed until automation stories |

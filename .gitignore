@@ -49,5 +49,11 @@ pnpm-debug.log*
 # Vite
 apps/web/.vite/ 
 
+# CDK
+infra/cdk/cdk.out/
+infra/cdk/dist/
+infra/cdk/*.js
+infra/cdk/*.d.ts
+
 # Claude
 .claude/settings.local.json

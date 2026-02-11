@@ -86,6 +86,7 @@ Seedling-HQ/
   apps/web/              React 19 + Vite frontend
   packages/shared/       Shared TypeScript types (AuthContext)
   e2e/                   Playwright E2E tests
+  infra/cdk/             AWS CDK stacks (Cognito User Pool, dev sandbox)
   docs/context/          Architecture & design context packs (10 files)
   docs/stories/          Story implementation checklists
 ```
@@ -124,9 +125,9 @@ Built with React 19, Vite, Tailwind CSS v4, and TanStack Query. Responsive layou
 | Database | PostgreSQL 17, Drizzle ORM |
 | Frontend | React 19, Vite 6, Tailwind CSS v4, TanStack Query |
 | Testing | Vitest (unit + integration), Playwright (E2E), axe-core (a11y) |
-| Auth | AWS Cognito (planned), `AUTH_MODE=local` mock for dev |
+| Auth | AWS Cognito (User Pool provisioned), `AUTH_MODE=local` mock for dev |
 | Email | Nodemailer + Mailpit (local), SES (planned) |
-| Infra | Docker Compose (local), AWS CDK (planned) |
+| Infra | Docker Compose (local), AWS CDK (Cognito deployed) |
 
 ## Development
 
