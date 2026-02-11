@@ -145,9 +145,9 @@ Added real password verification to local mode so the dev login UX mirrors cogni
 **Files modified:** `apps/api/src/adapters/http/routes/auth-routes.ts`, `apps/api/src/adapters/http/routes/tenant-routes.ts`, `apps/api/src/application/dto/create-tenant-dto.ts`, `apps/api/src/application/usecases/create-tenant.ts`, `apps/api/test/integration/auth-routes.test.ts`
 
 - [x] Add `POST /v1/auth/local/verify` route (userId + password → user info, rate limited 10/min, 404 in cognito mode)
-- [x] Add `ownerPassword` optional field to `CreateTenantInput` DTO
-- [x] Add `ownerPassword` to tenant-routes body schema (min 8 chars)
-- [x] Hash password during tenant creation if provided
+- [x] Add `ownerPassword` required field to `CreateTenantInput` DTO
+- [x] Add `ownerPassword` required to tenant-routes Zod body schema (min 8, max 128 chars)
+- [x] Always hash password during tenant creation
 - [x] 7 new integration tests (correct pw, wrong pw, unknown user, no hash, 404 cognito, invalid UUID, rate limit)
 
 ### Addendum Phase 4: Frontend
@@ -162,12 +162,13 @@ Added real password verification to local mode so the dev login UX mirrors cogni
 - [x] SignupPage calls `authenticate(ownerPassword)` after `createTenant` for auto-login
 
 ### Addendum Phase 5: Tests
-**Files created:** `apps/api/test/unit/password.test.ts`
+**Files created:** `apps/api/test/unit/password.test.ts`, `apps/web/test/unit/api-client.test.ts`
 **Files modified:** `apps/web/test/unit/auth-context.test.tsx`, `e2e/tests/login.spec.ts`, `e2e/tests/signup.spec.ts`
 
 - [x] 7 password.ts unit tests (hash format, salt uniqueness, verify correct/wrong/malformed/empty, unicode)
+- [x] 5 api-client.test.ts unit tests (401 retry: success, refresh fail logout, retry 401 logout, network error no logout, no provider no retry)
 - [x] Update auth-context tests: `selectAccount` returns false, add `authenticate` success + failure tests, add `mockLocalVerify` mock
-- [x] Update login E2E: fill password step after email lookup, update hint text assertion
+- [x] Update login E2E: combined email+password form, update hint text assertion
 - [x] Update signup E2E: fill password + confirm fields in all 3 tests (main, a11y, mobile)
 
 ### Addendum Phase 6: Docs
@@ -177,8 +178,8 @@ Added real password verification to local mode so the dev login UX mirrors cogni
 
 ## Test summary
 - **API unit**: 201 total (7 new password tests)
-- **Web unit**: 45 total (2 new auth-context tests + 1 updated selectAccount test)
-- **API integration**: 164 total (7 new verify endpoint tests)
+- **Web unit**: 50 total (5 new api-client retry tests + 2 new auth-context tests + 1 updated selectAccount test)
+- **API integration**: 165 total (7 new verify endpoint + 1 new ownerPassword-missing test)
 - **E2E**: 108 total / 74 run / 34 skipped non-desktop (0 new, login + signup updated)
 
 ## Resume context
@@ -196,14 +197,15 @@ All phases complete (original S-0030 + addendum). Branch `story/S-0030-frontend-
 - `apps/api/src/application/ports/user-repository.ts` — `getByIdGlobal(id)` added
 - `apps/api/src/infra/db/repositories/drizzle-user-repository.ts` — `passwordHash` in toEntity/create, `getByIdGlobal` impl
 - `apps/api/src/adapters/http/routes/auth-routes.ts` — `POST /v1/auth/local/verify` (rate limited, 404 in cognito)
-- `apps/api/src/application/dto/create-tenant-dto.ts` — `ownerPassword?: string`
-- `apps/api/src/application/usecases/create-tenant.ts` — hash password if provided
-- `apps/api/src/adapters/http/routes/tenant-routes.ts` — `ownerPassword` in body schema (min 8)
+- `apps/api/src/application/dto/create-tenant-dto.ts` — `ownerPassword: string` (required)
+- `apps/api/src/application/usecases/create-tenant.ts` — always hashes password (ownerPassword required)
+- `apps/api/src/adapters/http/routes/tenant-routes.ts` — `ownerPassword` required in Zod body schema (min 8, max 128)
 - `apps/api/src/infra/db/seed.ts` — demo user hashed with `"password"`
 - `apps/web/src/lib/api-client.ts` — `localVerify()`, `ownerPassword` in `CreateTenantRequest`
 - `apps/web/src/lib/auth/auth-context.tsx` — `selectAccount` always returns false, `authenticate` calls `localVerify` in local mode
-- `apps/web/src/pages/LoginPage.tsx` — hint text updated, 401 error handling for verify
+- `apps/web/src/pages/LoginPage.tsx` — combined email+password form (step machine: `login` → `accounts` → `new-password`), hint text updated, 401 error handling for verify
 - `apps/web/src/pages/SignupPage.tsx` — password + confirm fields, auto-authenticate after create
+- `apps/web/src/lib/api-client.ts` — 401 retry restructured: 3 distinct failure paths (forceRefresh fail → logout, retry 401 → logout, network error → no logout)
 - Unit test mocks updated in 3 files for `passwordHash` + `getByIdGlobal`
 
 ### Commits on branch (10 total)

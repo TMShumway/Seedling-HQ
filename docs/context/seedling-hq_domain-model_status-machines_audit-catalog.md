@@ -66,6 +66,7 @@ interface User {
   email: string;
   fullName: string;
   role: Role;           // 'owner' | 'admin' | 'member'
+  passwordHash: string | null; // Nullable — cognito-mode users don't store passwords locally
   status: UserStatus;   // 'active' | 'disabled'
   createdAt: Date;
   updatedAt: Date;

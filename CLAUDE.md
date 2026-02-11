@@ -118,12 +118,12 @@
 | Cognito email-to-username lookup | `POST /v1/auth/cognito/lookup` | S-0030 | Public, rate-limited 10 req/min; returns `cognitoUsername` (= `users.id`); 404 when `AUTH_MODE !== 'cognito'` |
 | Tenant creation gate | `POST /v1/tenants` returns 404 in cognito mode | S-0030 | Self-signup disabled in Cognito; backend prevents direct API calls |
 | Token refresh on-demand | `getToken()` checks expiry, refreshes if <5min remaining | S-0030 | Simpler than background timer; `forceRefresh()` for 401 retry |
-| 401 retry with auth failure | Single retry via `forceRefresh()` → on 2nd 401: `onAuthFailure()` → logout | S-0030 | `onAuthFailure` also called if `forceRefresh()` rejects |
+| 401 retry with auth failure | Single retry via `forceRefresh()` with 3 failure paths | S-0030 | (1) `forceRefresh()` rejects → `onAuthFailure()` → logout; (2) retry returns 401 → `onAuthFailure()` → logout; (3) retry fetch throws network error → propagate error, NO logout (transient failure) |
 | NEW_PASSWORD_REQUIRED | Inline form in LoginPage step machine | S-0030 | `authenticate()` returns `{ newPasswordRequired }` for synchronous step detection |
 | Local password hashing | `node:crypto` scrypt in `shared/password.ts` | S-0030 | Zero deps; self-describing format `scrypt:N:r:p:salt:hash`; timing-safe compare |
 | Local password verify endpoint | `POST /v1/auth/local/verify` | S-0030 | Accepts `{ userId, password }`; rate limited 10/min; 404 in cognito mode; returns user info |
 | Password column | Nullable `password_hash` varchar(255) on users | S-0030 | Cognito-mode users don't store passwords locally; 401 if hash missing |
-| Signup password | `ownerPassword` optional on `POST /v1/tenants` | S-0030 | Min 8 chars; hashed before storage; seed demo user with `password` |
+| Signup password | `ownerPassword` required on `POST /v1/tenants` | S-0030 | Min 8 chars, max 128; required in Zod schema + DTO; hashed before storage; seed demo user with `password` |
 | Demo credentials | `owner@demo.local` / `password` | S-0030 | Hint text updated on login page |
 
 ---
@@ -228,12 +228,12 @@
 | CreateQuotePage with client search | S-0026 | Debounced search → radio select → property dropdown → auto-title → redirect to `/quotes/:id`; route `/quotes/new` before `/:id` |
 | New Quote button on QuotesPage | S-0026 | `data-testid="new-quote-btn"` in header; updated empty state text |
 | AuthGuard wrapping AppShell | S-0027 | `<AuthGuard><AppShell /></AuthGuard>` in Route element; checks localStorage, redirects to `/login` |
-| Login page two-step flow | S-0027 | Step 1: email input → `localLogin(email)` via `publicRequest()`; Step 2: account picker (if multiple); auto-select if single account |
+| Login page combined form | S-0027 | Email + password on single form → lookup → auto-select (single account) or account picker (multiple); cognito mode uses SDK `authenticateUser`; local mode calls `localVerify` |
 | Logout in Sidebar + MobileDrawer | S-0027 | Clear `dev_tenant_id`/`dev_user_id` from localStorage, `navigate('/login')`; drawer also calls `onOpenChange(false)` |
 | Login/Signup cross-links | S-0027 | LoginPage → "Don't have an account? Sign up"; SignupPage → "Already have an account? Log in" |
 | AuthProvider wraps BrowserRouter | S-0030 | `<QueryClientProvider><AuthProvider><BrowserRouter>` — AuthProvider needs QueryClient for cache clear on logout; outside BrowserRouter intentionally |
 | AuthGuard uses useAuth() | S-0030 | `isLoading` → render null; `!isAuthenticated` → `<Navigate to="/login">`; replaces direct localStorage check |
-| Dual-mode LoginPage | S-0030 | Step machine: email → accounts → password (cognito) → new-password (challenge); local auto-selects single account |
+| Dual-mode LoginPage | S-0030 | Step machine: `login` (email + password) → `accounts` (multi-tenant picker) → `new-password` (cognito challenge); single account auto-selects in both modes |
 | Signup disabled in cognito mode | S-0030 | `isCognitoMode()` → "Contact admin" card with link to login; local mode unchanged |
 | Sidebar/Drawer useAuth().logout() | S-0030 | Replaces manual `localStorage.removeItem` + `queryClient.clear()` + `navigate('/login')` |
 | api-client setAuthProvider | S-0030 | Module-level `authProvider` enables Bearer token injection + 401 retry; `clearAuthProvider()` on logout/auth failure |
