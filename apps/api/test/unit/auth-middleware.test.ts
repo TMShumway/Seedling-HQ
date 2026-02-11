@@ -16,6 +16,8 @@ function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     SMTP_HOST: 'localhost',
     SMTP_PORT: 1025,
     SMTP_FROM: 'test@seedling.local',
+    APP_BASE_URL: 'http://localhost:5173',
+    SECURE_LINK_HMAC_SECRET: 'test-secret-for-unit-tests',
     ...overrides,
   };
 }

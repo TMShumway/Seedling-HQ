@@ -621,4 +621,4 @@ All audit events share this structure:
 
 | Story | Title | Notes |
 |-------|-------|-------|
-| S-0026 | In-app notification center | Revisit when 3+ notification types exist |
+| S-0028 | In-app notification center | Revisit when 3+ notification types exist |
