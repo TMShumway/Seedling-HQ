@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from '@/lib/auth';
 import { AppShell } from '@/app-shell/AppShell';
 import { AuthGuard } from '@/components/AuthGuard';
 import { LoginPage } from '@/pages/LoginPage';
@@ -29,6 +30,7 @@ const queryClient = new QueryClient({
 export function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <AuthProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
@@ -53,6 +55,7 @@ export function App() {
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

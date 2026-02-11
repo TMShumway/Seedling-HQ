@@ -6,6 +6,10 @@ import { resolve } from 'node:path';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   envDir: resolve(__dirname, '../../'),
+  define: {
+    // amazon-cognito-identity-js references `global` (Node.js global)
+    global: 'globalThis',
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),

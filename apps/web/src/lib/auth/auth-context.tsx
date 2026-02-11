@@ -27,7 +27,7 @@ export interface AuthContextValue {
 
   lookupEmail: (email: string) => Promise<LoginAccount[]>;
   selectAccount: (account: LoginAccount) => boolean;
-  authenticate: (password: string) => Promise<void>;
+  authenticate: (password: string) => Promise<{ newPasswordRequired: boolean }>;
   handleNewPassword: (newPassword: string) => Promise<void>;
   getAccessToken: () => Promise<string>;
   logout: () => Promise<void>;
@@ -202,17 +202,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const authenticate = useCallback(
-    async (password: string): Promise<void> => {
+    async (password: string): Promise<{ newPasswordRequired: boolean }> => {
       setError(null);
       const account = selectedAccountRef.current;
       if (!account) {
         setError('No account selected');
-        return;
+        return { newPasswordRequired: false };
       }
       const client = cognitoClientRef.current;
       if (!client) {
         setError('Auth client not initialized');
-        return;
+        return { newPasswordRequired: false };
       }
 
       try {
@@ -224,7 +224,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             requiredAttributes: result.requiredAttributes,
           };
           setPendingNewPassword(true);
-          return;
+          return { newPasswordRequired: true };
         }
 
         // Success
@@ -240,6 +240,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(authUser);
         setIsAuthenticated(true);
         registerCognitoProvider(client);
+        return { newPasswordRequired: false };
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Authentication failed';
         setError(msg);
