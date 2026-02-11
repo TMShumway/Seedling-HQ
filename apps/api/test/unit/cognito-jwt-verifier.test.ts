@@ -38,8 +38,8 @@ function buildToken(claims: Record<string, unknown> = {}, options: { key?: Crypt
   return new SignJWT({
     token_use: 'access',
     client_id: CLIENT_ID,
-    'custom:tenant_id': 'tenant-123',
-    username: 'user-456',
+    'custom:tenant_id': '00000000-0000-4000-a000-000000000001',
+    username: '00000000-0000-4000-a000-000000000002',
     'cognito:groups': ['owner'],
     ...claims,
   })
@@ -58,8 +58,8 @@ describe('CognitoJwtVerifier', () => {
     const result = await verifier.verify(token);
 
     expect(result).toEqual({
-      tenantId: 'tenant-123',
-      userId: 'user-456',
+      tenantId: '00000000-0000-4000-a000-000000000001',
+      userId: '00000000-0000-4000-a000-000000000002',
       role: 'owner',
     });
   });
@@ -104,6 +104,13 @@ describe('CognitoJwtVerifier', () => {
     const token = await buildToken({ 'custom:tenant_id': '' });
 
     await expect(verifier.verify(token)).rejects.toThrow('custom:tenant_id');
+  });
+
+  it('rejects a token with non-UUID custom:tenant_id', async () => {
+    const verifier = new CognitoJwtVerifier(config, jwks);
+    const token = await buildToken({ 'custom:tenant_id': 'not-a-uuid' });
+
+    await expect(verifier.verify(token)).rejects.toThrow('not a valid UUID');
   });
 
   it('rejects a token with missing cognito:groups', async () => {
@@ -153,6 +160,13 @@ describe('CognitoJwtVerifier', () => {
     const token = await buildToken({ username: '' });
 
     await expect(verifier.verify(token)).rejects.toThrow('username');
+  });
+
+  it('rejects a token with non-UUID username', async () => {
+    const verifier = new CognitoJwtVerifier(config, jwks);
+    const token = await buildToken({ username: 'john-doe' });
+
+    await expect(verifier.verify(token)).rejects.toThrow('not a valid UUID');
   });
 
   it('accepts all valid roles', async () => {

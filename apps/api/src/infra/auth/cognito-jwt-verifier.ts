@@ -4,6 +4,8 @@ import type { JwtVerifier, JwtVerifyResult } from '../../application/ports/jwt-v
 import { ROLES } from '../../domain/types/roles.js';
 import type { Role } from '../../domain/types/roles.js';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export interface CognitoJwtConfig {
   COGNITO_USER_POOL_ID: string;
   COGNITO_CLIENT_ID: string;
@@ -47,11 +49,17 @@ export class CognitoJwtVerifier implements JwtVerifier {
     if (typeof tenantId !== 'string' || !tenantId) {
       throw new Error('Token missing custom:tenant_id claim');
     }
+    if (!UUID_RE.test(tenantId)) {
+      throw new Error('Token custom:tenant_id is not a valid UUID');
+    }
 
     // Extract username — Contract: Cognito username must equal users.id (enforced at user provisioning time)
     const userId = payload.username;
     if (typeof userId !== 'string' || !userId) {
       throw new Error('Token missing username claim');
+    }
+    if (!UUID_RE.test(userId)) {
+      throw new Error('Token username is not a valid UUID');
     }
 
     // Extract role from cognito:groups — enforce exactly one group

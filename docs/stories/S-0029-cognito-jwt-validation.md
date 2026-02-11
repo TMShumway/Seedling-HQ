@@ -36,8 +36,8 @@ Implements JWT validation for `AUTH_MODE=cognito` so the API can authenticate re
 - [x] Task 2.2: Extend AppConfig with `COGNITO_USER_POOL_ID`, `COGNITO_CLIENT_ID`, `COGNITO_REGION` + validate `AUTH_MODE` at runtime (rejects typos like `'cogntio'`)
 - [x] Task 2.3: Add config unit tests (6 new: invalid AUTH_MODE, local mode without Cognito vars, 3 missing individual Cognito vars in cognito mode, all Cognito vars present)
 - [x] Task 2.4: Define `JwtVerifier` port interface (`verify(token) → { tenantId, userId, role }`)
-- [x] Task 2.5: Implement `CognitoJwtVerifier` (jose, JWKS, issuer, client_id, token_use=access, custom:tenant_id, username, cognito:groups with exactly-one enforcement + ROLES validation)
-- [x] Task 2.6: Unit test CognitoJwtVerifier (15 tests: valid, expired, wrong issuer, wrong client_id, wrong token_use, missing/empty tenant_id, missing/empty groups, multiple groups, unknown group, wrong key, missing/empty username, all valid roles)
+- [x] Task 2.5: Implement `CognitoJwtVerifier` (jose, JWKS, issuer, client_id, token_use=access, custom:tenant_id, username, cognito:groups with exactly-one enforcement + ROLES validation + UUID format validation for tenantId/userId)
+- [x] Task 2.6: Unit test CognitoJwtVerifier (17 tests: valid, expired, wrong issuer, wrong client_id, wrong token_use, missing/empty/non-UUID tenant_id, missing/empty/non-UUID username, missing/empty/multiple groups, unknown group, wrong key, all valid roles)
 
 ## Phase 3: Auth Middleware + Route Wiring + Tests
 **Goal:** Wire JwtVerifier into middleware, update routes, fix tests, write middleware tests
@@ -99,7 +99,7 @@ Implements JWT validation for `AUTH_MODE=cognito` so the API can authenticate re
 - **Integration tests require `pnpm test:integration`** — Direct `vitest run test/integration/...` uses the default unit test include pattern; must use the script which points to `vitest.integration.config.ts`
 
 ## Test summary
-- **Unit**: 192 total (26 new: 6 config + 15 verifier + 5 middleware)
+- **Unit**: 194 total (28 new: 6 config + 17 verifier + 5 middleware)
 - **Integration**: 150 total (3 new: cognito 401 no header, 401 bad token, 200 valid mock)
 - **E2E**: 0 new (no frontend changes; 74 existing all pass)
 
