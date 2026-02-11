@@ -91,7 +91,7 @@ This foundation is strong. What remains are the "rails" that prevent agents (and
 > Remaining sub-gaps: formatting/linting tool config, UI component location conventions.
 
 ### 6) CI/CD + environments matrix
-You have CDK sandbox infra, but not the end-to-end deployment posture.
+CDK dev-sandbox infra delivered in S-0028 (Cognito User Pool + App Client). Missing: CI/CD pipeline, staging/prod environment matrix, and deployment strategy.
 
 Document:
 - CI pipeline steps (exact commands) for:
