@@ -12,6 +12,9 @@ export interface AppConfig {
   SMTP_FROM: string;
   APP_BASE_URL: string;
   SECURE_LINK_HMAC_SECRET: string;
+  COGNITO_USER_POOL_ID: string;
+  COGNITO_CLIENT_ID: string;
+  COGNITO_REGION: string;
 }
 
 function required(key: string): string {
@@ -29,8 +32,15 @@ function optional(key: string, fallback: string): string {
 const DEV_HMAC_SECRET = 'dev-secret-change-in-production';
 const MIN_HMAC_SECRET_LENGTH = 16;
 
+const VALID_AUTH_MODES = ['local', 'cognito'] as const;
+
 export function loadConfig(): AppConfig {
   const nodeEnv = optional('NODE_ENV', 'development');
+
+  const authMode = optional('AUTH_MODE', 'local');
+  if (!VALID_AUTH_MODES.includes(authMode as any)) {
+    throw new Error(`Invalid AUTH_MODE '${authMode}'. Must be one of: ${VALID_AUTH_MODES.join(', ')}`);
+  }
 
   let hmacSecret: string;
   if (nodeEnv === 'production') {
@@ -45,11 +55,16 @@ export function loadConfig(): AppConfig {
     hmacSecret = optional('SECURE_LINK_HMAC_SECRET', DEV_HMAC_SECRET);
   }
 
+  // Cognito vars: required when AUTH_MODE=cognito, optional otherwise
+  const cognitoUserPoolId = authMode === 'cognito' ? required('COGNITO_USER_POOL_ID') : optional('COGNITO_USER_POOL_ID', '');
+  const cognitoClientId = authMode === 'cognito' ? required('COGNITO_CLIENT_ID') : optional('COGNITO_CLIENT_ID', '');
+  const cognitoRegion = authMode === 'cognito' ? required('COGNITO_REGION') : optional('COGNITO_REGION', '');
+
   return {
     DATABASE_URL: required('DATABASE_URL'),
     API_PORT: parseInt(optional('API_PORT', '4000'), 10),
     NODE_ENV: nodeEnv,
-    AUTH_MODE: optional('AUTH_MODE', 'local') as 'local' | 'cognito',
+    AUTH_MODE: authMode as 'local' | 'cognito',
     DEV_AUTH_TENANT_ID: optional('DEV_AUTH_TENANT_ID', ''),
     DEV_AUTH_USER_ID: optional('DEV_AUTH_USER_ID', ''),
     DEV_AUTH_ROLE: optional('DEV_AUTH_ROLE', ''),
@@ -59,5 +74,8 @@ export function loadConfig(): AppConfig {
     SMTP_FROM: optional('SMTP_FROM', 'noreply@seedling.local'),
     APP_BASE_URL: optional('APP_BASE_URL', 'http://localhost:5173'),
     SECURE_LINK_HMAC_SECRET: hmacSecret,
+    COGNITO_USER_POOL_ID: cognitoUserPoolId,
+    COGNITO_CLIENT_ID: cognitoClientId,
+    COGNITO_REGION: cognitoRegion,
   };
 }
