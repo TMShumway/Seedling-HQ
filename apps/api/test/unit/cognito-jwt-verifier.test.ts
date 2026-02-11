@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { SignJWT, generateKeyPair, exportJWK, createLocalJWKSet } from 'jose';
-import type { KeyLike, JWTVerifyGetKey } from 'jose';
+import type { JWTVerifyGetKey } from 'jose';
 import { CognitoJwtVerifier } from '../../src/infra/auth/cognito-jwt-verifier.js';
 import type { CognitoJwtConfig } from '../../src/infra/auth/cognito-jwt-verifier.js';
 
@@ -15,9 +15,9 @@ const config: CognitoJwtConfig = {
   COGNITO_REGION: REGION,
 };
 
-let privateKey: KeyLike;
+let privateKey: CryptoKey;
 let jwks: JWTVerifyGetKey;
-let wrongPrivateKey: KeyLike;
+let wrongPrivateKey: CryptoKey;
 
 beforeAll(async () => {
   const kp = await generateKeyPair('RS256');
@@ -32,7 +32,7 @@ beforeAll(async () => {
   wrongPrivateKey = wrongKp.privateKey;
 });
 
-function buildToken(claims: Record<string, unknown> = {}, options: { key?: KeyLike; issuer?: string; expiresIn?: string } = {}) {
+function buildToken(claims: Record<string, unknown> = {}, options: { key?: CryptoKey; issuer?: string; expiresIn?: string } = {}) {
   const { key = privateKey, issuer = ISSUER, expiresIn = '1h' } = options;
 
   return new SignJWT({

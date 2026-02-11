@@ -51,6 +51,9 @@ function makeConfig(): AppConfig {
     SMTP_FROM: 'test@seedling.local',
     APP_BASE_URL: 'http://localhost:5173',
     SECURE_LINK_HMAC_SECRET: 'test-secret',
+    COGNITO_USER_POOL_ID: '',
+    COGNITO_CLIENT_ID: '',
+    COGNITO_REGION: '',
   };
 }
 
@@ -67,7 +70,7 @@ describe('SendQuoteUseCase', () => {
     txRepos = {
       tenantRepo: {} as never,
       userRepo: {} as never,
-      auditRepo: { record: vi.fn().mockResolvedValue(undefined) },
+      auditRepo: { record: vi.fn().mockResolvedValue(undefined), listBySubjects: vi.fn().mockResolvedValue({ data: [], cursor: null, hasMore: false }) },
       clientRepo: {} as never,
       propertyRepo: {} as never,
       requestRepo: {} as never,

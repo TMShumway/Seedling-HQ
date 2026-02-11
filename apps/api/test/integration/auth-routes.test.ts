@@ -104,7 +104,11 @@ describe('POST /v1/auth/local/login', () => {
   });
 
   it('returns 404 when AUTH_MODE is cognito', async () => {
-    const app = await buildTestApp({ AUTH_MODE: 'cognito' });
+    const noopVerifier = { verify: async () => { throw new Error('not used'); } };
+    const app = await buildTestApp(
+      { AUTH_MODE: 'cognito', COGNITO_USER_POOL_ID: 'us-east-1_Test', COGNITO_CLIENT_ID: 'test', COGNITO_REGION: 'us-east-1' },
+      { jwtVerifier: noopVerifier },
+    );
     const res = await app.inject({
       method: 'POST',
       url: '/v1/auth/local/login',

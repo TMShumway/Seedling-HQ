@@ -49,6 +49,9 @@ function makeConfig(): AppConfig {
     SMTP_FROM: 'test@seedling.local',
     APP_BASE_URL: 'http://localhost:5173',
     SECURE_LINK_HMAC_SECRET: 'test-secret',
+    COGNITO_USER_POOL_ID: '',
+    COGNITO_CLIENT_ID: '',
+    COGNITO_REGION: '',
   };
 }
 

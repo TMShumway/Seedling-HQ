@@ -20,6 +20,7 @@ import { NotFoundError } from '../../../shared/errors.js';
 import { buildAuthMiddleware } from '../middleware/auth-middleware.js';
 import { buildRateLimiter } from '../middleware/rate-limit.js';
 import type { AppConfig } from '../../../shared/config.js';
+import type { JwtVerifier } from '../../../application/ports/jwt-verifier.js';
 
 const publicRequestBodySchema = z.object({
   clientName: z.string().min(1, 'Name is required').max(255),
@@ -208,11 +209,12 @@ export function buildRequestRoutes(deps: {
   clientRepo: ClientRepository;
   uow: UnitOfWork;
   config: AppConfig;
+  jwtVerifier?: JwtVerifier;
 }) {
   const createUseCase = new CreatePublicRequestUseCase(deps.tenantRepo, deps.requestRepo, deps.auditRepo);
   const notificationUseCase = new SendRequestNotificationUseCase(deps.userRepo, deps.outboxRepo, deps.emailSender, deps.config);
   const convertUseCase = new ConvertRequestUseCase(deps.requestRepo, deps.clientRepo, deps.uow);
-  const authMiddleware = buildAuthMiddleware(deps.config);
+  const authMiddleware = buildAuthMiddleware({ config: deps.config, jwtVerifier: deps.jwtVerifier });
   const rateLimiter = buildRateLimiter({ windowMs: 60_000, maxRequests: 5 });
 
   return async function requestRoutes(app: FastifyInstance) {

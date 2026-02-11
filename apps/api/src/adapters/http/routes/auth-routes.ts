@@ -37,7 +37,12 @@ export function buildAuthRoutes({ userRepo, config }: AuthRoutesDeps) {
         preHandler: buildRateLimiter({ maxRequests: 10 }),
         schema: {
           body: loginBodySchema,
-          response: { 200: loginResponseSchema },
+          response: {
+            200: loginResponseSchema,
+            404: z.object({
+              error: z.object({ code: z.string(), message: z.string() }),
+            }),
+          },
         },
       },
       async (request, reply) => {

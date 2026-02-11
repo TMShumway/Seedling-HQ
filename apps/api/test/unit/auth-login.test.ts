@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { createApp } from '../../src/app.js';
 import type { AppConfig } from '../../src/shared/config.js';
+import type { JwtVerifier } from '../../src/application/ports/jwt-verifier.js';
 
 function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {
   return {
@@ -17,6 +18,9 @@ function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     SMTP_FROM: 'test@seedling.local',
     APP_BASE_URL: 'http://localhost:5173',
     SECURE_LINK_HMAC_SECRET: 'test-secret-for-unit',
+    COGNITO_USER_POOL_ID: '',
+    COGNITO_CLIENT_ID: '',
+    COGNITO_REGION: '',
     ...overrides,
   };
 }
@@ -28,8 +32,15 @@ function makeMockDb() {
 
 describe('POST /v1/auth/local/login', () => {
   it('returns 404 when AUTH_MODE is cognito', async () => {
-    const config = makeConfig({ AUTH_MODE: 'cognito' });
-    const app = await createApp({ config, db: makeMockDb() });
+    const config = makeConfig({
+      AUTH_MODE: 'cognito',
+      COGNITO_USER_POOL_ID: 'us-east-1_TestPool',
+      COGNITO_CLIENT_ID: 'test-client',
+      COGNITO_REGION: 'us-east-1',
+    });
+    // No-op verifier — this test only checks that the login endpoint returns 404
+    const jwtVerifier: JwtVerifier = { verify: async () => { throw new Error('not used'); } };
+    const app = await createApp({ config, db: makeMockDb(), jwtVerifier });
 
     const res = await app.inject({
       method: 'POST',

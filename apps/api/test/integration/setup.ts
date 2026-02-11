@@ -4,6 +4,7 @@ import { sql } from 'drizzle-orm';
 import * as schema from '../../src/infra/db/schema.js';
 import { createApp } from '../../src/app.js';
 import type { AppConfig } from '../../src/shared/config.js';
+import type { JwtVerifier } from '../../src/application/ports/jwt-verifier.js';
 
 const DATABASE_URL = process.env.DATABASE_URL ?? 'postgresql://fsa:fsa@localhost:5432/fsa';
 
@@ -37,12 +38,15 @@ export function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     SMTP_FROM: 'test@seedling.local',
     APP_BASE_URL: 'http://localhost:5173',
     SECURE_LINK_HMAC_SECRET: 'test-hmac-secret',
+    COGNITO_USER_POOL_ID: '',
+    COGNITO_CLIENT_ID: '',
+    COGNITO_REGION: '',
     ...overrides,
   };
 }
 
-export async function buildTestApp(configOverrides: Partial<AppConfig> = {}) {
+export async function buildTestApp(configOverrides: Partial<AppConfig> = {}, opts?: { jwtVerifier?: JwtVerifier }) {
   const config = makeConfig(configOverrides);
-  const app = await createApp({ config, db });
+  const app = await createApp({ config, db, jwtVerifier: opts?.jwtVerifier });
   return app;
 }
