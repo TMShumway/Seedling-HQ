@@ -32,7 +32,7 @@ export class CreateTenantUseCase {
 
     const tenantId = randomUUID();
     const userId = randomUUID();
-    const passwordHash = input.ownerPassword ? await hashPassword(input.ownerPassword) : null;
+    const passwordHash = await hashPassword(input.ownerPassword);
 
     try {
       return await this.uow.run(async ({ tenantRepo, userRepo, auditRepo }) => {

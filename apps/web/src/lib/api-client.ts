@@ -142,7 +142,7 @@ export interface CreateTenantRequest {
   businessName: string;
   ownerEmail: string;
   ownerFullName: string;
-  ownerPassword?: string;
+  ownerPassword: string;
 }
 
 export interface CreateTenantResponse {

@@ -5,7 +5,7 @@ export interface CreateTenantInput {
   businessName: string;
   ownerEmail: string;
   ownerFullName: string;
-  ownerPassword?: string;
+  ownerPassword: string;
 }
 
 export interface CreateTenantOutput {

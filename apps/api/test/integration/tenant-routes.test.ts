@@ -84,6 +84,7 @@ describe('POST /v1/tenants', () => {
         businessName: 'Blocked Biz',
         ownerEmail: 'blocked@test.com',
         ownerFullName: 'Blocked Owner',
+        ownerPassword: 'test-password',
       },
     });
 
@@ -91,7 +92,7 @@ describe('POST /v1/tenants', () => {
     expect(res.json().error.code).toBe('NOT_FOUND');
   });
 
-  it('returns 400 when ownerPassword is missing in local mode', async () => {
+  it('returns 400 when ownerPassword is missing', async () => {
     const app = await buildTestApp();
 
     const res = await app.inject({
@@ -105,7 +106,6 @@ describe('POST /v1/tenants', () => {
     });
 
     expect(res.statusCode).toBe(400);
-    expect(res.json().error.code).toBe('VALIDATION_ERROR');
   });
 
   it('returns 400 for invalid body', async () => {

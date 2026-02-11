@@ -103,6 +103,7 @@ describe('CreateTenantUseCase', () => {
     businessName: 'Acme Landscaping',
     ownerEmail: 'owner@acme.test',
     ownerFullName: 'Jane Doe',
+    ownerPassword: 'test-password',
   };
 
   const correlationId = 'corr-123';
