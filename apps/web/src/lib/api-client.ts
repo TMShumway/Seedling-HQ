@@ -382,6 +382,9 @@ export const apiClient = {
     request<ConvertRequestResponse>('POST', `/v1/requests/${requestId}/convert`, input),
 
   // Quotes
+  createQuote: (input: CreateQuoteRequest) =>
+    request<QuoteResponse>('POST', '/v1/quotes', input),
+
   listQuotes: (params?: { limit?: number; cursor?: string; search?: string; status?: string }) => {
     const qs = new URLSearchParams();
     if (params?.limit) qs.set('limit', String(params.limit));
@@ -507,6 +510,12 @@ export interface QuoteResponse {
   declinedAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CreateQuoteRequest {
+  clientId: string;
+  propertyId?: string | null;
+  title: string;
 }
 
 export interface UpdateQuoteRequest {

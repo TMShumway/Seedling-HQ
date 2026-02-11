@@ -47,6 +47,7 @@ Clean Architecture in this repo means:
 
 **Application (Use Cases + Ports)**
 - "Upsert business settings" (singleton per tenant; no UoW needed)
+- "Create standalone quote" — validates client/property, no UoW (single write + best-effort audit) (S-0026)
 - "Send quote link"
 - "Respond to quote (approve/decline)" — single use case, parameterized by action (S-0011)
 - "Create job from approved quote"

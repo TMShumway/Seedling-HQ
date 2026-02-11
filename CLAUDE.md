@@ -95,6 +95,7 @@
 | Idempotent external actions | Same-action repeat → 200 no-op, cross-transition → 400 | S-0011 | Client may double-click approve; prevent approve→decline flip |
 | External principal type | `principalType: 'external'`, `principalId: tokenId` | S-0011 | Distinguishes token-based actions from `internal` (user) and `system` (automation) |
 | Quote response status machine | `sent` → `approved` / `declined` | S-0011 | Only `sent` quotes can be responded to; draft/expired/already-terminal blocked |
+| Standalone quote creation | `POST /v1/quotes` | S-0026 | Standalone quotes without a request; validates client (exists, active) and property (exists, active, belongs to client); `requestId: null` |
 
 ---
 
@@ -147,6 +148,8 @@
 | RespondToQuoteUseCase (single class) | S-0011 | Parameterized by `action: 'approve' | 'decline'`; no UoW needed (single entity write + best-effort audit + notification); race-safe idempotency: on null updateStatus, re-fetches quote — same-action race → 200 with current state, cross-action race → 400 ValidationError |
 | External approve/decline routes | S-0011 | `POST /v1/ext/quotes/:token/approve` and `/decline`; `respondMiddleware` requires `quote:respond` scope; returns `{ quote: { id, status, approvedAt, declinedAt } }` |
 | Quote response notification | S-0011 | Best-effort email to owner via outbox; `buildQuoteResponseEmail()` inline HTML builder; type `quote_approved`/`quote_declined` in outbox |
+| CreateStandaloneQuoteUseCase (no UoW) | S-0026 | Direct repo + best-effort audit; validates client (exists, active), property (optional: exists, active, belongs to client); creates draft with empty line items |
+| POST /v1/quotes route | S-0026 | Body: `{ clientId, propertyId?, title }`; returns 201; `propertyRepo` added to `buildQuoteRoutes` deps |
 
 ### Frontend
 
@@ -176,6 +179,8 @@
 | Public quote approve/decline flow | S-0011 | Approve button → direct call; Decline button → confirmation dialog (state-based, matches send confirm pattern); success → status banner + hide buttons; `useEffect` resets respond state on token change |
 | Already-responded read-only banners | S-0011 | If `status === 'approved'/'declined'` on page load, show date-stamped banner, hide action buttons |
 | Quote detail timestamps | S-0011 | Below status badge: green "Approved on {date}" or red "Declined on {date}" from `quote.approvedAt`/`declinedAt` |
+| CreateQuotePage with client search | S-0026 | Debounced search → radio select → property dropdown → auto-title → redirect to `/quotes/:id`; route `/quotes/new` before `/:id` |
+| New Quote button on QuotesPage | S-0026 | `data-testid="new-quote-btn"` in header; updated empty state text |
 
 ### Testing
 

@@ -36,6 +36,7 @@ function makeQuoteRepo(overrides: Partial<QuoteRepository> = {}): QuoteRepositor
     getById: vi.fn(async () => makeDraftQuote()),
     list: vi.fn(async () => ({ data: [], cursor: null, hasMore: false })),
     update: vi.fn(async (_tenantId, _id, patch) => makeDraftQuote({ ...patch, updatedAt: new Date() })),
+    updateStatus: vi.fn(async () => null),
     count: vi.fn(async () => 0),
     countByStatus: vi.fn(async () => 0),
     ...overrides,

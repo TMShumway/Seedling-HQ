@@ -28,6 +28,34 @@ async function createTenantAndGetApp() {
   return { app: authedApp, tenant: created.tenant, user: created.user };
 }
 
+async function createClientWithProperty(app: ReturnType<typeof buildTestApp> extends Promise<infer T> ? T : never) {
+  const clientRes = await app.inject({
+    method: 'POST',
+    url: '/v1/clients',
+    payload: {
+      firstName: 'Jane',
+      lastName: 'Doe',
+      email: 'jane@example.com',
+      phone: '555-9876',
+    },
+  });
+  const client = clientRes.json();
+
+  const propRes = await app.inject({
+    method: 'POST',
+    url: `/v1/clients/${client.id}/properties`,
+    payload: {
+      addressLine1: '456 Oak Ave',
+      city: 'Portland',
+      state: 'OR',
+      zip: '97201',
+    },
+  });
+  const property = propRes.json();
+
+  return { client, property };
+}
+
 async function createQuoteViaConvert(app: ReturnType<typeof buildTestApp> extends Promise<infer T> ? T : never, tenantSlug: string) {
   const publicApp = await buildTestApp();
   resetRateLimitStore();
@@ -335,6 +363,210 @@ describe('PUT /v1/quotes/:id', () => {
       url: `/v1/quotes/${converted.quote.id}`,
       payload: { title: 'Hacker Title' },
     });
+    expect(res.statusCode).toBe(404);
+  });
+});
+
+describe('POST /v1/quotes', () => {
+  beforeEach(async () => {
+    await truncateAll();
+    resetRateLimitStore();
+  });
+
+  it('creates a standalone quote without property', async () => {
+    const { app } = await createTenantAndGetApp();
+    const { client } = await createClientWithProperty(app);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/quotes',
+      payload: {
+        clientId: client.id,
+        title: 'Standalone Quote',
+      },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const body = res.json();
+    expect(body.clientId).toBe(client.id);
+    expect(body.propertyId).toBeNull();
+    expect(body.requestId).toBeNull();
+    expect(body.title).toBe('Standalone Quote');
+    expect(body.status).toBe('draft');
+    expect(body.lineItems).toEqual([]);
+    expect(body.subtotal).toBe(0);
+    expect(body.tax).toBe(0);
+    expect(body.total).toBe(0);
+  });
+
+  it('creates a standalone quote with property', async () => {
+    const { app } = await createTenantAndGetApp();
+    const { client, property } = await createClientWithProperty(app);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/quotes',
+      payload: {
+        clientId: client.id,
+        propertyId: property.id,
+        title: 'Quote with Property',
+      },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const body = res.json();
+    expect(body.clientId).toBe(client.id);
+    expect(body.propertyId).toBe(property.id);
+  });
+
+  it('returns 404 for non-existent client', async () => {
+    const { app } = await createTenantAndGetApp();
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/quotes',
+      payload: {
+        clientId: '00000000-0000-0000-0000-000000000999',
+        title: 'Bad Client',
+      },
+    });
+
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('returns 404 for non-existent property', async () => {
+    const { app } = await createTenantAndGetApp();
+    const { client } = await createClientWithProperty(app);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/quotes',
+      payload: {
+        clientId: client.id,
+        propertyId: '00000000-0000-0000-0000-000000000999',
+        title: 'Bad Property',
+      },
+    });
+
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('returns 400 when property does not belong to client', async () => {
+    const { app } = await createTenantAndGetApp();
+    const { client: clientA } = await createClientWithProperty(app);
+
+    // Create a second client with property
+    const client2Res = await app.inject({
+      method: 'POST',
+      url: '/v1/clients',
+      payload: { firstName: 'Bob', lastName: 'Jones', email: 'bob@example.com' },
+    });
+    const clientB = client2Res.json();
+    const prop2Res = await app.inject({
+      method: 'POST',
+      url: `/v1/clients/${clientB.id}/properties`,
+      payload: { addressLine1: '789 Elm St' },
+    });
+    const propertyB = prop2Res.json();
+
+    // Try to create quote with clientA but propertyB
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/quotes',
+      payload: {
+        clientId: clientA.id,
+        propertyId: propertyB.id,
+        title: 'Mismatched',
+      },
+    });
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('returns 400 for empty title', async () => {
+    const { app } = await createTenantAndGetApp();
+    const { client } = await createClientWithProperty(app);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/quotes',
+      payload: {
+        clientId: client.id,
+        title: '',
+      },
+    });
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('returns 400 for missing clientId', async () => {
+    const { app } = await createTenantAndGetApp();
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/quotes',
+      payload: {
+        title: 'No Client',
+      },
+    });
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('new quote appears in GET /v1/quotes list', async () => {
+    const { app } = await createTenantAndGetApp();
+    const { client } = await createClientWithProperty(app);
+
+    await app.inject({
+      method: 'POST',
+      url: '/v1/quotes',
+      payload: {
+        clientId: client.id,
+        title: 'Listed Quote',
+      },
+    });
+
+    const listRes = await app.inject({
+      method: 'GET',
+      url: '/v1/quotes',
+    });
+
+    expect(listRes.statusCode).toBe(200);
+    expect(listRes.json().data).toHaveLength(1);
+    expect(listRes.json().data[0].title).toBe('Listed Quote');
+  });
+
+  it('enforces cross-tenant isolation', async () => {
+    const { app: appA } = await createTenantAndGetApp();
+    const { client: clientA } = await createClientWithProperty(appA);
+
+    // Create tenant B
+    const publicApp = await buildTestApp();
+    const createBRes = await publicApp.inject({
+      method: 'POST',
+      url: '/v1/tenants',
+      payload: {
+        businessName: 'Tenant B Quote Biz',
+        ownerEmail: 'b-quote@test.com',
+        ownerFullName: 'Owner B',
+      },
+    });
+    const tenantB = createBRes.json();
+    const appB = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenantB.tenant.id,
+      DEV_AUTH_USER_ID: tenantB.user.id,
+    });
+
+    // Tenant B cannot create a quote for tenant A's client
+    const res = await appB.inject({
+      method: 'POST',
+      url: '/v1/quotes',
+      payload: {
+        clientId: clientA.id,
+        title: 'Cross-Tenant Attempt',
+      },
+    });
+
     expect(res.statusCode).toBe(404);
   });
 });

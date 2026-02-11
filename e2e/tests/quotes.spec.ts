@@ -65,10 +65,75 @@ test.describe('Quotes List', () => {
   });
 });
 
+test.describe('Create Standalone Quote', () => {
+  test('creates a standalone quote via New Quote button', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-chrome', 'Stateful test runs only on desktop-chrome');
+
+    // Navigate to quotes page
+    await page.goto('/quotes');
+    await expect(page.getByTestId('quotes-page')).toBeVisible({ timeout: 10000 });
+
+    // Click "New Quote" button
+    await page.getByTestId('new-quote-btn').click();
+    await expect(page.getByTestId('create-quote-page')).toBeVisible({ timeout: 10000 });
+
+    // Search for a seeded client
+    await page.getByTestId('client-search-input').fill('Bob');
+
+    // Wait for search results and select Bob Wilson
+    const clientOption = page.locator('[data-testid^="client-option-"]').filter({ hasText: 'Bob Wilson' });
+    await expect(clientOption).toBeVisible({ timeout: 10000 });
+    await clientOption.locator('input[type="radio"]').click();
+
+    // Property dropdown should appear with Bob's property
+    await expect(page.getByTestId('property-select')).toBeVisible({ timeout: 5000 });
+    const propertySelect = page.getByTestId('property-select');
+    await propertySelect.selectOption({ index: 1 }); // Select first property (789 Oak Avenue)
+
+    // Title should be auto-suggested
+    const titleInput = page.getByTestId('quote-title-input');
+    await expect(titleInput).toHaveValue('Quote for Bob Wilson');
+
+    // Customize the title
+    await titleInput.fill('Landscaping Quote for Bob Wilson');
+
+    // Submit the form
+    await page.getByTestId('create-quote-submit').click();
+
+    // Should redirect to QuoteDetailPage
+    await expect(page.getByTestId('quote-detail-page')).toBeVisible({ timeout: 10000 });
+
+    // Verify the quote title is in the title input (draft quotes show an editable input)
+    await expect(page.getByTestId('quote-title-input')).toHaveValue('Landscaping Quote for Bob Wilson');
+  });
+
+  test('new standalone quote appears in the quotes list', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-chrome', 'Depends on previous test creating data');
+
+    await page.goto('/quotes');
+    await expect(page.getByTestId('quotes-page')).toBeVisible({ timeout: 10000 });
+
+    // The standalone quote created above should be in the list
+    const card = page.getByTestId('quote-card').filter({ hasText: 'Landscaping Quote for Bob Wilson' });
+    await expect(card).toBeVisible();
+    await expect(card.getByText('Draft')).toBeVisible();
+  });
+});
+
 test.describe('Quotes Accessibility', () => {
   test('quotes list page has no critical a11y violations', async ({ page }) => {
     await page.goto('/quotes');
     await expect(page.getByTestId('quotes-page')).toBeVisible({ timeout: 10000 });
+
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa'])
+      .analyze();
+    expect(results.violations.filter((v) => v.impact === 'critical')).toHaveLength(0);
+  });
+
+  test('create quote page has no critical a11y violations', async ({ page }) => {
+    await page.goto('/quotes/new');
+    await expect(page.getByTestId('create-quote-page')).toBeVisible({ timeout: 10000 });
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])

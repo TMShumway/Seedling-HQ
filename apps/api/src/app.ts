@@ -98,7 +98,7 @@ export async function createApp({ config, db }: CreateAppOptions) {
   await app.register(buildClientRoutes({ clientRepo, propertyRepo, auditRepo, config }));
   await app.register(buildPropertyRoutes({ propertyRepo, clientRepo, auditRepo, config }));
   await app.register(buildRequestRoutes({ requestRepo, tenantRepo, auditRepo, userRepo, outboxRepo, emailSender, clientRepo, uow, config }));
-  await app.register(buildQuoteRoutes({ quoteRepo, auditRepo, uow, emailSender, outboxRepo, clientRepo, config }));
+  await app.register(buildQuoteRoutes({ quoteRepo, auditRepo, uow, emailSender, outboxRepo, clientRepo, propertyRepo, config }));
   await app.register(buildExternalQuoteRoutes({ secureLinkTokenRepo, quoteRepo, clientRepo, tenantRepo, propertyRepo, auditRepo, userRepo, outboxRepo, emailSender, config }));
 
   return app;

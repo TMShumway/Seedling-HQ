@@ -324,7 +324,8 @@ draft → sent → approved
 - `expired`: token TTL passed without action (S-0010)
 
 **Creation via conversion (S-0008):** `POST /v1/requests/:id/convert` atomically creates client + property + quote draft + updates request status to `converted`. The quote is created with empty `lineItems`, zero totals, and `draft` status.
-**Authenticated endpoints (S-0009):** `GET /v1/quotes` (paginated), `GET /v1/quotes/:id`, `PUT /v1/quotes/:id`, `GET /v1/quotes/count`
+**Standalone creation (S-0026):** `POST /v1/quotes` creates a draft quote for an existing client without a request. Validates client (exists, active, same tenant) and optional property (exists, active, belongs to client). Quote starts with empty `lineItems`, zero totals, and `draft` status — line items added via `PUT /v1/quotes/:id`.
+**Authenticated endpoints (S-0009/S-0026):** `POST /v1/quotes`, `GET /v1/quotes` (paginated), `GET /v1/quotes/:id`, `PUT /v1/quotes/:id`, `GET /v1/quotes/count`
 
 ---
 

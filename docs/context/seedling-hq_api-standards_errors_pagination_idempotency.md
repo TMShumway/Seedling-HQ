@@ -65,6 +65,7 @@ AppError (base)
 | Successful creation | 201 | Created entity | `POST /v1/tenants` |
 | Successful deletion/deactivation | 204 | No body | `DELETE /v1/services/:id` |
 | Successful upsert (update) | 200 | Updated entity | `PUT /v1/tenants/me/settings` |
+| Standalone entity creation | 201 | Created entity | `POST /v1/quotes` (S-0026) |
 | Composite conversion | 200 | Multi-entity result | `POST /v1/requests/:id/convert` (S-0008) |
 | Send + create token | 200 | `{ quote, token, link }` | `POST /v1/quotes/:id/send` (S-0010) |
 | External token read | 200 | Quote view data | `GET /v1/ext/quotes/:token` (S-0010) |

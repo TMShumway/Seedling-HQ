@@ -1,38 +1,117 @@
-# Seedling-HQ
+# Seedling HQ
 
-Field service management platform for small businesses. Built as a multi-tenant SaaS with an internal-user + external-secure-link access model.
+Seedling HQ is a field service management platform for small businesses — lawn care, tree service, landscaping, cleaning, and similar trades. It helps owners manage the full lifecycle from incoming service requests through quoting, scheduling, and invoicing.
+
+Built as a multi-tenant SaaS with two access models:
+- **Internal users** (business owners and technicians) log in via the web app
+- **External customers** receive secure links to view and approve quotes, pay invoices, etc. — no login required
+
+## What's Built So Far
+
+Seedling HQ is under active development. Here's what's working today:
+
+| Feature | Status | Description |
+|---------|--------|-------------|
+| Signup + onboarding | Done | Create a business account, configure profile, hours, and service defaults |
+| Service catalog | Done | Two-level catalog (categories and items) with pricing in dollars |
+| Client management | Done | Client records with properties (service addresses), activity timeline |
+| Public request form | Done | Embeddable form for customers to request service — with spam protection |
+| Request notifications | Done | Email alerts to the business owner when new requests arrive |
+| Request conversion | Done | Convert incoming requests into clients, properties, and draft quotes |
+| Quote builder | Done | Inline line-item editor with service picker, tax, and auto-totals |
+| Create standalone quotes | Done | Create quotes directly for existing clients (no request needed) |
+| Send quotes via secure link | Done | One-click send generates a secure link; quote is viewable without login |
+| Customer approves/declines | Done | Customers approve or decline quotes from the secure link |
+| Scheduling + jobs | Planned | Calendar view, visit tracking, technician "Today" page |
+| Invoicing + payments | Planned | Invoice generation, Stripe payments via secure link |
 
 ## Prerequisites
 
 - **Node.js 24** (see `.nvmrc`)
-- **pnpm** (`corepack enable && corepack prepare pnpm@9.15.4 --activate`)
-- **Docker** (for Postgres and Mailpit)
+- **pnpm** — `corepack enable && corepack prepare pnpm@9.15.4 --activate`
+- **Docker** — for Postgres and Mailpit (local email capture)
 
 ## Quick Start
 
 ```bash
-pnpm i              # install all workspace dependencies
-make deps           # start Docker services, push DB schema, seed demo data
-pnpm dev            # start API (:4000) + Web (:5173)
+# 1. Clone and install
+git clone <repo-url> && cd Seedling-HQ
+pnpm i
+
+# 2. Set up environment
+cp .env.example .env
+
+# 3. Start services, create DB schema, seed demo data
+make deps
+
+# 4. Start the app
+pnpm dev
 ```
 
-Open:
-- **App:** http://localhost:5173/signup
-- **API health:** http://localhost:4000/health
-- **Swagger UI:** http://localhost:4000/docs
-- **Mailpit UI:** http://localhost:8025
+Once running, open:
+
+| URL | What |
+|-----|------|
+| http://localhost:5173/signup | Create a new business account |
+| http://localhost:5173/dashboard | Dashboard (uses demo tenant by default) |
+| http://localhost:4000/docs | Swagger UI — browse and test API endpoints |
+| http://localhost:8025 | Mailpit — see captured emails (request notifications, quote sends) |
+
+## Demo Walkthrough
+
+The seed data creates a ready-to-explore demo tenant. After `make deps` and `pnpm dev`:
+
+1. **Dashboard** (http://localhost:5173/dashboard) — see metric cards for clients, requests, and quotes
+2. **Services** — browse Lawn Care, Tree Service, and Landscaping categories with 8 service items
+3. **Clients** — 3 seeded clients (John Smith, Jane Johnson, Bob Wilson) each with a property
+4. **Requests** — 3 incoming requests from the public form, all with status "New"
+5. **Quotes** — 1 draft quote and 2 sent quotes (with secure links you can follow)
+
+To try the full flow yourself:
+1. Submit a request at http://localhost:5173/request/demo
+2. Check the notification email in Mailpit (http://localhost:8025)
+3. Open the request in the app and click "Convert to Client"
+4. Edit the draft quote — add line items, set pricing
+5. Click "Send Quote" — copy the secure link
+6. Open the secure link in an incognito window to see the customer view
+7. Approve or decline the quote
 
 ## Project Structure
 
 ```
 Seedling-HQ/
-  packages/shared/       # @seedling/shared — shared TypeScript types (AuthContext)
-  apps/api/              # @seedling/api — Fastify 5 backend
-  apps/web/              # @seedling/web — React 19 + Vite frontend
-  e2e/                   # @seedling/e2e — Playwright E2E tests
-  docs/context/          # Architecture & design context packs (10 files)
-  docs/stories/          # Story implementation checklists
+  apps/api/              Fastify 5 backend (Clean Architecture)
+  apps/web/              React 19 + Vite frontend
+  packages/shared/       Shared TypeScript types (AuthContext)
+  e2e/                   Playwright E2E tests
+  docs/context/          Architecture & design context packs (10 files)
+  docs/stories/          Story implementation checklists
 ```
+
+### Backend Architecture (Clean Architecture)
+
+```
+apps/api/src/
+  domain/          Entities and value types (no dependencies)
+  application/     Use cases, ports (repository interfaces), DTOs
+  adapters/http/   Route handlers, middleware
+  infra/           Drizzle repositories, auth providers, email sender
+  shared/          Errors, config, logging
+```
+
+Dependencies point inward: infra → application → domain. Route handlers validate input and call use cases. Use cases enforce business rules and call repository ports. Infrastructure implements those ports.
+
+### Frontend
+
+```
+apps/web/src/
+  app-shell/       Sidebar, TopBar, MobileDrawer
+  pages/           One file per page/route
+  components/ui/   Reusable UI components (Button, Input, Card, etc.)
+  lib/             API client, auth helpers, utilities
+```
+
+Built with React 19, Vite, Tailwind CSS v4, and TanStack Query. Responsive layout with sidebar navigation on desktop and drawer on mobile.
 
 ## Tech Stack
 
@@ -42,184 +121,186 @@ Seedling-HQ/
 | API | Fastify 5, Zod, Pino |
 | Database | PostgreSQL 17, Drizzle ORM |
 | Frontend | React 19, Vite 6, Tailwind CSS v4, TanStack Query |
-| Testing | Vitest (unit/integration), Playwright (E2E), axe-core (a11y) |
+| Testing | Vitest (unit + integration), Playwright (E2E), axe-core (a11y) |
 | Auth | AWS Cognito (planned), `AUTH_MODE=local` mock for dev |
+| Email | Nodemailer + Mailpit (local), SES (planned) |
 | Infra | Docker Compose (local), AWS CDK (planned) |
 
-## Scripts
+## Development
 
-### Root (run from repo root)
+### Common Commands
 
-| Script | Description |
-|--------|-------------|
-| `pnpm dev` | Start API and Web dev servers concurrently |
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Start API (:4000) + Web (:5173) with hot reload |
 | `pnpm build` | Build all packages |
-| `pnpm test` | Run unit tests across all packages |
-| `pnpm test:integration` | Run API integration tests (requires Postgres) |
-| `pnpm test:e2e` | Run Playwright E2E tests |
-| `pnpm gen` | Generate OpenAPI JSON from API routes |
+| `pnpm test` | Run unit tests |
+| `pnpm test:integration` | Run integration tests (requires Postgres) |
+| `pnpm test:e2e` | Run Playwright E2E tests (starts servers automatically) |
+| `pnpm gen` | Regenerate OpenAPI spec from routes |
 | `pnpm typecheck` | Type-check all packages |
 
-### Makefile
+### Makefile Shortcuts
 
 | Target | Description |
 |--------|-------------|
-| `make deps` | Full setup: start Docker, push schema, seed data |
-| `make deps-up` | Start Docker services and wait for Postgres |
+| `make deps` | Full setup: Docker up, push schema, seed data |
+| `make deps-up` | Start Docker services only |
 | `make deps-down` | Stop Docker services |
-| `make deps-reset` | Stop Docker, remove volumes, and re-setup |
+| `make deps-reset` | Wipe everything and re-setup from scratch |
 
-### API (`pnpm --filter @seedling/api run <script>`)
+### Database
 
-| Script | Description |
-|--------|-------------|
-| `dev` | Start dev server with hot reload (port 4000) |
-| `test` | Run unit tests |
-| `test:integration` | Run integration tests against real Postgres |
-| `db:push` | Push Drizzle schema to database |
-| `db:seed` | Seed demo tenant, user, services, clients, properties, requests, draft quote, two sent quotes with secure link tokens, and audit events |
-| `gen` | Generate OpenAPI spec to `openapi.json` |
+PostgreSQL 17 runs via Docker Compose. Schema is managed by Drizzle ORM.
 
-## API Endpoints
+| Command | Description |
+|---------|-------------|
+| `pnpm --filter @seedling/api run db:push` | Apply schema to database |
+| `pnpm --filter @seedling/api run db:seed` | Seed demo data |
+| `pnpm --filter @seedling/api run db:reset` | Truncate all tables |
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/health` | None | Health check |
-| POST | `/v1/tenants` | None | Signup: create tenant + owner user |
-| GET | `/v1/tenants/me` | Required | Get current tenant |
-| GET | `/v1/users/me` | Required | Get current user |
-| GET | `/v1/tenants/me/settings` | Required | Get business settings (or null) |
-| PUT | `/v1/tenants/me/settings` | Required | Upsert business settings |
-| GET | `/v1/services/categories` | Required | List service categories |
-| POST | `/v1/services/categories` | Required | Create service category |
-| GET | `/v1/services/categories/:id` | Required | Get service category |
-| PUT | `/v1/services/categories/:id` | Required | Update service category |
-| DELETE | `/v1/services/categories/:id` | Required | Deactivate service category (soft delete) |
-| GET | `/v1/services` | Required | List service items |
-| POST | `/v1/services` | Required | Create service item |
-| GET | `/v1/services/:id` | Required | Get service item |
-| PUT | `/v1/services/:id` | Required | Update service item |
-| DELETE | `/v1/services/:id` | Required | Deactivate service item (soft delete) |
-| GET | `/v1/clients` | Required | List clients (paginated, searchable) |
-| POST | `/v1/clients` | Required | Create client |
-| GET | `/v1/clients/count` | Required | Count active clients |
-| GET | `/v1/clients/:id` | Required | Get client |
-| PUT | `/v1/clients/:id` | Required | Update client |
-| DELETE | `/v1/clients/:id` | Required | Deactivate client (soft delete, cascades to properties) |
-| GET | `/v1/clients/:clientId/properties` | Required | List client's properties |
-| POST | `/v1/clients/:clientId/properties` | Required | Add property to client |
-| GET | `/v1/clients/:clientId/timeline` | Required | Client activity timeline (paginated, `?exclude=deactivated`) |
-| GET | `/v1/properties/:id` | Required | Get property |
-| PUT | `/v1/properties/:id` | Required | Update property |
-| DELETE | `/v1/properties/:id` | Required | Deactivate property (soft delete) |
-| POST | `/v1/public/requests/:tenantSlug` | None | Submit public service request (rate-limited, honeypot) |
-| GET | `/v1/requests` | Required | List requests (paginated, searchable, `?status=`) |
-| GET | `/v1/requests/count` | Required | Count requests (`?status=new`) |
-| GET | `/v1/requests/:id` | Required | Get request |
-| POST | `/v1/requests/:id/convert` | Required | Convert request to client + property + quote draft |
-| GET | `/v1/quotes` | Required | List quotes (paginated, searchable, `?status=`) |
-| GET | `/v1/quotes/count` | Required | Count quotes (`?status=`) |
-| GET | `/v1/quotes/:id` | Required | Get quote |
-| PUT | `/v1/quotes/:id` | Required | Update quote (draft only) |
-| POST | `/v1/quotes/:id/send` | Required | Send quote to client (draft only, creates secure link, returns token+link) |
-| GET | `/v1/ext/quotes/:token` | External token | View sent quote publicly (token-authenticated, no login) |
-| POST | `/v1/ext/quotes/:token/approve` | External token | Approve sent quote (token-authenticated, idempotent) |
-| POST | `/v1/ext/quotes/:token/decline` | External token | Decline sent quote (token-authenticated, idempotent) |
-
-## Architecture
-
-The API follows **Clean Architecture** with clear layer boundaries:
-
-```
-domain/          Entities and value types (no dependencies)
-application/     Use cases, ports (repository interfaces), DTOs
-adapters/http/   Route handlers, middleware (depends on application)
-infra/           Drizzle repositories, auth providers, email sender (implements ports)
-```
-
-### Multi-Tenancy
-
-Every data query is scoped by `tenant_id`. The `users` table has a composite unique constraint on `(tenant_id, email)` — the same email can exist in different tenants. Cross-tenant access is denied at the repository level.
-
-### Auth (Local Dev)
-
-`AUTH_MODE=local` reads `DEV_AUTH_TENANT_ID`, `DEV_AUTH_USER_ID`, and `DEV_AUTH_ROLE` from `.env` and injects them into every authenticated request. This mode refuses to activate when `NODE_ENV=production`.
-
-The demo seed creates:
-- **Tenant:** `00000000-0000-0000-0000-000000000001` (slug: `demo`)
-- **User:** `00000000-0000-0000-0000-000000000010` (email: `owner@demo.local`, role: `owner`)
-- **Service categories:** Lawn Care, Tree Service, Landscaping (with 8 service items)
-- **Clients:** John Smith, Jane Johnson, Bob Wilson (with 3 properties)
-- **Requests:** Sarah Davis, Mike Chen, Emily Rodriguez (3 public_form requests, all `new`)
-- **Quotes:** "Lawn Service for John Smith" (draft, 2 line items, $70 total) + "Tree Service for Jane Johnson" (sent, 2 line items, $720 total with secure link token) + "Landscaping for Bob Wilson" (sent, 2 line items, $1,020 total with second secure link token)
-- **Audit events:** tenant/user signup + client/property/request/quote creation events (for timeline)
-
-## Database
-
-PostgreSQL 17 via Docker Compose. Schema managed by Drizzle ORM with `db:push` for local dev.
-
-**Tables (S-0001 through S-0011):**
-- `tenants` — id, slug (unique), name, status, timestamps
-- `users` — id, tenant_id (FK), email, full_name, role, status, timestamps
-- `audit_events` — id, tenant_id (FK), event_name, principal/subject info, correlation_id, created_at; indexes on `(tenant_id, created_at)` and `(tenant_id, subject_type, subject_id, created_at)`
-- `business_settings` — id, tenant_id (FK, unique), phone, address fields, timezone, business_hours (JSONB), service_area, default_duration_minutes, description, timestamps
-- `service_categories` — id, tenant_id (FK), name, description, sort_order, active, timestamps; unique (tenant_id, name)
-- `service_items` — id, tenant_id (FK), category_id (FK), name, description, unit_price (cents), unit_type, estimated_duration_minutes, active, sort_order, timestamps; unique (tenant_id, category_id, name)
-- `clients` — id, tenant_id (FK), first_name, last_name, email, phone, company, notes, tags (JSONB), active, timestamps; unique (tenant_id, email)
-- `properties` — id, tenant_id (FK), client_id (FK), address fields, notes, active, timestamps; unique (tenant_id, client_id, address_line1)
-- `requests` — id, tenant_id (FK), source, client_name, client_email, client_phone, description, status, assigned_user_id, timestamps; indexes on `(tenant_id, created_at)` and `(tenant_id, status)`
-- `message_outbox` — id, tenant_id (FK), type, recipient_id, recipient_type, channel, subject, body, status, provider, provider_message_id, attempt_count, last_error_code, last_error_message, correlation_id, scheduled_for, created_at, sent_at; indexes on `(tenant_id, created_at)` and `(status, created_at)`
-- `quotes` — id, tenant_id (FK), request_id (FK, nullable), client_id (FK), property_id (FK, nullable), title, line_items (JSONB), subtotal, tax, total, status (default 'draft'), sent_at, approved_at, declined_at, timestamps; indexes on `(tenant_id)`, `(client_id)`, `(request_id)`, `(tenant_id, status)`
-- `secure_link_tokens` — id, tenant_id (FK), token_hash (varchar 64, unique), hash_version, subject_type, subject_id, scopes (JSONB), expires_at, revoked_at, created_by_user_id, created_at, last_used_at; indexes on `(tenant_id, subject_type, subject_id)`
-
-## Testing
-
-```bash
-pnpm test                # 151 unit tests
-pnpm test:integration    # 128 integration tests (needs Postgres)
-pnpm test:e2e            # 88 E2E tests, 58 run + 30 skipped (starts API + Web automatically)
-```
-
-Integration tests truncate tables between runs. E2E tests re-seed the database via `globalSetup` before each run.
-
-**Tip:** After running E2E tests, the database will contain test-created data. To restore clean state for manual testing:
+To restore a clean database (e.g. after E2E tests leave test data behind):
 
 ```bash
 pnpm --filter @seedling/api run db:reset && pnpm --filter @seedling/api run db:push && pnpm --filter @seedling/api run db:seed
 ```
 
-Run a single test file:
+**Tables:** tenants, users, audit_events, business_settings, service_categories, service_items, clients, properties, requests, message_outbox, quotes, secure_link_tokens
+
+### Running a Single Test
 
 ```bash
-pnpm --filter @seedling/api exec vitest run test/unit/timeline.test.ts          # unit
-pnpm --filter @seedling/api exec vitest run --config vitest.integration.config.ts test/integration/timeline-routes.test.ts  # integration
-pnpm exec playwright test e2e/tests/client-timeline.spec.ts --project=desktop-chrome  # E2E
+# Unit
+pnpm --filter @seedling/api exec vitest run test/unit/create-quote.test.ts
+
+# Integration
+pnpm --filter @seedling/api exec vitest run --config vitest.integration.config.ts test/integration/quote-routes.test.ts
+
+# E2E (single spec, single browser)
+pnpm exec playwright test e2e/tests/quotes.spec.ts --project=desktop-chrome
 ```
+
+### Test Coverage
+
+```
+Unit:        163 tests
+Integration: 137 tests (requires Postgres)
+E2E:          94 tests (62 run + 32 skipped on non-desktop projects)
+```
+
+## Multi-Tenancy
+
+Every database query is scoped by `tenant_id`. The same email address can exist in different tenants. Cross-tenant access is denied at the repository level — there's no way to accidentally query another tenant's data.
+
+### Auth (Local Dev)
+
+In development, `AUTH_MODE=local` injects auth context from environment variables. No real JWT validation happens. The `.env` file points to the demo tenant by default.
+
+The frontend stores tenant/user IDs in `localStorage` after signup, sending them as headers on every request. To switch back to the demo tenant after signing up a new one:
+
+```js
+// Run in browser console
+localStorage.removeItem('dev_tenant_id');
+localStorage.removeItem('dev_user_id');
+location.reload();
+```
+
+### Secure Links (External Access)
+
+Customers access quotes (and eventually invoices) via secure links like `http://localhost:5173/quote/<token>`. These tokens are:
+- Hashed with HMAC-SHA256 before storage (raw token is never persisted)
+- Scoped to a specific object and action (e.g., "read and respond to this quote")
+- Time-limited (14 days default, configurable 1-90)
+- Revocable
+
+## API Endpoints
+
+### System
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/health` | None | Health check |
+
+### Tenants + Users
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/v1/tenants` | None | Signup: create tenant + owner user |
+| GET | `/v1/tenants/me` | Required | Get current tenant |
+| GET | `/v1/users/me` | Required | Get current user |
+| GET | `/v1/tenants/me/settings` | Required | Get business settings (null if not configured) |
+| PUT | `/v1/tenants/me/settings` | Required | Create or update business settings |
+
+### Services
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/v1/services/categories` | Required | List categories |
+| POST | `/v1/services/categories` | Required | Create category |
+| GET | `/v1/services/categories/:id` | Required | Get category |
+| PUT | `/v1/services/categories/:id` | Required | Update category |
+| DELETE | `/v1/services/categories/:id` | Required | Deactivate category + its items |
+| GET | `/v1/services` | Required | List service items (`?categoryId=`) |
+| POST | `/v1/services` | Required | Create service item |
+| GET | `/v1/services/:id` | Required | Get service item |
+| PUT | `/v1/services/:id` | Required | Update service item |
+| DELETE | `/v1/services/:id` | Required | Deactivate service item |
+
+### Clients + Properties
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/v1/clients` | Required | List clients (`?search=`, `?limit=`, `?cursor=`) |
+| POST | `/v1/clients` | Required | Create client |
+| GET | `/v1/clients/count` | Required | Count active clients |
+| GET | `/v1/clients/:id` | Required | Get client |
+| PUT | `/v1/clients/:id` | Required | Update client |
+| DELETE | `/v1/clients/:id` | Required | Deactivate client (cascades to properties) |
+| GET | `/v1/clients/:clientId/properties` | Required | List properties for a client |
+| POST | `/v1/clients/:clientId/properties` | Required | Add property to client |
+| GET | `/v1/clients/:clientId/timeline` | Required | Activity timeline (`?exclude=deactivated`) |
+| GET | `/v1/properties/:id` | Required | Get property |
+| PUT | `/v1/properties/:id` | Required | Update property |
+| DELETE | `/v1/properties/:id` | Required | Deactivate property |
+
+### Requests
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/v1/public/requests/:tenantSlug` | None | Submit public service request (rate-limited) |
+| GET | `/v1/requests` | Required | List requests (`?search=`, `?status=`, `?cursor=`) |
+| GET | `/v1/requests/count` | Required | Count requests (`?status=new`) |
+| GET | `/v1/requests/:id` | Required | Get request |
+| POST | `/v1/requests/:id/convert` | Required | Convert to client + property + draft quote |
+
+### Quotes
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/v1/quotes` | Required | Create standalone draft quote |
+| GET | `/v1/quotes` | Required | List quotes (`?search=`, `?status=`, `?cursor=`) |
+| GET | `/v1/quotes/count` | Required | Count quotes (`?status=`) |
+| GET | `/v1/quotes/:id` | Required | Get quote with line items |
+| PUT | `/v1/quotes/:id` | Required | Update quote (draft only) |
+| POST | `/v1/quotes/:id/send` | Required | Send quote link to customer |
+| GET | `/v1/ext/quotes/:token` | Secure link | View quote (customer-facing) |
+| POST | `/v1/ext/quotes/:token/approve` | Secure link | Approve quote (idempotent) |
+| POST | `/v1/ext/quotes/:token/decline` | Secure link | Decline quote (idempotent) |
 
 ## Environment Variables
 
-See `.env.example` for all variables. Copy to `.env` before starting:
-
-```bash
-cp .env.example .env
-```
+Copy `.env.example` to `.env` before starting. Key variables:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `DATABASE_URL` | `postgresql://fsa:fsa@localhost:5432/fsa` | Postgres connection string |
 | `API_PORT` | `4000` | API server port |
-| `NODE_ENV` | `development` | Environment (`development`, `test`, `production`) |
 | `AUTH_MODE` | `local` | Auth strategy (`local` or `cognito`) |
-| `DEV_AUTH_TENANT_ID` | _(demo UUID)_ | Tenant ID injected in local auth mode |
-| `DEV_AUTH_USER_ID` | _(demo UUID)_ | User ID injected in local auth mode |
-| `DEV_AUTH_ROLE` | `owner` | Role injected in local auth mode |
-| `NOTIFICATION_ENABLED` | `true` | Enable/disable email notifications on new requests |
-| `SMTP_HOST` | `localhost` | SMTP server host (Mailpit locally) |
-| `SMTP_PORT` | `1025` | SMTP server port (Mailpit locally) |
-| `SMTP_FROM` | `noreply@seedling.local` | Sender email address for notifications |
-| `APP_BASE_URL` | `http://localhost:5173` | Base URL for constructing secure quote links |
-| `SECURE_LINK_HMAC_SECRET` | `dev-secret-change-in-production` | HMAC secret for signing secure link tokens (change in production) |
+| `NOTIFICATION_ENABLED` | `true` | Email notifications on new requests |
+| `SMTP_HOST` / `SMTP_PORT` | `localhost` / `1025` | Mailpit SMTP (local email capture) |
+| `APP_BASE_URL` | `http://localhost:5173` | Base URL for secure quote links |
+| `SECURE_LINK_HMAC_SECRET` | `dev-secret-...` | HMAC secret for token hashing (change in production) |
 
 ## AI Context
 
-This repo uses `CLAUDE.md` as an AI context index. It points to 10 context packs in `docs/context/` covering architecture, UI/UX, testing, security, observability, DevEx conventions, data access patterns, domain model, and API standards. Read `CLAUDE.md` first before making design or implementation decisions.
+This repo uses `CLAUDE.md` as an AI context index. It points to 10 context packs in `docs/context/` covering architecture, UI/UX, testing, security, observability, conventions, data access, domain model, and API standards. AI agents should read `CLAUDE.md` first before making design or implementation decisions.
