@@ -117,6 +117,7 @@ Seedling-HQ/
 | GET | `/v1/requests/count` | Required | Count requests (`?status=new`) |
 | GET | `/v1/requests/:id` | Required | Get request |
 | POST | `/v1/requests/:id/convert` | Required | Convert request to client + property + quote draft |
+| POST | `/v1/quotes` | Required | Create standalone draft quote for existing client (S-0026) |
 | GET | `/v1/quotes` | Required | List quotes (paginated, searchable, `?status=`) |
 | GET | `/v1/quotes/count` | Required | Count quotes (`?status=`) |
 | GET | `/v1/quotes/:id` | Required | Get quote |
@@ -175,9 +176,9 @@ PostgreSQL 17 via Docker Compose. Schema managed by Drizzle ORM with `db:push` f
 ## Testing
 
 ```bash
-pnpm test                # 151 unit tests
-pnpm test:integration    # 128 integration tests (needs Postgres)
-pnpm test:e2e            # 88 E2E tests, 58 run + 30 skipped (starts API + Web automatically)
+pnpm test                # 163 unit tests
+pnpm test:integration    # 137 integration tests (needs Postgres)
+pnpm test:e2e            # 94 E2E tests, 62 run + 32 skipped (starts API + Web automatically)
 ```
 
 Integration tests truncate tables between runs. E2E tests re-seed the database via `globalSetup` before each run.

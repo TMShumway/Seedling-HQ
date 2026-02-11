@@ -201,7 +201,8 @@ External:
 
 ### 7.3 Quotes
 Internal:
-- Quote list: paginated list with status filter pills (all/draft/sent/approved/declined/expired), debounced search, status badges, click-through to detail — **DONE** (S-0009)
+- Quote list: paginated list with status filter pills (all/draft/sent/approved/declined/expired), debounced search, status badges, "New Quote" button in header, click-through to detail — **DONE** (S-0009, S-0026)
+- Create standalone quote (`/quotes/new`): debounced client search → radio select → property dropdown (loads on client select) → auto-suggested title → redirect to quote detail — **DONE** (S-0026)
 - Quote detail / builder: — **DONE** (S-0009)
   - select client + property (linked from quote header)
   - inline line-item builder with service item picker, custom description, quantity, unit price
@@ -342,7 +343,7 @@ When an AI agent adds UI:
 2) Page header component pattern (title + actions) — **DONE** (S-0001/S-0002): consistent pattern in DashboardPage, SettingsPage, ServicesPage
 3) Badge/status system — **PARTIAL** (S-0006/S-0009): `StatusBadge` implemented in RequestsPage (new=amber, reviewed=blue, converted=green, declined=gray) and QuotesPage (draft=gray, sent=blue, approved=green, declined=red, expired=amber); extend for Job/Invoice statuses (S-0012+/S-0017+)
 4) Form components + validation approach + error summary — **DONE** (S-0002): Input, Select, Textarea, Checkbox in `apps/web/src/components/ui/`; validation via controlled state + Zod schemas
-5) List patterns (desktop table + mobile cards) — **PARTIAL** (S-0003+): ServicesPage has category accordion + item rows (S-0003); ClientsPage has card list + search + cursor pagination (S-0004); RequestsPage has card list + search + status badges + click-through to detail (S-0006/S-0008); QuotesPage has card list + search + status filter pills + cursor pagination (S-0009)
+5) List patterns (desktop table + mobile cards) — **PARTIAL** (S-0003+): ServicesPage has category accordion + item rows (S-0003); ClientsPage has card list + search + cursor pagination (S-0004); RequestsPage has card list + search + status badges + click-through to detail (S-0006/S-0008); QuotesPage has card list + search + status filter pills + "New Quote" button + cursor pagination (S-0009/S-0026)
    - Remaining: Invoices (S-0017+)
 6) External page templates — **PARTIAL** (S-0010):
    - Quote view — **DONE** (S-0010): `PublicQuoteViewPage` at `/quote/:token` — business name header, "Prepared for: clientName", property address, line items table, subtotal/tax/total
