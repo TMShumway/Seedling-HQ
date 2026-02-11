@@ -172,7 +172,7 @@
 | CDK standalone workspace | S-0028 | `infra/cdk/` with own `package.json`; install with `pnpm install --ignore-workspace`; deploy with `pnpm dlx aws-cdk@2 deploy --context env=dev --context owner=<name>` |
 | CDK resource naming + tags | S-0028 | Prefix `fsa-${env}-${owner}` on all resources; tags: `app=fsa`, `env`, `owner`; `RemovalPolicy.DESTROY` for dev sandbox |
 | DevSandboxStack construct | S-0028 | `lib/dev-sandbox-stack.ts` takes `env_name`, `owner`, `allowedOrigin`; provisions User Pool + Groups + App Client; outputs UserPoolId, UserPoolArn, AppClientId, JwksUrl, AllowedCorsOrigin |
-| JwtVerifier port + CognitoJwtVerifier | S-0029 | Port: `application/ports/jwt-verifier.ts`; impl: `infra/auth/cognito-jwt-verifier.ts`; uses `jose.jwtVerify()` + `createRemoteJWKSet`; validates issuer, `client_id` (not `aud`), `token_use=access`, `custom:tenant_id`, `username`, exactly-one `cognito:groups` |
+| JwtVerifier port + CognitoJwtVerifier | S-0029 | Port: `application/ports/jwt-verifier.ts`; impl: `infra/auth/cognito-jwt-verifier.ts`; uses `jose.jwtVerify()` + `createRemoteJWKSet`; validates issuer, `client_id` (not `aud`), `token_use=access`, `custom:tenant_id` (UUID format), `username` (UUID format), exactly-one `cognito:groups` |
 | Bearer token extraction in middleware | S-0029 | `buildAuthMiddleware({ config, jwtVerifier? })` — cognito path extracts `Bearer <token>` from `Authorization` header, calls `jwtVerifier.verify()`, sets `authContext` |
 | Cognito config conditional validation | S-0029 | `COGNITO_USER_POOL_ID`, `COGNITO_CLIENT_ID`, `COGNITO_REGION` required via `required()` when `AUTH_MODE=cognito`, default to `''` via `optional()` when `local` |
 | Fail-fast verifier creation | S-0029 | `createApp()` creates `CognitoJwtVerifier` at startup when `AUTH_MODE=cognito`; throws immediately if config is invalid |
@@ -229,6 +229,9 @@
 
 | Item | Deferred to | Reason |
 |------|-------------|--------|
+| Cognito user provisioning (`username = users.id`) | Post-S-0029 | S-0029 documents the contract; provisioning story must enforce `AdminCreateUser` sets `username` to `users.id` |
+| Frontend Cognito SDK (PKCE flow, token storage, refresh) | Post-S-0029 | Separate story; backend JWT validation complete |
+| DB CHECK constraint or enum for `role` column | Post-S-0029 | Role safety from TS `Role` type + Zod + Cognito groups; DB constraint deferred |
 | SMS worker (send from outbox) | S-0021 | `message_outbox` table exists; SMS records queued but not sent |
 | LocalStack in docker-compose | S-0007+ | Not needed until async/queue stories |
 | EventBridge bus + Scheduler | S-0022+ | Not needed until automation stories |

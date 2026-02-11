@@ -89,6 +89,7 @@ API middleware validates Cognito Access tokens using `jose` library (`CognitoJwt
    - `custom:tenant_id` → `authContext.tenant_id` (added to access token by pre-token-generation V2 Lambda trigger, S-0029)
    - `username` → `authContext.user_id` (NOT `sub` — contract: Cognito `username` must equal `users.id`)
    - `cognito:groups` → `authContext.role` (enforce exactly one group; validate against `ROLES` from `roles.ts`)
+7. **UUID format validation:** Both `custom:tenant_id` and `username` must be valid UUIDs (regex check). Rejects non-UUID values at the verifier layer before building `authContext`, preventing DB UUID-cast failures (500) downstream.
 
 **Token refresh:**
 - The React app is responsible for refreshing tokens using the Cognito refresh token before expiry.

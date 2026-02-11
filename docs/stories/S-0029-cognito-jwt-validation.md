@@ -77,26 +77,7 @@ Implements JWT validation for `AUTH_MODE=cognito` so the API can authenticate re
   - Context-gaps doc: added S-0029 to recently resolved decisions
 
 ## Resume context
-### Last completed
-- All 4 phases complete. All tasks done.
-- PR #68 opened: https://github.com/TMShumway/Seedling-HQ/pull/68
-- Branch: `story/S-0029-cognito-jwt-validation` (4 commits, pushed)
-- All tests passing: 192 unit, 150 integration, 74 E2E (34 skipped non-desktop)
-- Typecheck clean
-
-### Pending
-- PR review and merge (use `gh pr merge --merge` per project convention)
-
-### Deferred follow-ups (not in S-0029 scope)
-- **`username = users.id` contract enforcement** — Cognito user provisioning story must set `username` to `users.id` when calling `AdminCreateUser`. S-0029 documents the contract in code comments.
-- **DB CHECK constraint or enum for `role` column** — tracked but deferred
-- **Frontend Cognito SDK** (PKCE flow, token storage, refresh) — separate story
-- **Live Cognito E2E test** — deferred until user provisioning story provides real pool users
-
-### Implementation gotchas encountered
-- **jose v6 removed `KeyLike` export** — Unit tests needed `CryptoKey` type instead of `KeyLike` for RSA key pair typing
-- **Fail-fast breaks existing `AUTH_MODE: 'cognito'` tests** — Two existing tests (`auth-login.test.ts`, integration `auth-routes.test.ts`) set `AUTH_MODE: 'cognito'` without a verifier. After fail-fast wiring in `createApp()`, they needed a no-op mock `jwtVerifier` + fake Cognito config values to avoid startup crash.
-- **Integration tests require `pnpm test:integration`** — Direct `vitest run test/integration/...` uses the default unit test include pattern; must use the script which points to `vitest.integration.config.ts`
+All phases complete. Story delivered via PR #68.
 
 ## Test summary
 - **Unit**: 194 total (28 new: 6 config + 17 verifier + 5 middleware)
@@ -122,7 +103,7 @@ apps/api/src/adapters/http/routes/property-routes.ts            — jwtVerifier 
 apps/api/src/adapters/http/routes/request-routes.ts             — jwtVerifier in deps
 apps/api/src/adapters/http/routes/quote-routes.ts               — jwtVerifier in deps
 apps/api/src/adapters/http/routes/auth-routes.ts                — fix pre-existing 404 type error
-apps/api/test/unit/cognito-jwt-verifier.test.ts                 — NEW: 15 verifier tests
+apps/api/test/unit/cognito-jwt-verifier.test.ts                 — NEW: 17 verifier tests
 apps/api/test/unit/config.test.ts                               — 6 new config tests
 apps/api/test/unit/auth-middleware.test.ts                       — 5 new cognito middleware tests
 apps/api/test/unit/auth-login.test.ts                           — fix for cognito mode test
