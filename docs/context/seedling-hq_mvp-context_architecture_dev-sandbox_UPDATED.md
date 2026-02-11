@@ -470,9 +470,13 @@ Scheduler wiring:
 ## 14) CDK Dev Sandbox (core MVP infra + outputs for `.env.dev`)
 
 ### What it provisions
-- Cognito User Pool + App Client (PKCE, no client secret)
-  - Custom attribute: `custom:tenant_id`
+- **Cognito User Pool + App Client (PKCE, no client secret) — Implemented (S-0028)**
+  - Custom attribute: `custom:tenant_id` (immutable)
   - Groups: `owner`, `admin`, `technician`
+  - UUID username (not email); email required but not unique/alias
+  - Self-signup disabled; password: 8+ chars, upper+lower+digit+symbol, 7-day temp
+  - Token TTLs: access 1h, ID 1h, refresh 30d
+  - `preventUserExistenceErrors: true`, `enableTokenRevocation: true`
 - S3 uploads bucket
 - SQS:
   - message jobs + DLQ
