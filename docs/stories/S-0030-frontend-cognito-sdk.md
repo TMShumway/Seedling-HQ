@@ -115,11 +115,119 @@ Added real Cognito authentication to the React frontend so `AUTH_MODE=cognito` w
   - [x] Update security doc §3.4 (frontend token lifecycle)
   - [x] Update context-gaps doc (add S-0030 to resolved decisions)
 
+## Addendum: Local Mode Password Verification
+
+### Overview
+Added real password verification to local mode so the dev login UX mirrors cognito production. Previously local mode accepted any password — now it uses scrypt hashing and a verify endpoint.
+
+### Key decisions (addendum)
+- Decision: Hashing — Chosen: `node:crypto` scrypt — Why: Zero deps, OWASP-recommended KDF, already using `node:crypto` for HMAC in `shared/crypto.ts`
+- Decision: Stored format — Chosen: `scrypt:N:r:p:salt_hex:hash_hex` — Why: Self-describing, future-proof parameter changes
+- Decision: Endpoint — Chosen: Separate `POST /v1/auth/local/verify` — Why: Keeps email-lookup and password-verify as distinct steps (mirrors cognito where lookup and `authenticateUser` are separate)
+- Decision: Column — Chosen: Nullable `password_hash` varchar(255) — Why: Cognito-mode users don't need local passwords; existing users without passwords return 401 on verify
+- Decision: Demo password — Chosen: `password` — Why: Simple, obvious; hint text updated to `owner@demo.local / password`
+
+### Addendum Phase 1: Backend schema + password utility
+**Files created:** `apps/api/src/shared/password.ts`
+**Files modified:** `apps/api/src/infra/db/schema.ts`, `apps/api/src/domain/entities/user.ts`, `apps/api/src/application/ports/user-repository.ts`, `apps/api/src/infra/db/repositories/drizzle-user-repository.ts`, `apps/api/src/infra/db/seed.ts`, `apps/api/src/application/usecases/create-tenant.ts`, `apps/api/test/unit/create-tenant.test.ts`, `apps/api/test/unit/respond-to-quote.test.ts`, `apps/api/test/unit/send-request-notification.test.ts`, `apps/web/src/lib/auth/auth-context.tsx`, `apps/web/src/pages/LoginPage.tsx`
+
+- [x] Create `password.ts` with `hashPassword()` / `verifyPassword()` using scrypt
+- [x] Add `password_hash` nullable column to users schema
+- [x] Add `passwordHash` field to User entity
+- [x] Add `getByIdGlobal(id)` to UserRepository port + Drizzle impl
+- [x] Update `create-tenant.ts` to pass `passwordHash: null` (placeholder)
+- [x] Seed demo user with hashed `"password"`
+- [x] Update all unit test mocks (3 files) for new `passwordHash` field + `getByIdGlobal`
+- [x] Update auth-context `selectAccount` to always return false (password needed)
+- [x] Fix missing `isCognitoMode` import in LoginPage
+
+### Addendum Phase 2+3: Verify endpoint + signup password
+**Files modified:** `apps/api/src/adapters/http/routes/auth-routes.ts`, `apps/api/src/adapters/http/routes/tenant-routes.ts`, `apps/api/src/application/dto/create-tenant-dto.ts`, `apps/api/src/application/usecases/create-tenant.ts`, `apps/api/test/integration/auth-routes.test.ts`
+
+- [x] Add `POST /v1/auth/local/verify` route (userId + password → user info, rate limited 10/min, 404 in cognito mode)
+- [x] Add `ownerPassword` optional field to `CreateTenantInput` DTO
+- [x] Add `ownerPassword` to tenant-routes body schema (min 8 chars)
+- [x] Hash password during tenant creation if provided
+- [x] 7 new integration tests (correct pw, wrong pw, unknown user, no hash, 404 cognito, invalid UUID, rate limit)
+
+### Addendum Phase 4: Frontend
+**Files modified:** `apps/web/src/lib/api-client.ts`, `apps/web/src/lib/auth/auth-context.tsx`, `apps/web/src/pages/LoginPage.tsx`, `apps/web/src/pages/SignupPage.tsx`
+
+- [x] Add `localVerify()` and `LocalVerifyResponse` to api-client
+- [x] Add `ownerPassword` to `CreateTenantRequest` type
+- [x] Update `authenticate()` local mode to call `localVerify()` instead of accepting any password
+- [x] Update LoginPage hint text to `"owner@demo.local / password"`
+- [x] Update LoginPage error handling for 401 from verify endpoint (ApiClientError check)
+- [x] Add password + confirm fields to SignupPage
+- [x] SignupPage calls `authenticate(ownerPassword)` after `createTenant` for auto-login
+
+### Addendum Phase 5: Tests
+**Files created:** `apps/api/test/unit/password.test.ts`
+**Files modified:** `apps/web/test/unit/auth-context.test.tsx`, `e2e/tests/login.spec.ts`, `e2e/tests/signup.spec.ts`
+
+- [x] 7 password.ts unit tests (hash format, salt uniqueness, verify correct/wrong/malformed/empty, unicode)
+- [x] Update auth-context tests: `selectAccount` returns false, add `authenticate` success + failure tests, add `mockLocalVerify` mock
+- [x] Update login E2E: fill password step after email lookup, update hint text assertion
+- [x] Update signup E2E: fill password + confirm fields in all 3 tests (main, a11y, mobile)
+
+### Addendum Phase 6: Docs
+**Files modified:** `CLAUDE.md`
+
+- [x] Add 6 key decisions, 3 backend patterns, 2 frontend patterns to CLAUDE.md
+
 ## Test summary
-- **Web unit**: 43 total (43 new: 9 auth-config, 6 cognito-storage, 13 cognito-client, 15 auth-context)
-- **API unit**: 194 total (0 new)
-- **API integration**: 157 total (7 new: 6 cognito lookup, 1 tenant gate)
-- **E2E**: 108 total / 74 run / 34 skipped non-desktop (0 new, all existing pass)
+- **API unit**: 201 total (7 new password tests)
+- **Web unit**: 45 total (2 new auth-context tests + 1 updated selectAccount test)
+- **API integration**: 164 total (7 new verify endpoint tests)
+- **E2E**: 108 total / 74 run / 34 skipped non-desktop (0 new, login + signup updated)
 
 ## Resume context
-All phases complete. Story delivered.
+
+### Current state
+All phases complete (original S-0030 + addendum). Branch `story/S-0030-frontend-cognito-sdk` is pushed with PR #69 open.
+
+### What was completed
+**Original S-0030 (phases 1-4):** Full Cognito SDK frontend integration with dual-mode auth, auth-context, cognito-client, login/signup/logout, backend lookup endpoint + tenant gate.
+
+**Addendum (phases 1-6):** Local mode password verification:
+- `apps/api/src/shared/password.ts` — scrypt hash/verify utility
+- `apps/api/src/infra/db/schema.ts` — `password_hash` nullable column on users
+- `apps/api/src/domain/entities/user.ts` — `passwordHash: string | null` field
+- `apps/api/src/application/ports/user-repository.ts` — `getByIdGlobal(id)` added
+- `apps/api/src/infra/db/repositories/drizzle-user-repository.ts` — `passwordHash` in toEntity/create, `getByIdGlobal` impl
+- `apps/api/src/adapters/http/routes/auth-routes.ts` — `POST /v1/auth/local/verify` (rate limited, 404 in cognito)
+- `apps/api/src/application/dto/create-tenant-dto.ts` — `ownerPassword?: string`
+- `apps/api/src/application/usecases/create-tenant.ts` — hash password if provided
+- `apps/api/src/adapters/http/routes/tenant-routes.ts` — `ownerPassword` in body schema (min 8)
+- `apps/api/src/infra/db/seed.ts` — demo user hashed with `"password"`
+- `apps/web/src/lib/api-client.ts` — `localVerify()`, `ownerPassword` in `CreateTenantRequest`
+- `apps/web/src/lib/auth/auth-context.tsx` — `selectAccount` always returns false, `authenticate` calls `localVerify` in local mode
+- `apps/web/src/pages/LoginPage.tsx` — hint text updated, 401 error handling for verify
+- `apps/web/src/pages/SignupPage.tsx` — password + confirm fields, auto-authenticate after create
+- Unit test mocks updated in 3 files for `passwordHash` + `getByIdGlobal`
+
+### Commits on branch (10 total)
+1. `2ba4539` S-0030 phase 1: Add auth infrastructure for Cognito SDK integration
+2. `7aaa70f` S-0030 phase 2: Add cognito lookup endpoint and tenant creation gate
+3. `d355146` S-0030 phase 3: Wire AuthProvider into components for dual-mode auth
+4. `42c990e` S-0030 phase 4: Add unit tests and update documentation
+5. `9771676` S-0030: Fix auth failure on token retrieval and rate-limit isolation
+6. `def16fe` S-0030 addendum phase 1: Add password infrastructure
+7. `ef6ec2c` S-0030 addendum phase 2+3: Add verify endpoint and signup password
+8. `9ccfe49` S-0030 addendum phase 4: Wire frontend password flow
+9. `4a67089` S-0030 addendum phase 5: Add tests for password flow
+10. `dc05280` S-0030 addendum phase 6: Update documentation
+
+### PR status
+- PR #69: https://github.com/TMShumway/Seedling-HQ/pull/69
+- Title: "S-0030: Frontend Cognito SDK integration"
+- Description updated with addendum section and new test counts
+- Pushed to remote, awaiting review
+- Merge strategy: merge commits (`gh pr merge --merge`)
+
+### Next up
+- PR review and merge
+- No outstanding work on this branch
+
+### Blockers / open questions
+- None
