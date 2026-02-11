@@ -120,6 +120,11 @@
 | Token refresh on-demand | `getToken()` checks expiry, refreshes if <5min remaining | S-0030 | Simpler than background timer; `forceRefresh()` for 401 retry |
 | 401 retry with auth failure | Single retry via `forceRefresh()` → on 2nd 401: `onAuthFailure()` → logout | S-0030 | `onAuthFailure` also called if `forceRefresh()` rejects |
 | NEW_PASSWORD_REQUIRED | Inline form in LoginPage step machine | S-0030 | `authenticate()` returns `{ newPasswordRequired }` for synchronous step detection |
+| Local password hashing | `node:crypto` scrypt in `shared/password.ts` | S-0030 | Zero deps; self-describing format `scrypt:N:r:p:salt:hash`; timing-safe compare |
+| Local password verify endpoint | `POST /v1/auth/local/verify` | S-0030 | Accepts `{ userId, password }`; rate limited 10/min; 404 in cognito mode; returns user info |
+| Password column | Nullable `password_hash` varchar(255) on users | S-0030 | Cognito-mode users don't store passwords locally; 401 if hash missing |
+| Signup password | `ownerPassword` optional on `POST /v1/tenants` | S-0030 | Min 8 chars; hashed before storage; seed demo user with `password` |
+| Demo credentials | `owner@demo.local` / `password` | S-0030 | Hint text updated on login page |
 
 ---
 
@@ -188,6 +193,9 @@
 | CDK pre-token-generation Lambda | S-0029 | `Code.fromInline()` JS function copies `custom:tenant_id` into access token; wired via `userPool.addTrigger(PRE_TOKEN_GENERATION_CONFIG, fn, LambdaVersion.V2_0)` |
 | Cognito lookup route | S-0030 | `POST /v1/auth/cognito/lookup` — public, rate-limited, returns `cognitoUsername` (= `users.id`); reuses `listActiveByEmail()` and `loginBodySchema`; 404 when `AUTH_MODE !== 'cognito'` |
 | Tenant creation gate | S-0030 | `POST /v1/tenants` returns 404 in cognito mode — early return before use case execution; 404 response schema added |
+| Local password verify route | S-0030 | `POST /v1/auth/local/verify` — public, rate-limited 10/min; accepts `{ userId, password }`, returns `{ user }` or 401; 404 in cognito mode |
+| Password hashing utility | S-0030 | `hashPassword()` / `verifyPassword()` in `shared/password.ts` — scrypt via `node:crypto`, self-describing stored format, timing-safe compare |
+| getByIdGlobal on UserRepository | S-0030 | Cross-tenant user lookup by ID (no tenantId filter); used by verify endpoint to find user regardless of tenant |
 
 ### Frontend
 
@@ -231,6 +239,8 @@
 | api-client setAuthProvider | S-0030 | Module-level `authProvider` enables Bearer token injection + 401 retry; `clearAuthProvider()` on logout/auth failure |
 | cognitoLookup DTO normalization | S-0030 | `apiClient.cognitoLookup()` maps `cognitoUsername` → `userId` so LoginPage uses unified `LoginAccount` type |
 | Buffer polyfill for Cognito SDK | S-0030 | `buffer` npm package + `define: { global: 'globalThis' }` in vite.config.ts — SDK uses Node's `Buffer` |
+| Local mode password verify | S-0030 | `authenticate()` calls `apiClient.localVerify(userId, password)` — real password check instead of accepting any password |
+| Signup with password | S-0030 | SignupPage adds password + confirm fields; calls `createTenant({ ownerPassword })` then `authenticate(password)` for auto-login |
 
 ### Testing
 
