@@ -1,4 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { setDemoAuth } from '../helpers/auth';
+
+test.beforeEach(async ({ page }) => {
+  await setDemoAuth(page);
+});
 
 test.describe('Client Timeline', () => {
   test('shows timeline events on Activity tab', async ({ page }, testInfo) => {

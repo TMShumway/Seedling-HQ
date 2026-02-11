@@ -38,10 +38,10 @@ Add a proper login/logout UX for `AUTH_MODE=local` so developers and testers see
 ## Phase 3: E2E Migration + New E2E Tests
 **Goal:** Fix existing E2E tests broken by AuthGuard, add new login/logout E2E tests.
 
-- [ ] **Task 3.1: Create `e2e/helpers/auth.ts` helper**
-- [ ] **Task 3.2: Add `setDemoAuth` to all existing E2E test files**
-- [ ] **Task 3.3: Write new E2E test: login flow**
-- [ ] **Task 3.4: Accessibility test for login page**
+- [x] **Task 3.1: Create `e2e/helpers/auth.ts` helper**
+- [x] **Task 3.2: Add `setDemoAuth` to all existing E2E test files**
+- [x] **Task 3.3: Write new E2E test: login flow**
+- [x] **Task 3.4: Accessibility test for login page**
 
 ## Phase 4: Documentation + CLAUDE.md Updates
 **Goal:** Update CLAUDE.md with new patterns and decisions, run full test suite.
@@ -52,19 +52,19 @@ Add a proper login/logout UX for `AUTH_MODE=local` so developers and testers see
 
 ## Resume context
 ### Last completed
-- Phase 2 complete: Frontend login page, AuthGuard, logout buttons, cross-links
-- Files created: `AuthGuard.tsx`, `LoginPage.tsx`
-- Files modified: `api-client.ts` (localLogin), `App.tsx` (AuthGuard wrapping, /login route, catch-all redirect to /login), `Sidebar.tsx` (logout button), `MobileDrawer.tsx` (logout button), `SignupPage.tsx` (cross-link to login)
-- LoginPage: two-step flow (email → account picker for multi-tenant), auto-select for single account
-- Frontend builds cleanly
+- Phase 3 complete: E2E migration + new login/logout/a11y tests
+- Created `e2e/helpers/auth.ts` with `setDemoAuth()` using `page.addInitScript()`
+- Added `setDemoAuth` beforeEach to 8 existing E2E files
+- Created `e2e/tests/login.spec.ts` (7 tests: redirect, login, unknown email, logout, hint, cross-link, a11y)
+- Logout test uses `page.evaluate()` to set localStorage (not `addInitScript`) to properly test cleanup
 ### In progress
-- Starting Phase 3: E2E migration + new E2E tests
+- Starting Phase 4: CLAUDE.md updates and final verification
 ### Next up
-- Task 3.1: Create `e2e/helpers/auth.ts` helper
+- Task 4.1: Update CLAUDE.md key decisions table
 ### Blockers / open questions
 - None
 
 ## Test summary
 - **Unit**: 166 total (3 new)
 - **Integration**: 145 total (8 new)
-- **E2E**: 88 total (0 new)
+- **E2E**: 108 total (74 run + 34 skipped) — 20 new

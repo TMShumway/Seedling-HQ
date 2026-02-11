@@ -1,8 +1,13 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { setDemoAuth } from '../helpers/auth';
 
 // Stateful onboarding tests run only on desktop-chrome to avoid cross-project DB state conflicts.
 // The wizard creates settings, subsequent tests depend on that state existing.
+
+test.beforeEach(async ({ page }) => {
+  await setDemoAuth(page);
+});
 
 test.describe('Onboarding — Guided Setup', () => {
   test('completes all 4 wizard steps and lands on dashboard', async ({ page }, testInfo) => {

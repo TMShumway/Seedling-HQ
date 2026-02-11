@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { setDemoAuth } from '../helpers/auth';
+
+test.beforeEach(async ({ page }) => {
+  await setDemoAuth(page);
+});
 
 test.describe('Public Request Form', () => {
   test('submits a request and shows confirmation', async ({ page }, testInfo) => {

@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { setDemoAuth } from '../helpers/auth';
+
+test.beforeEach(async ({ page }) => {
+  await setDemoAuth(page);
+});
 
 const KNOWN_RAW_TOKEN = 'e2e-test-quote-token';
 const KNOWN_RAW_TOKEN_2 = 'e2e-test-quote-token-2';
