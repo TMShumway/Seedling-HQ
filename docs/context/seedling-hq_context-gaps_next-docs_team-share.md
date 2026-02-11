@@ -1,6 +1,6 @@
 # Seedling-HQ — Context Documentation Gaps & Next Files to Add (Team Share)
 
-_Last updated: 2026-02-09 (America/Chihuahua)_
+_Last updated: 2026-02-11 (America/Chihuahua)_
 
 > Purpose: Share this with the team to identify what context documentation is still missing for AI-Driven Development and consistent engineering.
 
@@ -66,6 +66,7 @@ This foundation is strong. What remains are the "rails" that prevent agents (and
 - **S-0010 implemented (2026-02-10):** Send secure quote link. HMAC-SHA256 token hashing, `/v1/ext/` routes with `buildExternalTokenMiddleware()`, `externalAuthContext` request decorator, `SecureLinkToken` entity + `SecureLinkTokenRepository` port and Drizzle implementation. Quote status transition: `draft` → `sent`.
 - **S-0011 implemented (2026-02-10):** Customer approves/declines quote. `RespondToQuoteUseCase` (single class, parameterized by action). Token scopes expanded: `['quote:read']` → `['quote:read', 'quote:respond']`. `principalType: 'external'` in audit events. Idempotent external actions (same-action → 200 no-op, cross-transition → 400). Best-effort owner notification. Frontend approve/decline buttons on `PublicQuoteViewPage`, timestamps on `QuoteDetailPage`. 151 unit, 128 integration, 88 E2E tests passing.
 - **S-0029 implemented (2026-02-11):** Cognito JWT validation. `JwtVerifier` port + `CognitoJwtVerifier` impl using `jose` library. Validates access tokens (not ID tokens) via JWKS, `client_id`, `token_use=access`, `custom:tenant_id`, `username`, exactly-one `cognito:groups`. CDK pre-token-generation V2 Lambda copies `custom:tenant_id` into access token. Group renamed `technician` → `member`. `AUTH_MODE` runtime validation, Cognito config vars conditionally required. Fail-fast verifier creation at startup. UUID format validation for `custom:tenant_id` and `username` claims. 194 unit, 150 integration tests passing.
+- **S-0030 implemented (2026-02-11):** Frontend Cognito SDK integration. `amazon-cognito-identity-js` with `USER_PASSWORD_AUTH` flow, sessionStorage via custom `ICognitoStorage`, `AuthProvider` context + `useAuth()` hook for dual-mode auth (local/cognito). `POST /v1/auth/cognito/lookup` endpoint for email→username resolution. Tenant creation gate (404 in cognito mode). 401 retry with `forceRefresh` + `onAuthFailure`. NEW_PASSWORD_REQUIRED challenge handling. `VITE_AUTH_MODE` build-time env var. Buffer polyfill for SDK in Vite. 43 web unit, 157 integration, 74 E2E tests passing.
 
 ---
 

@@ -1,6 +1,6 @@
 # Seedling-HQ — MVP Context, Architecture, Naming, Dev Sandbox, and Customer Model (Single Source of Truth)
 
-_Last updated: 2026-02-10 (America/Chihuahua)_
+_Last updated: 2026-02-11 (America/Chihuahua)_
 
 > This document updates the prior “MVP Context, Architecture, Naming, and Dev Sandbox” file to include:
 > - Two customer types (internal vs external) and how that impacts tenancy
@@ -141,7 +141,7 @@ sequenceDiagram
   { principal_type: "internal", tenant_id (custom:tenant_id), user_id (username, NOT sub), role (cognito:groups — exactly one) }
   ```
 - **Contract:** Cognito `username` must equal `users.id` from the database. This is enforced at user provisioning time (future story), not at JWT validation time.
-- React app stores tokens **in memory** (preferred) or `sessionStorage`. Do not use cookies.
+- React app stores tokens in `sessionStorage` via a custom `ICognitoStorage` adapter (`cognito-storage.ts`). Do not use cookies or `localStorage` (persists too long). `sessionStorage` survives page refresh but clears on tab close. **Implemented in S-0030.**
 
 #### AUTH_MODE switch (local dev)
 - `AUTH_MODE=cognito` — dev-sandbox, staging, prod: real JWT validation via JWKS.
@@ -154,11 +154,16 @@ sequenceDiagram
     - `X-Dev-Tenant-Id` — overrides `DEV_AUTH_TENANT_ID` for this request
     - `X-Dev-User-Id` — overrides `DEV_AUTH_USER_ID` for this request
     - The frontend stores tenant/user IDs in `localStorage` after login or signup and sends them as headers on all subsequent requests.
-  - **Login page** (added in S-0027):
+  - **Login page** (added in S-0027, updated in S-0030):
     - `POST /v1/auth/local/login` — cross-tenant email lookup (joins users + tenants, case-insensitive via `lower()`); returns 404 when `AUTH_MODE !== 'local'`; rate-limited (10 req/min per IP)
-    - Frontend `LoginPage` at `/login` — email input → API call → auto-select (single account) or account picker (multi-tenant) → sets localStorage → redirect to `/dashboard`
-    - `AuthGuard` wraps all authenticated routes — checks localStorage, redirects to `/login` if missing
-    - Logout buttons in Sidebar + MobileDrawer clear localStorage + React Query cache, redirect to `/login`
+    - Frontend `LoginPage` at `/login` — dual-mode step machine:
+      - **Local mode:** email → `auth.lookupEmail()` → auto-select (single account) or account picker → sets localStorage → redirect
+      - **Cognito mode:** email → `auth.lookupEmail()` → account picker → password form → `auth.authenticate()` → NEW_PASSWORD_REQUIRED challenge (if first login) → redirect
+    - `AuthGuard` wraps all authenticated routes — uses `useAuth()` context (not direct localStorage), redirects to `/login` if not authenticated
+    - Logout buttons in Sidebar + MobileDrawer call `useAuth().logout()` which clears storage + React Query cache and redirects to `/login`
+  - **Cognito lookup endpoint** (added in S-0030): `POST /v1/auth/cognito/lookup` — same cross-tenant email lookup, returns `cognitoUsername` (= `users.id`); returns 404 when `AUTH_MODE !== 'cognito'`; rate-limited (10 req/min per IP)
+  - **Tenant creation gate** (added in S-0030): `POST /v1/tenants` returns 404 when `AUTH_MODE=cognito` (self-signup disabled; users must be admin-provisioned)
+  - **Frontend auth** (added in S-0030): `AuthProvider` context (`auth-context.tsx`) + `useAuth()` hook provide dual-mode auth state. `api-client.ts` uses `setAuthProvider()` to inject `Authorization: Bearer <token>` in cognito mode with 401 retry (forceRefresh → retry → onAuthFailure → logout). `SignupPage` shows "Contact your administrator" in cognito mode.
   - The `AuthContext` interface is **identical** in both modes — use cases and domain logic never know which mode produced it.
   - The mock middleware must refuse to activate if `NODE_ENV=production`.
 

@@ -1,6 +1,6 @@
 # Seedling-HQ — Security Baseline Context Pack (MVP) for AI-Driven Development
 
-_Last updated: 2026-02-08 (America/Chihuahua)_
+_Last updated: 2026-02-11 (America/Chihuahua)_
 
 > Purpose: Paste this into a new LLM/agent so it can build secure features consistently.
 > Scope: **MVP baseline security** beyond individual stories, aligned with:
@@ -91,8 +91,13 @@ API middleware validates Cognito Access tokens using `jose` library (`CognitoJwt
    - `cognito:groups` → `authContext.role` (enforce exactly one group; validate against `ROLES` from `roles.ts`)
 7. **UUID format validation:** Both `custom:tenant_id` and `username` must be valid UUIDs (regex check). Rejects non-UUID values at the verifier layer before building `authContext`, preventing DB UUID-cast failures (500) downstream.
 
-**Token refresh:**
-- The React app is responsible for refreshing tokens using the Cognito refresh token before expiry.
+**Frontend token lifecycle (implemented in S-0030):**
+- **SDK:** `amazon-cognito-identity-js` with `USER_PASSWORD_AUTH` flow (not SRP). Set explicitly via `setAuthenticationFlowType('USER_PASSWORD_AUTH')` on `CognitoUser`.
+- **Storage:** Tokens stored in `sessionStorage` via custom `ICognitoStorage` adapter (`cognito-storage.ts`). Survives page refresh, cleared on tab close. Never use `localStorage` (persists too long) or cookies.
+- **Refresh (on-demand):** `getAccessToken()` in `AuthProvider` checks token expiry before each API call. If <5 minutes remaining, calls `CognitoAuthClient.refreshSession()` to obtain a new token. No background polling.
+- **401 retry:** `api-client.ts` intercepts 401 responses in cognito mode. Calls `authProvider.forceRefresh()` → retries the request once with the new token → on second 401: `await authProvider.onAuthFailure()` → logout. If `forceRefresh()` itself throws (e.g., refresh token expired): `await authProvider.onAuthFailure()` → logout.
+- **Logout:** `CognitoAuthClient.signOut()` + `ICognitoStorage.clear()` (scoped to Cognito-prefixed keys) + `clearAuthProvider()` + `queryClient.clear()`. State-driven: AuthGuard detects `isAuthenticated === false` and redirects to `/login`.
+- **NEW_PASSWORD_REQUIRED:** Admin-created users with temporary passwords trigger this Cognito challenge on first login. Frontend shows inline password-change form; `completeNewPasswordChallenge()` forwards `requiredAttributes` opaquely to SDK.
 - The API never issues or refreshes tokens — it only validates.
 
 **Revocation considerations (MVP):**
