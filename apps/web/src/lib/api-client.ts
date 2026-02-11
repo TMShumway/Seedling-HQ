@@ -54,7 +54,16 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const correlationId = crypto.randomUUID();
-  const authHeaders = await getAuthHeaders();
+  let authHeaders: Record<string, string>;
+  try {
+    authHeaders = await getAuthHeaders();
+  } catch (err) {
+    // Token retrieval failed (e.g., refresh token expired) — trigger auth failure
+    if (authProvider) {
+      await authProvider.onAuthFailure();
+    }
+    throw err;
+  }
 
   const doFetch = async (headers: Record<string, string>) => {
     const res = await fetch(`${BASE_URL}${path}`, {

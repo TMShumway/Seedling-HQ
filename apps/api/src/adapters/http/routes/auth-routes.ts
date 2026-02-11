@@ -46,7 +46,7 @@ export function buildAuthRoutes({ userRepo, config }: AuthRoutesDeps) {
     server.post(
       '/v1/auth/local/login',
       {
-        preHandler: buildRateLimiter({ maxRequests: 10 }),
+        preHandler: buildRateLimiter({ maxRequests: 10, key: 'auth:local' }),
         schema: {
           body: loginBodySchema,
           response: {
@@ -86,7 +86,7 @@ export function buildAuthRoutes({ userRepo, config }: AuthRoutesDeps) {
     server.post(
       '/v1/auth/cognito/lookup',
       {
-        preHandler: buildRateLimiter({ maxRequests: 10 }),
+        preHandler: buildRateLimiter({ maxRequests: 10, key: 'auth:cognito' }),
         schema: {
           body: loginBodySchema,
           response: {
