@@ -82,20 +82,24 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
   // 401 retry for cognito mode
   if (res.status === 401 && authProvider) {
+    let newToken: string;
     try {
-      const newToken = await authProvider.forceRefresh();
-      res = await doFetch(newToken ? { Authorization: `Bearer ${newToken}` } : {});
+      newToken = await authProvider.forceRefresh();
+    } catch {
+      // Refresh token expired or revoked — session is unrecoverable
+      await authProvider.onAuthFailure();
+      const err: ApiError = await res.json().catch(() => ({
+        error: { code: 'UNAUTHORIZED', message: res.statusText },
+      }));
+      throw new ApiClientError(res.status, err.error.code, err.error.message);
+    }
 
-      if (res.status === 401) {
-        await authProvider.onAuthFailure();
-        const err: ApiError = await res.json().catch(() => ({
-          error: { code: 'UNAUTHORIZED', message: res.statusText },
-        }));
-        throw new ApiClientError(res.status, err.error.code, err.error.message);
-      }
-    } catch (retryErr) {
-      if (retryErr instanceof ApiClientError) throw retryErr;
-      // forceRefresh itself failed (e.g., refresh token expired)
+    // Retry the request with the fresh token — network errors propagate
+    // to the caller without logging out (session is still valid)
+    res = await doFetch(newToken ? { Authorization: `Bearer ${newToken}` } : {});
+
+    if (res.status === 401) {
+      // Server rejected the fresh token — session is invalid
       await authProvider.onAuthFailure();
       const err: ApiError = await res.json().catch(() => ({
         error: { code: 'UNAUTHORIZED', message: res.statusText },
