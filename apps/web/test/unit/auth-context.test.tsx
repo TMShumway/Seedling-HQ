@@ -37,6 +37,7 @@ vi.mock('@/lib/auth/cognito-storage', () => ({
 
 // Mock api-client
 const mockLocalLogin = vi.fn();
+const mockLocalVerify = vi.fn();
 const mockCognitoLookup = vi.fn();
 const mockSetAuthProvider = vi.fn();
 const mockClearAuthProvider = vi.fn();
@@ -44,6 +45,7 @@ const mockClearAuthProvider = vi.fn();
 vi.mock('@/lib/api-client', () => ({
   apiClient: {
     localLogin: (...args: any[]) => mockLocalLogin(...args),
+    localVerify: (...args: any[]) => mockLocalVerify(...args),
     cognitoLookup: (...args: any[]) => mockCognitoLookup(...args),
   },
   setAuthProvider: (...args: any[]) => mockSetAuthProvider(...args),
@@ -129,7 +131,7 @@ describe('AuthProvider (local mode)', () => {
     expect(mockLocalLogin).toHaveBeenCalledWith('test@test.com');
   });
 
-  it('selectAccount sets localStorage and returns true (auth complete)', async () => {
+  it('selectAccount returns false (password needed) and does not set localStorage', async () => {
     const { result } = renderHook(() => useAuth(), { wrapper: makeWrapper() });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
@@ -140,10 +142,56 @@ describe('AuthProvider (local mode)', () => {
       });
     });
 
-    expect(done!).toBe(true);
+    expect(done!).toBe(false);
+    expect(localStorage.getItem('dev_tenant_id')).toBeNull();
+    expect(localStorage.getItem('dev_user_id')).toBeNull();
+    expect(result.current.isAuthenticated).toBe(false);
+  });
+
+  it('authenticate calls localVerify and sets localStorage on success', async () => {
+    mockLocalVerify.mockResolvedValue({ user: { id: 'u1', tenantId: 't1', email: 'test@test.com', fullName: 'Owner', role: 'owner' } });
+
+    const { result } = renderHook(() => useAuth(), { wrapper: makeWrapper() });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => {
+      result.current.selectAccount({
+        tenantId: 't1', tenantName: 'Biz', userId: 'u1', fullName: 'Owner', role: 'owner',
+      });
+    });
+
+    let authResult: any;
+    await act(async () => {
+      authResult = await result.current.authenticate('test-password');
+    });
+
+    expect(authResult.newPasswordRequired).toBe(false);
+    expect(mockLocalVerify).toHaveBeenCalledWith('u1', 'test-password');
     expect(localStorage.getItem('dev_tenant_id')).toBe('t1');
     expect(localStorage.getItem('dev_user_id')).toBe('u1');
     expect(result.current.isAuthenticated).toBe(true);
+  });
+
+  it('authenticate propagates error on wrong password', async () => {
+    mockLocalVerify.mockRejectedValue(new Error('Invalid credentials'));
+
+    const { result } = renderHook(() => useAuth(), { wrapper: makeWrapper() });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => {
+      result.current.selectAccount({
+        tenantId: 't1', tenantName: 'Biz', userId: 'u1', fullName: 'Owner', role: 'owner',
+      });
+    });
+
+    await expect(
+      act(async () => {
+        await result.current.authenticate('wrong-password');
+      }),
+    ).rejects.toThrow('Invalid credentials');
+
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(localStorage.getItem('dev_tenant_id')).toBeNull();
   });
 
   it('logout clears localStorage and query cache', async () => {
