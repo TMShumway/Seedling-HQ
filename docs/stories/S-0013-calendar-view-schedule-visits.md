@@ -53,10 +53,10 @@ Adds a calendar-based schedule view (week + day) and the ability to schedule/res
 - [x] **7.4: Update JobDetailPage with schedule actions**
 
 ## Phase 8: Tests
-- [ ] **8.1: Unit tests for ScheduleVisitUseCase**
-- [ ] **8.2: Integration tests for visit routes**
-- [ ] **8.3: Update existing test mocks**
-- [ ] **8.4: E2E tests**
+- [x] **8.1: Unit tests for ScheduleVisitUseCase**
+- [x] **8.2: Integration tests for visit routes**
+- [x] **8.3: Update existing test mocks**
+- [x] **8.4: E2E tests**
 
 ## Phase 9: Documentation
 - [ ] **9.1: Update story file to Complete**
@@ -65,11 +65,14 @@ Adds a calendar-based schedule view (week + day) and the ability to schedule/res
 
 ## Resume context
 ### Last completed
-- Phase 7: Unscheduled Panel + Schedule Modal
-  - `apps/web/src/pages/SchedulePage.tsx` — added `useQuery(['unscheduled-visits'])`, horizontal scroll panel of amber-styled unscheduled cards above calendar, modal integration for both schedule + reschedule
-  - `apps/web/src/components/schedule/ScheduleVisitModal.tsx` — Card overlay modal with `<input type="datetime-local">`, auto-computed end display, `useMutation` calling `scheduleVisit`, invalidates queries on success
-  - `apps/web/src/pages/JobDetailPage.tsx` — scheduled visits: time is now a `<Link>` to `/schedule?week=YYYY-MM-DD`; unscheduled visits: "Schedule" button navigates to `/schedule`
-- Phases 1–6 all complete (backend + frontend calendar)
+- Phase 8: Tests (all passing)
+  - `apps/api/test/unit/schedule-visit.test.ts` — 11 unit tests for ScheduleVisitUseCase (first schedule, reschedule, custom end, auto-computed end, not found, wrong status, end before start, end equals start, conflict error, audit failure, reschedule with null previous end)
+  - `apps/api/test/integration/visit-routes.test.ts` — 15 integration tests for visit routes (PATCH schedule: start only, start+end, reschedule, end-before-start 400, not-found 404, tenant isolation; GET visits: range query, excludes out-of-range, context fields, from>=to 400, range>8 days 400, exactly 8-day range OK; GET unscheduled: returns unscheduled, excludes scheduled, tenant isolation)
+  - `apps/api/test/unit/create-job-from-quote.test.ts` — added `updateSchedule`, `listByDateRange`, `listUnscheduled` to visitRepo mocks (both standalone and txRepos)
+  - `e2e/tests/schedule.spec.ts` — 7 E2E tests (page render, seeded visit on calendar, unscheduled panel, schedule via modal, reschedule via click, week navigation, a11y)
+  - `e2e/tests/jobs.spec.ts` — updated job count assertions from 1 to 2 (Bob Wilson job added in seed)
+  - `apps/web/src/pages/SchedulePage.tsx` — added aria-labels to prev/next week buttons and prev/next day buttons for a11y compliance
+- Phases 1–7 all complete (backend + frontend)
 
 ### Commits so far
 1. `0b77a14` — phase 1 (DB + repos)
@@ -78,70 +81,22 @@ Adds a calendar-based schedule view (week + day) and the ability to schedule/res
 4. `c556eeb` — phase 4 (seed data)
 5. `9f4815d` — phase 5 (API client)
 6. `cc357a8` — phase 6 (SchedulePage + calendar grid)
-7. (pending) — phase 7 (unscheduled panel + modal)
+7. `26c19b5` — phase 7 (unscheduled panel + modal)
+8. (pending) — phase 8 (tests)
 
 ### In progress
 - None
 
 ### Next up
-- Phase 8: Tests
-  - **8.1: Unit tests** for `ScheduleVisitUseCase` — file: `apps/api/test/unit/schedule-visit.test.ts` (new)
-    - Happy paths: first schedule (emits `visit.time_set`), reschedule (emits `visit.rescheduled` with previous/new timestamps in metadata)
-    - Auto-computed end from `estimatedDurationMinutes`, custom end time accepted
-    - Rejections: end before start, non-scheduled status (→ ValidationError), missing visit (→ NotFoundError)
-    - ConflictError when `updateSchedule` returns null (concurrent status change)
-    - Audit failure doesn't propagate
-  - **8.2: Integration tests** for visit routes — file: `apps/api/test/integration/visit-routes.test.ts` (new)
-    - PATCH schedule: start only, start+end, reschedule, end-before-start 400, wrong status 400, not-found 404, concurrent conflict
-    - GET visits: range query returns correct visits, excludes out-of-range, includes context fields (jobTitle/clientName/propertyAddress), 400 for from >= to, 400 for range > 8 days
-    - GET unscheduled: returns only unscheduled visits
-    - Tenant isolation
-  - **8.3: Update existing test mocks** — grep all test files mocking VisitRepository, add `updateSchedule`, `listByDateRange`, `listUnscheduled`; verify audit metadata compatibility
-  - **8.4: E2E tests** — file: `e2e/tests/schedule.spec.ts` (new)
-    - Schedule page renders with week calendar
-    - Unscheduled visits panel visible
-    - Schedule a visit via modal
-    - Reschedule via calendar click
-    - Week navigation
-    - Accessibility check
+- Phase 9: Documentation
+  - 9.1: Update story file to Complete
+  - 9.2: Update CLAUDE.md with new decisions + patterns
+  - 9.3: Update domain model doc with new audit events
 
-### Exhaustive file inventory (all changes in this story)
-**New files:**
-- `apps/api/src/application/dto/schedule-visit-dto.ts` — ScheduleVisitInput/Output
-- `apps/api/src/application/usecases/schedule-visit.ts` — ScheduleVisitUseCase
-- `apps/api/src/adapters/http/routes/visit-routes.ts` — 3 endpoints (GET /v1/visits, GET /v1/visits/unscheduled, PATCH /v1/visits/:id/schedule)
-- `apps/web/src/pages/SchedulePage.tsx` — Full calendar page (week + day view)
-- `apps/web/src/components/schedule/ScheduleVisitModal.tsx` — Schedule modal overlay
-- `docs/stories/S-0013-calendar-view-schedule-visits.md` — Story file
-
-**Modified files:**
-- `apps/api/src/infra/db/schema.ts` — added `metadata` JSONB column to `auditEvents` table, added `visits_tenant_scheduled_start_idx` index
-- `apps/api/src/application/ports/audit-event-repository.ts` — added `metadata?: Record<string, unknown> | null` to `AuditEvent` interface
-- `apps/api/src/infra/db/repositories/drizzle-audit-event-repository.ts` — passes metadata through in `record()` and `toEntity()`
-- `apps/api/src/application/ports/visit-repository.ts` — added `VisitWithContext`, `ListVisitsFilters`, 3 new methods
-- `apps/api/src/infra/db/repositories/drizzle-visit-repository.ts` — implemented `updateSchedule()`, `listByDateRange()`, `listUnscheduled()` with JOINs
-- `apps/api/src/app.ts` — wired `buildVisitRoutes`
-- `apps/api/src/infra/db/seed.ts` — `getTodayAt()` helper, scheduled times on existing visit, Bob Wilson quote/job/unscheduled visit
-- `apps/web/src/lib/api-client.ts` — `VisitWithContextResponse` type + `listVisits`, `listUnscheduledVisits`, `scheduleVisit` methods
-- `apps/web/src/app-shell/Sidebar.tsx` — enabled Schedule nav (`active: true, href: '/schedule'`)
-- `apps/web/src/App.tsx` — added `/schedule` route + import
-- `apps/web/src/pages/JobDetailPage.tsx` — scheduled visit times are links to `/schedule?week=`, unscheduled visits have "Schedule" button
-
-### Key implementation details for tests
-- `ScheduleVisitUseCase` constructor takes `(visitRepo, auditRepo)` — no UoW
-- `updateSchedule()` uses SQL `WHERE status='scheduled'` — returns null if status changed (→ ConflictError)
-- Audit uses `metadata` field: `{ newStart, newEnd }` for `visit.time_set`, `{ previousStart, previousEnd, newStart, newEnd }` for `visit.rescheduled`
-- Visit routes use `z.string().datetime({ offset: true })` for ISO datetime validation
-- GET /v1/visits enforces `from < to` and `to - from <= 8 days` at route level
-- GET /v1/visits/unscheduled registered BEFORE any `:id` routes in Fastify
-- Seed data IDs: DEMO_VISIT_ID=`...0950`, DEMO_BOB_VISIT_ID=`...0951`, DEMO_JOB_ID=`...0900`, DEMO_BOB_JOB_ID=`...0901`
-
-### Blockers / open questions
-- None
 ### Blockers / open questions
 - None
 
 ## Test summary
-- **Unit**: 0 new
-- **Integration**: 0 new
-- **E2E**: 0 new
+- **Unit**: 240 total (11 new)
+- **Integration**: 214 total (15 new)
+- **E2E**: 154 total / 103 passed + 51 skipped (7 new)

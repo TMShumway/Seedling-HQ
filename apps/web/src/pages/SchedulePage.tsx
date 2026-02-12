@@ -190,13 +190,13 @@ export function SchedulePage() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-semibold">Schedule</h1>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => navigateWeek(-1)} data-testid="prev-week">
+          <Button variant="outline" size="sm" onClick={() => navigateWeek(-1)} data-testid="prev-week" aria-label="Previous week">
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <Button variant="outline" size="sm" onClick={goToToday} data-testid="today-btn">
             Today
           </Button>
-          <Button variant="outline" size="sm" onClick={() => navigateWeek(1)} data-testid="next-week">
+          <Button variant="outline" size="sm" onClick={() => navigateWeek(1)} data-testid="next-week" aria-label="Next week">
             <ChevronRight className="h-4 w-4" />
           </Button>
           <span className="ml-2 text-sm font-medium text-muted-foreground" data-testid="week-range">
@@ -294,6 +294,7 @@ export function SchedulePage() {
             size="sm"
             onClick={() => setSelectedDayIndex((i) => Math.max(0, i - 1))}
             disabled={selectedDayIndex === 0}
+            aria-label="Previous day"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -305,6 +306,7 @@ export function SchedulePage() {
             size="sm"
             onClick={() => setSelectedDayIndex((i) => Math.min(6, i + 1))}
             disabled={selectedDayIndex === 6}
+            aria-label="Next day"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>

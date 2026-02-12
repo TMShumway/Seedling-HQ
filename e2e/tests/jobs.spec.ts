@@ -28,7 +28,7 @@ test.describe('Jobs List', () => {
     // Click Scheduled filter pill — scope to the filter bar to avoid matching job card's role="button"
     const filterBar = page.locator('.flex.flex-wrap.gap-2');
     await filterBar.getByRole('button', { name: 'Scheduled' }).click();
-    await expect(page.getByTestId('job-card')).toHaveCount(1);
+    await expect(page.getByTestId('job-card')).toHaveCount(2);
 
     // Click Completed filter — should show empty state
     await filterBar.getByRole('button', { name: 'Completed' }).click();
@@ -36,7 +36,7 @@ test.describe('Jobs List', () => {
 
     // Click All to reset
     await filterBar.getByRole('button', { name: 'All' }).click();
-    await expect(page.getByTestId('job-card')).toHaveCount(1);
+    await expect(page.getByTestId('job-card')).toHaveCount(2);
   });
 
   test('clicks through to job detail and shows visit', async ({ page }, testInfo) => {
