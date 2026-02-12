@@ -1,9 +1,9 @@
-# S-0036: Invite + Onboard Team Members
+# S-0037: Invite + Onboard Team Members
 
 Status: Post-MVP (not scheduled)
 Priority: P0 — required for multi-user businesses
 Epic: E-0013 (RBAC + Team Management)
-Depends on: S-0035 (Role-based permissions)
+Depends on: S-0036 (Role-based permissions)
 
 ## Context
 

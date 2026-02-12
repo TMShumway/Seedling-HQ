@@ -1,4 +1,4 @@
-# S-0035: Role-Based Permissions (API + UI Gates)
+# S-0036: Role-Based Permissions (API + UI Gates)
 
 Status: Post-MVP (not scheduled)
 Priority: P0 — required for multi-user businesses

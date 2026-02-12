@@ -1,4 +1,4 @@
-# S-0055: Weather Forecast on Calendar View
+# S-0056: Weather Forecast on Calendar View
 
 **Status:** Post-MVP (not scheduled)
 **Priority:** P2 — low effort, high perceived value
@@ -22,7 +22,7 @@ Display weather forecast data on the calendar view so dispatchers can see condit
   - Rain days highlighted (light blue background) as a visual cue
 - Cache weather data: fetch once daily per tenant (or on calendar load with 1-hour cache), store in Redis or in-memory
 - Mobile: weather shown as a compact strip above the day's schedule
-- No weather-based automation in this story (see S-0056 for that)
+- No weather-based automation in this story (see S-0057 for that)
 
 ## Open questions
 

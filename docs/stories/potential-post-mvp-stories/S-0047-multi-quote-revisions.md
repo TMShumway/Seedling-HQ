@@ -1,4 +1,4 @@
-# S-0046: Multi-Quote per Request + Revisions
+# S-0047: Multi-Quote per Request + Revisions
 
 **Status:** Post-MVP (not scheduled)
 **Priority:** P1 — common real-world workflow

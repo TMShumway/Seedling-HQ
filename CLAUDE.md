@@ -258,8 +258,7 @@
 
 | Item | Deferred to | Reason |
 |------|-------------|--------|
-| Cognito user provisioning (`username = users.id`) | Post-S-0029 | S-0029 documents the contract; provisioning story must enforce `AdminCreateUser` sets `username` to `users.id` |
-| ~~Frontend Cognito SDK~~ | ~~S-0030~~ | ~~Completed in S-0030~~ |
+| Cognito user provisioning (`username = users.id`) | S-0031 | S-0029 documents the contract; provisioning story must enforce `AdminCreateUser` sets `username` to `users.id` |
 | DB CHECK constraint or enum for `role` column | Post-S-0029 | Role safety from TS `Role` type + Zod + Cognito groups; DB constraint deferred |
 | SMS worker (send from outbox) | S-0021 | `message_outbox` table exists; SMS records queued but not sent |
 | LocalStack in docker-compose | S-0007+ | Not needed until async/queue stories |
