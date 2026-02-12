@@ -21,6 +21,8 @@ import { PublicRequestPage } from '@/pages/PublicRequestPage';
 import { RequestSuccessPage } from '@/pages/RequestSuccessPage';
 import { PublicQuoteViewPage } from '@/pages/PublicQuoteViewPage';
 import { TeamPage } from '@/pages/TeamPage';
+import { JobsPage } from '@/pages/JobsPage';
+import { JobDetailPage } from '@/pages/JobDetailPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,6 +53,8 @@ export function App() {
             <Route path="/quotes" element={<QuotesPage />} />
             <Route path="/quotes/new" element={<CreateQuotePage />} />
             <Route path="/quotes/:id" element={<QuoteDetailPage />} />
+            <Route path="/jobs" element={<JobsPage />} />
+            <Route path="/jobs/:id" element={<JobDetailPage />} />
             <Route path="/team" element={<TeamPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
