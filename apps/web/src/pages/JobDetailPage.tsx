@@ -209,7 +209,7 @@ export function JobDetailPage() {
                   const monday = new Date(d);
                   const day = monday.getDay();
                   monday.setDate(monday.getDate() - (day === 0 ? 6 : day - 1));
-                  const weekParam = monday.toISOString().slice(0, 10);
+                  const weekParam = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
                   return (
                     <p className="mt-1 text-sm">
                       <Link to={`/schedule?week=${weekParam}`} className="text-primary hover:underline">

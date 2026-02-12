@@ -76,10 +76,12 @@ test.describe('Schedule Page', () => {
     // Modal should close
     await expect(page.getByTestId('schedule-modal')).not.toBeVisible({ timeout: 10000 });
 
-    // The card text we clicked should no longer be in unscheduled panel
+    // The visit should now appear on the calendar for the scheduled date
+    await expect(page.getByTestId('visit-block').first()).toBeVisible({ timeout: 10000 });
+
+    // The unscheduled panel should no longer contain the card we scheduled
     if (cardText) {
-      // Give time for query invalidation
-      await page.waitForTimeout(1000);
+      await expect(page.getByTestId('unscheduled-card').filter({ hasText: cardText })).not.toBeVisible({ timeout: 5000 });
     }
   });
 
