@@ -46,6 +46,42 @@ test.describe('Send Quote', () => {
     await expect(page.getByTestId('send-quote-btn')).not.toBeVisible();
   });
 
+  test('sends quote with unsaved line items via auto-save', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-chrome', 'Stateful test runs only on desktop-chrome');
+
+    // 1. Create a standalone quote (DB will have empty line items)
+    await page.goto('/quotes/new');
+    await expect(page.getByTestId('create-quote-page')).toBeVisible({ timeout: 10000 });
+
+    await page.getByTestId('client-search-input').fill('Jane');
+    const clientOption = page.locator('[data-testid^="client-option-"]').filter({ hasText: 'Jane Johnson' });
+    await expect(clientOption).toBeVisible({ timeout: 10000 });
+    await clientOption.locator('input[type="radio"]').click();
+    await page.getByTestId('create-quote-submit').click();
+
+    // 2. On detail page, add a line item WITHOUT saving
+    await expect(page.getByTestId('quote-detail-page')).toBeVisible({ timeout: 10000 });
+    await page.getByTestId('add-line-item').click();
+    const row = page.getByTestId('line-item-row').last();
+    await row.getByTestId('line-item-description').fill('Hedge Trimming');
+    await row.getByTestId('line-item-quantity').fill('2');
+    await row.getByTestId('line-item-unitprice').fill('50');
+
+    // 3. Send without clicking Save first
+    await page.getByTestId('send-quote-btn').click();
+    await expect(page.getByText('Send this quote to the client?')).toBeVisible();
+    await page.getByRole('button', { name: 'Yes, Send Quote' }).click();
+
+    // 4. Verify auto-save + send succeeded
+    await expect(page.getByTestId('success-message')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText('Sent', { exact: true })).toBeVisible();
+    await expect(page.getByTestId('quote-link-card')).toBeVisible();
+
+    // Edit controls should be gone
+    await expect(page.getByTestId('save-quote')).not.toBeVisible();
+    await expect(page.getByTestId('send-quote-btn')).not.toBeVisible();
+  });
+
   test('sent quote card shows Sent status in list', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop-chrome', 'Depends on previous send test');
 
