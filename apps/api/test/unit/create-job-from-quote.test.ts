@@ -107,7 +107,7 @@ describe('CreateJobFromQuoteUseCase', () => {
     txRepos = {
       tenantRepo: {} as any,
       userRepo: {} as any,
-      auditRepo: { record: vi.fn() },
+      auditRepo: { record: vi.fn(), listBySubjects: vi.fn() },
       clientRepo: {} as any,
       propertyRepo: {} as any,
       requestRepo: {} as any,

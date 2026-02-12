@@ -30,6 +30,7 @@ function makeDraftQuote(overrides: Partial<Quote> = {}): Quote {
     sentAt: null,
     approvedAt: null,
     declinedAt: null,
+    scheduledAt: null,
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-01'),
     ...overrides,
