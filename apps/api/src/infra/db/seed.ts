@@ -15,6 +15,13 @@ const DEMO_CATEGORY_IDS = {
   landscaping: '00000000-0000-0000-0000-000000000202',
 };
 
+/** Returns a Date for today at the given hour:minute in local time */
+function getTodayAt(hour: number, minute: number): Date {
+  const d = new Date();
+  d.setHours(hour, minute, 0, 0);
+  return d;
+}
+
 async function seed() {
   const connectionString = process.env.DATABASE_URL ?? 'postgresql://fsa:fsa@localhost:5432/fsa';
   const pool = new pg.Pool({ connectionString });
@@ -395,6 +402,8 @@ async function seed() {
       set: { title: 'Tree Trimming for Jane Johnson', status: 'scheduled' },
     });
 
+  const demoVisitStart = getTodayAt(9, 0);
+  const demoVisitEnd = new Date(demoVisitStart.getTime() + 120 * 60 * 1000);
   await db
     .insert(visits)
     .values({
@@ -402,15 +411,80 @@ async function seed() {
       tenantId: DEMO_TENANT_ID,
       jobId: DEMO_JOB_ID,
       assignedUserId: null,
-      scheduledStart: null,
-      scheduledEnd: null,
+      scheduledStart: demoVisitStart,
+      scheduledEnd: demoVisitEnd,
       estimatedDurationMinutes: 120,
       status: 'scheduled',
       notes: null,
     })
     .onConflictDoUpdate({
       target: visits.id,
-      set: { estimatedDurationMinutes: 120, status: 'scheduled' },
+      set: { scheduledStart: demoVisitStart, scheduledEnd: demoVisitEnd, estimatedDurationMinutes: 120, status: 'scheduled' },
+    });
+
+  // Upsert scheduled quote + job + unscheduled visit (for Bob Wilson — calendar unscheduled panel demo)
+  const DEMO_BOB_QUOTE_ID = '00000000-0000-0000-0000-000000000705';
+  const DEMO_BOB_JOB_ID = '00000000-0000-0000-0000-000000000901';
+  const DEMO_BOB_VISIT_ID = '00000000-0000-0000-0000-000000000951';
+  const bobQuoteLineItems = [
+    { serviceItemId: '00000000-0000-0000-0000-000000000305', description: 'Mulch Installation', quantity: 100, unitPrice: 350, total: 35000 },
+    { serviceItemId: '00000000-0000-0000-0000-000000000307', description: 'Shrub Planting', quantity: 5, unitPrice: 2500, total: 12500 },
+  ];
+  await db
+    .insert(quotes)
+    .values({
+      id: DEMO_BOB_QUOTE_ID,
+      tenantId: DEMO_TENANT_ID,
+      requestId: null,
+      clientId: DEMO_CLIENT_IDS.bobWilson,
+      propertyId: '00000000-0000-0000-0000-000000000502',
+      title: 'Landscaping Work for Bob Wilson',
+      lineItems: bobQuoteLineItems,
+      subtotal: 47500,
+      tax: 3500,
+      total: 51000,
+      status: 'scheduled',
+      sentAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      approvedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      scheduledAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+    })
+    .onConflictDoUpdate({
+      target: quotes.id,
+      set: { title: 'Landscaping Work for Bob Wilson', lineItems: bobQuoteLineItems, subtotal: 47500, tax: 3500, total: 51000, status: 'scheduled' },
+    });
+
+  await db
+    .insert(jobs)
+    .values({
+      id: DEMO_BOB_JOB_ID,
+      tenantId: DEMO_TENANT_ID,
+      quoteId: DEMO_BOB_QUOTE_ID,
+      clientId: DEMO_CLIENT_IDS.bobWilson,
+      propertyId: '00000000-0000-0000-0000-000000000502',
+      title: 'Landscaping Work for Bob Wilson',
+      status: 'scheduled',
+    })
+    .onConflictDoUpdate({
+      target: jobs.id,
+      set: { title: 'Landscaping Work for Bob Wilson', status: 'scheduled' },
+    });
+
+  await db
+    .insert(visits)
+    .values({
+      id: DEMO_BOB_VISIT_ID,
+      tenantId: DEMO_TENANT_ID,
+      jobId: DEMO_BOB_JOB_ID,
+      assignedUserId: null,
+      scheduledStart: null,
+      scheduledEnd: null,
+      estimatedDurationMinutes: 60,
+      status: 'scheduled',
+      notes: null,
+    })
+    .onConflictDoUpdate({
+      target: visits.id,
+      set: { scheduledStart: null, scheduledEnd: null, estimatedDurationMinutes: 60, status: 'scheduled' },
     });
 
   // Insert audit events (idempotent: check first)
@@ -585,6 +659,27 @@ async function seed() {
         eventName: 'visit.scheduled',
         subjectType: 'visit',
         subjectId: DEMO_VISIT_ID,
+        correlationId: 'seed',
+      },
+      // Bob Wilson job + visit events
+      {
+        id: '00000000-0000-0000-0000-000000000170',
+        tenantId: DEMO_TENANT_ID,
+        principalType: 'internal',
+        principalId: DEMO_USER_ID,
+        eventName: 'job.created',
+        subjectType: 'job',
+        subjectId: DEMO_BOB_JOB_ID,
+        correlationId: 'seed',
+      },
+      {
+        id: '00000000-0000-0000-0000-000000000171',
+        tenantId: DEMO_TENANT_ID,
+        principalType: 'internal',
+        principalId: DEMO_USER_ID,
+        eventName: 'visit.scheduled',
+        subjectType: 'visit',
+        subjectId: DEMO_BOB_VISIT_ID,
         correlationId: 'seed',
       },
     ]);

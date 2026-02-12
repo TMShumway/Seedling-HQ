@@ -34,8 +34,8 @@ Adds a calendar-based schedule view (week + day) and the ability to schedule/res
 - [x] **3.4: Wire buildVisitRoutes into app.ts**
 
 ## Phase 4: Seed Data Updates
-- [ ] **4.1: Give existing demo visit scheduled times**
-- [ ] **4.2: Add second job + unscheduled visit for Bob Wilson**
+- [x] **4.1: Give existing demo visit scheduled times**
+- [x] **4.2: Add second job + unscheduled visit for Bob Wilson**
 
 ## Phase 5: API Client Extensions
 - [ ] **5.1: Add VisitWithContextResponse type + 3 API methods**
@@ -65,9 +65,9 @@ Adds a calendar-based schedule view (week + day) and the ability to schedule/res
 
 ## Resume context
 ### Last completed
+- Phase 4: Seed Data Updates
+  - `apps/api/src/infra/db/seed.ts` — gave DEMO_VISIT_ID scheduled times (today 9:00 AM + 120 min), added Bob Wilson quote (0705) + job (0901) + unscheduled visit (0951)
 - Phase 3: Visit Routes + Wiring
-  - `apps/api/src/adapters/http/routes/visit-routes.ts` — 3 endpoints: GET /v1/visits/unscheduled, GET /v1/visits (date range), PATCH /v1/visits/:id/schedule
-  - `apps/api/src/app.ts` — wired buildVisitRoutes
 - Phase 2: DTO + Use Case
 - Phase 1: DB Schema + Repository Extensions
   - `apps/api/src/infra/db/schema.ts` — added `metadata` JSONB column to `auditEvents`, added `visits_tenant_scheduled_start_idx` index
@@ -79,7 +79,7 @@ Adds a calendar-based schedule view (week + day) and the ability to schedule/res
 ### In progress
 - None
 ### Next up
-- Phase 4: Seed Data Updates
+- Phase 5: API Client Extensions
 ### Blockers / open questions
 - None
 
