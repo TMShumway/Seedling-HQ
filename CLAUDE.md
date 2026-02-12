@@ -125,6 +125,14 @@
 | Password column | Nullable `password_hash` varchar(255) on users | S-0030 | Cognito-mode users don't store passwords locally; 401 if hash missing |
 | Signup password | `ownerPassword` required on `POST /v1/tenants` | S-0030 | Min 8 chars, max 128; required in Zod schema + DTO; hashed before storage; seed demo user with `password` |
 | Demo credentials | `owner@demo.local` / `password` | S-0030 | Hint text updated on login page |
+| CognitoProvisioner port | Explicit interface with `provisionUser` + `setUserPassword` | S-0031 | `AwsCognitoProvisioner` for prod, `NoopCognitoProvisioner` for local; testable via mock |
+| User provisioning re-use | Re-use disabled user's UUID on retry | S-0031 | Preserves `username=users.id` Cognito contract; avoids UUID drift |
+| ForbiddenError (403) | New `AppError` subclass, code `FORBIDDEN` | S-0031 | Role guard needs distinct error from 401 `UNAUTHORIZED` |
+| Role hierarchy | Owner > Admin > Member, inline guards | S-0031 | Owner can manage all; admin can manage members; full RBAC deferred to S-0036 |
+| DB CHECK constraints | `users.role` and `users.status` CHECK constraints | S-0031 | Enforces enum values at DB layer in addition to TS + Zod validation |
+| Team management routes | `GET /v1/users`, `POST /v1/users`, `POST /v1/users/:id/reset-password` | S-0031 | Owner/admin only; mode-specific Zod schemas (local requires password) |
+| Change own password | `POST /v1/users/me/password` (local mode only) | S-0031 | Any authenticated role; requires current password; scrypt hashing |
+| Local auth localStorage | Persist role/name/tenantName alongside tenant_id/user_id | S-0031 | Fixes role-gated UI after page refresh in local mode |
 
 ---
 
@@ -196,6 +204,11 @@
 | Local password verify route | S-0030 | `POST /v1/auth/local/verify` — public, rate-limited 10/min; accepts `{ userId, password }`, returns `{ user }` or 401; 404 in cognito mode |
 | Password hashing utility | S-0030 | `hashPassword()` / `verifyPassword()` in `shared/password.ts` — scrypt via `node:crypto`, self-describing stored format, timing-safe compare |
 | getByIdGlobal on UserRepository | S-0030 | Cross-tenant user lookup by ID (no tenantId filter); used by verify endpoint to find user regardless of tenant |
+| CognitoProvisioner port + impls | S-0031 | `application/ports/cognito-provisioner.ts` — `provisionUser()` + `setUserPassword()`; `AwsCognitoProvisioner` (AWS SDK) + `NoopCognitoProvisioner` (local mode) |
+| CreateUserUseCase with re-provision | S-0031 | If disabled user exists with same email, re-uses UUID and re-enables; atomically provisions DB + Cognito in UoW |
+| Role hierarchy inline guards | S-0031 | Owner > Admin > Member — checked inline in use case/route; `ForbiddenError` on violation; full RBAC deferred to S-0036 |
+| User CRUD routes (3 endpoints) | S-0031 | `GET /v1/users` (list), `POST /v1/users` (create), `POST /v1/users/:id/reset-password`; owner/admin only; mode-specific Zod body schemas |
+| Change own password route | S-0031 | `POST /v1/users/me/password` (local mode, any role); requires `currentPassword`; scrypt verify + re-hash; best-effort audit |
 
 ### Frontend
 
@@ -241,6 +254,12 @@
 | Buffer polyfill for Cognito SDK | S-0030 | `buffer` npm package + `define: { global: 'globalThis' }` in vite.config.ts — SDK uses Node's `Buffer` |
 | Local mode password verify | S-0030 | `authenticate()` calls `apiClient.localVerify(userId, password)` — real password check instead of accepting any password |
 | Signup with password | S-0030 | SignupPage adds password + confirm fields; calls `createTenant({ ownerPassword })` then `authenticate(password)` for auto-login |
+| TeamPage with role-gated actions | S-0031 | `useAuth()` for caller role; `canCreateUser(role)` gates invite button; `canResetPassword(callerRole, targetRole)` gates reset button |
+| InviteMemberForm (mode-specific) | S-0031 | Local mode shows password field; cognito mode shows info text about temporary password email |
+| ResetPasswordDialog | S-0031 | Card overlay with password + confirm; `useMutation` → `apiClient.resetUserPassword()`; auto-closes after success |
+| ChangePasswordForm in SettingsPage | S-0031 | Current + new + confirm fields; calls `auth.changePassword()`; dual-mode (local calls API, cognito calls SDK) |
+| Forgot password in LoginPage | S-0031 | Cognito: code + confirm steps; local: "contact admin" message; triggered from password step |
+| Local auth localStorage persistence | S-0031 | `authenticate()` stores `dev_user_role`, `dev_user_name`, `dev_tenant_name`; init reads them back; logout clears all 5 keys |
 
 ### Testing
 
@@ -249,7 +268,7 @@
 | E2E DB isolation | S-0002 | `db:reset` → `db:push` → `db:seed` in globalSetup |
 | Cross-project skip | S-0002 | `test.skip(testInfo.project.name !== 'desktop-chrome', 'reason')` inside test body |
 | Integration DB sharing | S-0001 | `pool: 'forks'` + `singleFork: true` in vitest config |
-| `setDemoAuth` E2E helper | S-0027 | `e2e/helpers/auth.ts` — `page.addInitScript()` sets demo localStorage before every page load; add to `test.beforeEach` in all authenticated E2E tests |
+| `setDemoAuth` E2E helper | S-0027/S-0031 | `e2e/helpers/auth.ts` — `page.addInitScript()` sets demo localStorage (tenant_id, user_id, role, name, tenant_name) before every page load; add to `test.beforeEach` in all authenticated E2E tests |
 | Logout E2E uses `page.evaluate` | S-0027 | Don't use `addInitScript` when testing logout — it re-sets localStorage on navigation; use `page.evaluate(() => localStorage.setItem(...))` instead |
 
 ---
@@ -258,8 +277,6 @@
 
 | Item | Deferred to | Reason |
 |------|-------------|--------|
-| Cognito user provisioning (`username = users.id`) | S-0031 | S-0029 documents the contract; provisioning story must enforce `AdminCreateUser` sets `username` to `users.id` |
-| DB CHECK constraint or enum for `role` column | Post-S-0029 | Role safety from TS `Role` type + Zod + Cognito groups; DB constraint deferred |
 | SMS worker (send from outbox) | S-0021 | `message_outbox` table exists; SMS records queued but not sent |
 | LocalStack in docker-compose | S-0007+ | Not needed until async/queue stories |
 | EventBridge bus + Scheduler | S-0022+ | Not needed until automation stories |

@@ -28,6 +28,7 @@ All API errors return a consistent JSON structure:
 |-------------|-----------|-------|------|
 | 400 | `VALIDATION_ERROR` | `ValidationError` / Fastify validation | Request body or params fail schema validation, or use-case-level business rule violation (e.g., editing a non-draft quote) |
 | 401 | `UNAUTHORIZED` | `UnauthorizedError` | Missing or invalid auth credentials |
+| 403 | `FORBIDDEN` | `ForbiddenError` | Authenticated user lacks permission for the action (e.g., non-owner attempting to create user). Distinct from 401 which indicates missing/invalid auth (S-0031). |
 | 403 | `LINK_INVALID` | `LinkInvalidError` | External token is invalid, expired, revoked, scope mismatch, subject_type mismatch, or referenced object missing/deleted (S-0010). All cases return the same generic message: "This link is no longer valid." |
 | 404 | `NOT_FOUND` | `NotFoundError` | Entity not found within the tenant scope |
 | 409 | `CONFLICT` | `ConflictError` | Unique constraint violation (e.g., duplicate slug or name) |
@@ -40,6 +41,7 @@ All API errors return a consistent JSON structure:
 AppError (base)
   ├── ValidationError   (400, VALIDATION_ERROR)
   ├── UnauthorizedError (401, UNAUTHORIZED)
+  ├── ForbiddenError    (403, FORBIDDEN)
   ├── LinkInvalidError  (403, LINK_INVALID)
   ├── NotFoundError     (404, NOT_FOUND)
   └── ConflictError     (409, CONFLICT)
