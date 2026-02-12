@@ -37,6 +37,7 @@ function toEntity(row: typeof quotes.$inferSelect): Quote {
     sentAt: row.sentAt,
     approvedAt: row.approvedAt,
     declinedAt: row.declinedAt,
+    scheduledAt: row.scheduledAt,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -63,6 +64,7 @@ export class DrizzleQuoteRepository implements QuoteRepository {
         sentAt: quote.sentAt,
         approvedAt: quote.approvedAt,
         declinedAt: quote.declinedAt,
+        scheduledAt: quote.scheduledAt,
       })
       .returning();
     return toEntity(row);
@@ -138,6 +140,7 @@ export class DrizzleQuoteRepository implements QuoteRepository {
     if (statusFields?.sentAt !== undefined) setPatch.sentAt = statusFields.sentAt;
     if (statusFields?.approvedAt !== undefined) setPatch.approvedAt = statusFields.approvedAt;
     if (statusFields?.declinedAt !== undefined) setPatch.declinedAt = statusFields.declinedAt;
+    if (statusFields?.scheduledAt !== undefined) setPatch.scheduledAt = statusFields.scheduledAt;
 
     const rows = await this.db
       .update(quotes)

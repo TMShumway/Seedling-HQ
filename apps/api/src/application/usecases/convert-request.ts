@@ -126,6 +126,7 @@ export class ConvertRequestUseCase {
           sentAt: null,
           approvedAt: null,
           declinedAt: null,
+          scheduledAt: null,
         });
 
         await auditRepo.record({

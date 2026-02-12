@@ -275,6 +275,7 @@ export const quotes = pgTable(
     sentAt: timestamp('sent_at', { withTimezone: true }),
     approvedAt: timestamp('approved_at', { withTimezone: true }),
     declinedAt: timestamp('declined_at', { withTimezone: true }),
+    scheduledAt: timestamp('scheduled_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -283,5 +284,59 @@ export const quotes = pgTable(
     index('quotes_client_id_idx').on(table.clientId),
     index('quotes_request_id_idx').on(table.requestId),
     index('quotes_tenant_status_idx').on(table.tenantId, table.status),
+  ],
+);
+
+export const jobs = pgTable(
+  'jobs',
+  {
+    id: uuid('id').primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id),
+    quoteId: uuid('quote_id')
+      .notNull()
+      .references(() => quotes.id),
+    clientId: uuid('client_id')
+      .notNull()
+      .references(() => clients.id),
+    propertyId: uuid('property_id').references(() => properties.id),
+    title: varchar('title', { length: 500 }).notNull(),
+    status: varchar('status', { length: 50 }).notNull().default('scheduled'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique('jobs_tenant_quote_unique').on(table.tenantId, table.quoteId),
+    index('jobs_tenant_id_idx').on(table.tenantId),
+    index('jobs_tenant_status_idx').on(table.tenantId, table.status),
+    index('jobs_client_id_idx').on(table.clientId),
+  ],
+);
+
+export const visits = pgTable(
+  'visits',
+  {
+    id: uuid('id').primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id),
+    jobId: uuid('job_id')
+      .notNull()
+      .references(() => jobs.id),
+    assignedUserId: uuid('assigned_user_id'),
+    scheduledStart: timestamp('scheduled_start', { withTimezone: true }),
+    scheduledEnd: timestamp('scheduled_end', { withTimezone: true }),
+    estimatedDurationMinutes: integer('estimated_duration_minutes').notNull().default(60),
+    status: varchar('status', { length: 50 }).notNull().default('scheduled'),
+    notes: text('notes'),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('visits_tenant_id_idx').on(table.tenantId),
+    index('visits_job_id_idx').on(table.jobId),
+    index('visits_tenant_status_idx').on(table.tenantId, table.status),
   ],
 );

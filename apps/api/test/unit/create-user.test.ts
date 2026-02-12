@@ -80,6 +80,8 @@ function makeUnitOfWork(userRepo: UserRepository, auditRepo: AuditEventRepositor
       requestRepo: {} as any,
       quoteRepo: {} as any,
       secureLinkTokenRepo: {} as any,
+      jobRepo: {} as any,
+      visitRepo: {} as any,
     }),
   };
 }

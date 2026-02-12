@@ -1,6 +1,6 @@
 import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { tenants, users, auditEvents, serviceCategories, serviceItems, clients, properties, requests, quotes, secureLinkTokens } from './schema.js';
+import { tenants, users, auditEvents, serviceCategories, serviceItems, clients, properties, requests, quotes, secureLinkTokens, jobs, visits } from './schema.js';
 import { sql } from 'drizzle-orm';
 import { hashPassword } from '../../shared/password.js';
 
@@ -321,6 +321,98 @@ async function seed() {
       set: { tokenHash: knownToken2Hash, scopes: ['quote:read', 'quote:respond'], subjectId: DEMO_SENT_QUOTE_2_ID, expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) },
     });
 
+  // Upsert approved quote (for "Create Job" demo — John Smith, property 500)
+  const DEMO_APPROVED_QUOTE_ID = '00000000-0000-0000-0000-000000000703';
+  const approvedQuoteLineItems = [
+    { serviceItemId: '00000000-0000-0000-0000-000000000300', description: 'Weekly Mowing', quantity: 4, unitPrice: 4500, total: 18000 },
+    { serviceItemId: '00000000-0000-0000-0000-000000000301', description: 'Edging & Trimming', quantity: 4, unitPrice: 2500, total: 10000 },
+  ];
+  await db
+    .insert(quotes)
+    .values({
+      id: DEMO_APPROVED_QUOTE_ID,
+      tenantId: DEMO_TENANT_ID,
+      requestId: null,
+      clientId: DEMO_CLIENT_IDS.johnSmith,
+      propertyId: '00000000-0000-0000-0000-000000000500',
+      title: 'Monthly Lawn Package for John Smith',
+      lineItems: approvedQuoteLineItems,
+      subtotal: 28000,
+      tax: 2100,
+      total: 30100,
+      status: 'approved',
+      sentAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      approvedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    })
+    .onConflictDoUpdate({
+      target: quotes.id,
+      set: { title: 'Monthly Lawn Package for John Smith', lineItems: approvedQuoteLineItems, subtotal: 28000, tax: 2100, total: 30100, status: 'approved' },
+    });
+
+  // Upsert scheduled quote + job + visit (for Jobs page demo — Jane Johnson, property 501)
+  const DEMO_SCHEDULED_QUOTE_ID = '00000000-0000-0000-0000-000000000704';
+  const DEMO_JOB_ID = '00000000-0000-0000-0000-000000000900';
+  const DEMO_VISIT_ID = '00000000-0000-0000-0000-000000000950';
+  const scheduledQuoteLineItems = [
+    { serviceItemId: '00000000-0000-0000-0000-000000000303', description: 'Tree Trimming', quantity: 1, unitPrice: 8500, total: 8500 },
+  ];
+  await db
+    .insert(quotes)
+    .values({
+      id: DEMO_SCHEDULED_QUOTE_ID,
+      tenantId: DEMO_TENANT_ID,
+      requestId: null,
+      clientId: DEMO_CLIENT_IDS.janeJohnson,
+      propertyId: '00000000-0000-0000-0000-000000000501',
+      title: 'Tree Trimming for Jane Johnson',
+      lineItems: scheduledQuoteLineItems,
+      subtotal: 8500,
+      tax: 0,
+      total: 8500,
+      status: 'scheduled',
+      sentAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      approvedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
+      scheduledAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+    })
+    .onConflictDoUpdate({
+      target: quotes.id,
+      set: { title: 'Tree Trimming for Jane Johnson', lineItems: scheduledQuoteLineItems, subtotal: 8500, tax: 0, total: 8500, status: 'scheduled' },
+    });
+
+  await db
+    .insert(jobs)
+    .values({
+      id: DEMO_JOB_ID,
+      tenantId: DEMO_TENANT_ID,
+      quoteId: DEMO_SCHEDULED_QUOTE_ID,
+      clientId: DEMO_CLIENT_IDS.janeJohnson,
+      propertyId: '00000000-0000-0000-0000-000000000501',
+      title: 'Tree Trimming for Jane Johnson',
+      status: 'scheduled',
+    })
+    .onConflictDoUpdate({
+      target: jobs.id,
+      set: { title: 'Tree Trimming for Jane Johnson', status: 'scheduled' },
+    });
+
+  await db
+    .insert(visits)
+    .values({
+      id: DEMO_VISIT_ID,
+      tenantId: DEMO_TENANT_ID,
+      jobId: DEMO_JOB_ID,
+      assignedUserId: null,
+      scheduledStart: null,
+      scheduledEnd: null,
+      estimatedDurationMinutes: 120,
+      status: 'scheduled',
+      notes: null,
+    })
+    .onConflictDoUpdate({
+      target: visits.id,
+      set: { estimatedDurationMinutes: 120, status: 'scheduled' },
+    });
+
   // Insert audit events (idempotent: check first)
   const existing = await db
     .select({ count: sql<number>`count(*)::int` })
@@ -451,6 +543,48 @@ async function seed() {
         eventName: 'quote.created',
         subjectType: 'quote',
         subjectId: DEMO_QUOTE_ID,
+        correlationId: 'seed',
+      },
+      // Approved quote events
+      {
+        id: '00000000-0000-0000-0000-000000000150',
+        tenantId: DEMO_TENANT_ID,
+        principalType: 'external',
+        principalId: 'customer',
+        eventName: 'quote.approved',
+        subjectType: 'quote',
+        subjectId: DEMO_APPROVED_QUOTE_ID,
+        correlationId: 'seed',
+      },
+      // Scheduled quote + job + visit events
+      {
+        id: '00000000-0000-0000-0000-000000000160',
+        tenantId: DEMO_TENANT_ID,
+        principalType: 'internal',
+        principalId: DEMO_USER_ID,
+        eventName: 'quote.scheduled',
+        subjectType: 'quote',
+        subjectId: DEMO_SCHEDULED_QUOTE_ID,
+        correlationId: 'seed',
+      },
+      {
+        id: '00000000-0000-0000-0000-000000000161',
+        tenantId: DEMO_TENANT_ID,
+        principalType: 'internal',
+        principalId: DEMO_USER_ID,
+        eventName: 'job.created',
+        subjectType: 'job',
+        subjectId: DEMO_JOB_ID,
+        correlationId: 'seed',
+      },
+      {
+        id: '00000000-0000-0000-0000-000000000162',
+        tenantId: DEMO_TENANT_ID,
+        principalType: 'internal',
+        principalId: DEMO_USER_ID,
+        eventName: 'visit.scheduled',
+        subjectType: 'visit',
+        subjectId: DEMO_VISIT_ID,
         correlationId: 'seed',
       },
     ]);

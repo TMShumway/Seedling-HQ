@@ -63,6 +63,7 @@ export class CreateStandaloneQuoteUseCase {
       sentAt: null,
       approvedAt: null,
       declinedAt: null,
+      scheduledAt: null,
     });
 
     // Best-effort audit

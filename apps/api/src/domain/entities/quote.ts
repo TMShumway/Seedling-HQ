@@ -1,4 +1,4 @@
-export type QuoteStatus = 'draft' | 'sent' | 'approved' | 'declined' | 'expired';
+export type QuoteStatus = 'draft' | 'sent' | 'approved' | 'declined' | 'expired' | 'scheduled';
 
 export interface QuoteLineItem {
   serviceItemId: string | null;
@@ -23,6 +23,7 @@ export interface Quote {
   sentAt: Date | null;
   approvedAt: Date | null;
   declinedAt: Date | null;
+  scheduledAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -28,6 +28,7 @@ function makeSentQuote(overrides: Partial<Quote> = {}): Quote {
     sentAt: new Date('2026-01-15'),
     approvedAt: null,
     declinedAt: null,
+    scheduledAt: null,
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-15'),
     ...overrides,
@@ -230,6 +231,24 @@ describe('RespondToQuoteUseCase', () => {
     );
 
     expect(result.quote.status).toBe('approved');
+    expect(result.quote.approvedAt).toBe(approvedAt.toISOString());
+    expect(quoteRepo.updateStatus).not.toHaveBeenCalled();
+  });
+
+  it('returns idempotent success for approve on scheduled quote', async () => {
+    const approvedAt = new Date('2026-01-20');
+    const scheduledAt = new Date('2026-01-21');
+    (quoteRepo.getById as ReturnType<typeof vi.fn>).mockResolvedValue(
+      makeSentQuote({ status: 'scheduled', approvedAt, scheduledAt }),
+    );
+    const uc = makeUseCase();
+
+    const result = await uc.execute(
+      { tenantId: TENANT_ID, quoteId: QUOTE_ID, tokenId: TOKEN_ID, action: 'approve' },
+      'corr-1',
+    );
+
+    expect(result.quote.status).toBe('scheduled');
     expect(result.quote.approvedAt).toBe(approvedAt.toISOString());
     expect(quoteRepo.updateStatus).not.toHaveBeenCalled();
   });

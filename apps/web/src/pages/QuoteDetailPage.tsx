@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Plus, User, MapPin, FileText, Send, Copy, Check, Link as LinkIcon } from 'lucide-react';
+import { ArrowLeft, Plus, User, MapPin, FileText, Send, Copy, Check, Link as LinkIcon, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { apiClient, type UpdateQuoteRequest, type SendQuoteResponse } from '@/lib/api-client';
+import { apiClient, type UpdateQuoteRequest, type SendQuoteResponse, type CreateJobResponse } from '@/lib/api-client';
 import { formatPrice, centsToDollars, dollarsToCents } from '@/lib/format';
 import { LineItemRow, type LineItemData } from '@/components/quotes/LineItemRow';
 import { ServiceItemPicker } from '@/components/quotes/ServiceItemPicker';
@@ -18,6 +18,7 @@ function QuoteStatusBadge({ status }: { status: string }) {
     approved: 'bg-green-100 text-green-800',
     declined: 'bg-red-100 text-red-800',
     expired: 'bg-amber-100 text-amber-800',
+    scheduled: 'bg-indigo-100 text-indigo-800',
   };
 
   return (
@@ -143,6 +144,24 @@ export function QuoteDetailPage() {
     },
   });
 
+  // Create job mutation
+  const createJobMutation = useMutation({
+    mutationFn: () => apiClient.createJobFromQuote(quote!.id),
+    onSuccess: (data: CreateJobResponse) => {
+      navigate(`/jobs/${data.job.id}`);
+    },
+    onError: (err: Error) => {
+      setError(err.message);
+    },
+  });
+
+  // Job lookup for scheduled quotes
+  const jobByQuoteQuery = useQuery({
+    queryKey: ['job-by-quote', quote?.id],
+    queryFn: () => apiClient.getJobByQuoteId(quote!.id),
+    enabled: !!quote && quote.status === 'scheduled',
+  });
+
   const handleCopyLink = async () => {
     if (!sentLink) return;
     try {
@@ -247,6 +266,11 @@ export function QuoteDetailPage() {
           {quote.declinedAt && (
             <span className="text-xs text-red-700">
               Declined on {new Date(quote.declinedAt).toLocaleDateString()}
+            </span>
+          )}
+          {quote.scheduledAt && (
+            <span className="text-xs text-indigo-700">
+              Scheduled on {new Date(quote.scheduledAt).toLocaleDateString()}
             </span>
           )}
         </div>
@@ -474,6 +498,39 @@ export function QuoteDetailPage() {
             </Button>
           )}
         </div>
+      )}
+
+      {/* Create Job button for approved quotes */}
+      {quote.status === 'approved' && (
+        <div className="flex justify-end">
+          <Button
+            onClick={() => createJobMutation.mutate()}
+            disabled={createJobMutation.isPending}
+            data-testid="create-job-btn"
+          >
+            <Briefcase className="mr-1 h-4 w-4" />
+            {createJobMutation.isPending ? 'Creating Job...' : 'Create Job'}
+          </Button>
+        </div>
+      )}
+
+      {/* View Job link for scheduled quotes */}
+      {quote.status === 'scheduled' && jobByQuoteQuery.data && (
+        <Card>
+          <CardContent className="flex items-center gap-3 pt-6">
+            <Briefcase className="h-5 w-5 shrink-0 text-muted-foreground" />
+            <span className="text-sm">Job created from this quote</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/jobs/${jobByQuoteQuery.data.id}`)}
+              className="ml-auto"
+              data-testid="view-job-link"
+            >
+              View Job
+            </Button>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

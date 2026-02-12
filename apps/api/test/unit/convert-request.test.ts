@@ -115,6 +115,8 @@ function makeUnitOfWork(
       requestRepo,
       quoteRepo,
       secureLinkTokenRepo: {} as any,
+      jobRepo: {} as any,
+      visitRepo: {} as any,
     }),
   };
 }

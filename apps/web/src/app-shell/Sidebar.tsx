@@ -22,7 +22,7 @@ const navItems = [
   { label: 'Clients', icon: Users, href: '/clients', active: true },
   { label: 'Quotes', icon: Calculator, href: '/quotes', active: true },
   { label: 'Schedule', icon: Calendar, href: '#', active: false },
-  { label: 'Jobs', icon: Briefcase, href: '#', active: false },
+  { label: 'Jobs', icon: Briefcase, href: '/jobs', active: true },
   { label: 'Invoices', icon: Receipt, href: '#', active: false },
   { label: 'Team', icon: UsersRound, href: '/team', active: true },
   { label: 'Settings', icon: Settings, href: '/settings', active: true },
