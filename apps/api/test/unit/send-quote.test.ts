@@ -80,6 +80,8 @@ describe('SendQuoteUseCase', () => {
       secureLinkTokenRepo: {
         create: vi.fn().mockResolvedValue({}),
       } as never,
+      jobRepo: {} as any,
+      visitRepo: {} as any,
     };
 
     quoteRepo = {

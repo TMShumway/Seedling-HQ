@@ -8,6 +8,8 @@ import { DrizzlePropertyRepository } from './repositories/drizzle-property-repos
 import { DrizzleRequestRepository } from './repositories/drizzle-request-repository.js';
 import { DrizzleQuoteRepository } from './repositories/drizzle-quote-repository.js';
 import { DrizzleSecureLinkTokenRepository } from './repositories/drizzle-secure-link-token-repository.js';
+import { DrizzleJobRepository } from './repositories/drizzle-job-repository.js';
+import { DrizzleVisitRepository } from './repositories/drizzle-visit-repository.js';
 
 export class DrizzleUnitOfWork implements UnitOfWork {
   constructor(private db: Database) {}
@@ -23,6 +25,8 @@ export class DrizzleUnitOfWork implements UnitOfWork {
         requestRepo: new DrizzleRequestRepository(tx),
         quoteRepo: new DrizzleQuoteRepository(tx),
         secureLinkTokenRepo: new DrizzleSecureLinkTokenRepository(tx),
+        jobRepo: new DrizzleJobRepository(tx),
+        visitRepo: new DrizzleVisitRepository(tx),
       });
     });
   }
