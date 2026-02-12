@@ -20,6 +20,7 @@ function toEntity(row: typeof auditEvents.$inferSelect): AuditEvent {
     subjectType: row.subjectType,
     subjectId: row.subjectId,
     correlationId: row.correlationId,
+    metadata: row.metadata as Record<string, unknown> | null,
     createdAt: row.createdAt,
   };
 }
@@ -48,6 +49,7 @@ export class DrizzleAuditEventRepository implements AuditEventRepository {
         subjectType: event.subjectType,
         subjectId: event.subjectId,
         correlationId: event.correlationId,
+        metadata: event.metadata ?? null,
       })
       .returning();
     return toEntity(row);
