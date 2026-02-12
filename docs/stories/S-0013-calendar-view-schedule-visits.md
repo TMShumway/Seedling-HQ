@@ -41,10 +41,10 @@ Adds a calendar-based schedule view (week + day) and the ability to schedule/res
 - [x] **5.1: Add VisitWithContextResponse type + 3 API methods**
 
 ## Phase 6: Frontend — SchedulePage + Calendar Grid
-- [ ] **6.1: Enable Schedule nav + add route**
-- [ ] **6.2: Create SchedulePage with week header + navigation**
-- [ ] **6.3: Build week view calendar grid (desktop)**
-- [ ] **6.4: Build day view (mobile)**
+- [x] **6.1: Enable Schedule nav + add route**
+- [x] **6.2: Create SchedulePage with week header + navigation**
+- [x] **6.3: Build week view calendar grid (desktop)**
+- [x] **6.4: Build day view (mobile)**
 
 ## Phase 7: Frontend — Unscheduled Panel + Schedule Modal
 - [ ] **7.1: Add unscheduled visits panel above calendar**
@@ -65,29 +65,42 @@ Adds a calendar-based schedule view (week + day) and the ability to schedule/res
 
 ## Resume context
 ### Last completed
-- Phase 5: API Client Extensions
-  - `apps/web/src/lib/api-client.ts` — added `VisitWithContextResponse` type (extends `VisitResponse` with `jobTitle`, `clientName`, `propertyAddress`), and 3 methods: `listVisits({ from, to, status? })`, `listUnscheduledVisits()`, `scheduleVisit(id, { scheduledStart, scheduledEnd? })`
-  - `tsc --noEmit` passes in web workspace
+- Phase 6: Frontend SchedulePage + Calendar Grid
+  - `apps/web/src/app-shell/Sidebar.tsx` — enabled Schedule nav item (`active: true, href: '/schedule'`)
+  - `apps/web/src/App.tsx` — added `<Route path="/schedule">` + import SchedulePage
+  - `apps/web/src/pages/SchedulePage.tsx` — full calendar page with:
+    - Week navigation via `?week=YYYY-MM-DD` URL param (prev/next/today buttons)
+    - Date helpers: `getMonday`, `addDays`, `formatDateParam`, `formatDayHeader`, `isToday`
+    - `useQuery` for `listVisits` by week range
+    - CSS Grid week view (desktop, `hidden lg:block`): 7 day columns + time gutter (6AM–8PM), VisitBlock absolutely positioned by time
+    - Day view (mobile, `lg:hidden`): single column with day selector arrows
+    - VisitBlock component: shows jobTitle, clientName, time range; clickable → sets selectedVisit state (for Phase 7 modal)
+    - `visitsByDay` memo groups visits by day index
 
-### Summary of all backend work (Phases 1–4)
-- **Phase 1 (DB + Repos):** `schema.ts` got `metadata` JSONB on `audit_events` + `visits_tenant_scheduled_start_idx` index. `AuditEvent` interface + `DrizzleAuditEventRepository` handle metadata. `VisitRepository` port now has `VisitWithContext`, `ListVisitsFilters`, `updateSchedule`, `listByDateRange`, `listUnscheduled`. `DrizzleVisitRepository` implements all with JOINs.
-- **Phase 2 (DTO + Use Case):** `ScheduleVisitInput/Output` DTOs. `ScheduleVisitUseCase` — validates status=scheduled, auto-computes end from duration, status-guarded SQL update, best-effort audit (`visit.time_set` first schedule, `visit.rescheduled` subsequent with metadata).
-- **Phase 3 (Routes + Wiring):** `visit-routes.ts` with 3 endpoints: `GET /v1/visits/unscheduled`, `GET /v1/visits` (date range, max 8 days), `PATCH /v1/visits/:id/schedule`. Wired in `app.ts`.
-- **Phase 4 (Seed):** `seed.ts` — `getTodayAt()` helper. Existing visit now has `scheduledStart=today 9AM, scheduledEnd=+120min`. New Bob Wilson quote (0705), job (0901), unscheduled visit (0951).
+### Summary of backend work (Phases 1–5)
+- Phase 1: DB schema (metadata JSONB on audit_events, scheduled_start index on visits), VisitRepository extensions
+- Phase 2: ScheduleVisitUseCase with status guard, auto-computed end, first-schedule vs reschedule audit metadata
+- Phase 3: visit-routes.ts (3 endpoints), wired in app.ts
+- Phase 4: Seed data with scheduled + unscheduled visits
+- Phase 5: api-client.ts VisitWithContextResponse + 3 API methods
 
 ### Commits so far
-1. `0b77a14` — S-0013 phase 1: DB schema + repository extensions
-2. `99e788b` — S-0013 phase 2: DTO + Use Case
-3. `81548b6` — S-0013 phase 3: Visit routes + wiring
-4. `c556eeb` — S-0013 phase 4: Seed data updates
-5. (pending) — S-0013 phase 5: API client extensions
+1. `0b77a14` — phase 1
+2. `99e788b` — phase 2
+3. `81548b6` — phase 3
+4. `c556eeb` — phase 4
+5. `9f4815d` — phase 5
+6. (pending) — phase 6
 
 ### In progress
 - None
 ### Next up
-- Phase 6: Frontend SchedulePage + Calendar Grid
-  - Need to: enable Schedule nav in Sidebar.tsx (currently `active: false, href: '#'`), add `/schedule` route in App.tsx, build SchedulePage with week header/navigation, CSS Grid week view (desktop), day view (mobile)
-  - Key patterns: `?week=YYYY-MM-DD` URL param for deep-linking, `useQuery` for `listVisits`, `hidden lg:grid` + `lg:hidden` for responsive
+- Phase 7: Unscheduled Panel + Schedule Modal
+  - Add `useQuery` for `listUnscheduledVisits()` in SchedulePage
+  - Build horizontal scroll panel of unscheduled visit cards above calendar
+  - Create `ScheduleVisitModal` component (Card overlay, `<input type="datetime-local">`, auto-computed end, useMutation)
+  - Wire click interactions: unscheduled card → open modal, calendar block → open modal pre-filled
+  - Update JobDetailPage: "Schedule" button on unscheduled visits, time link to `/schedule?week=` on scheduled visits
 ### Blockers / open questions
 - None
 

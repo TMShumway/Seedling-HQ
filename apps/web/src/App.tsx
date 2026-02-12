@@ -23,6 +23,7 @@ import { PublicQuoteViewPage } from '@/pages/PublicQuoteViewPage';
 import { TeamPage } from '@/pages/TeamPage';
 import { JobsPage } from '@/pages/JobsPage';
 import { JobDetailPage } from '@/pages/JobDetailPage';
+import { SchedulePage } from '@/pages/SchedulePage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -53,6 +54,7 @@ export function App() {
             <Route path="/quotes" element={<QuotesPage />} />
             <Route path="/quotes/new" element={<CreateQuotePage />} />
             <Route path="/quotes/:id" element={<QuoteDetailPage />} />
+            <Route path="/schedule" element={<SchedulePage />} />
             <Route path="/jobs" element={<JobsPage />} />
             <Route path="/jobs/:id" element={<JobDetailPage />} />
             <Route path="/team" element={<TeamPage />} />
