@@ -69,7 +69,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userId = localStorage.getItem('dev_user_id');
       if (tenantId && userId) {
         setIsAuthenticated(true);
-        setUser({ tenantId, userId, fullName: '', role: '', tenantName: '' });
+        setUser({
+          tenantId,
+          userId,
+          fullName: localStorage.getItem('dev_user_name') ?? '',
+          role: localStorage.getItem('dev_user_role') ?? '',
+          tenantName: localStorage.getItem('dev_tenant_name') ?? '',
+        });
       }
       setIsLoading(false);
     } else {
@@ -202,6 +208,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await apiClient.localVerify(account.userId, password);
         localStorage.setItem('dev_tenant_id', account.tenantId);
         localStorage.setItem('dev_user_id', account.userId);
+        localStorage.setItem('dev_user_role', account.role);
+        localStorage.setItem('dev_user_name', account.fullName);
+        localStorage.setItem('dev_tenant_name', account.tenantName);
         const authUser: AuthUser = {
           tenantId: account.tenantId,
           userId: account.userId,
@@ -386,6 +395,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (mode === 'local') {
       localStorage.removeItem('dev_tenant_id');
       localStorage.removeItem('dev_user_id');
+      localStorage.removeItem('dev_user_role');
+      localStorage.removeItem('dev_user_name');
+      localStorage.removeItem('dev_tenant_name');
     } else {
       clearAuthProvider();
       cognitoClientRef.current?.signOut();
