@@ -387,3 +387,98 @@ describe('POST /v1/users/:id/reset-password', () => {
     expect(res.statusCode).toBe(404);
   });
 });
+
+describe('POST /v1/users/me/password', () => {
+  beforeEach(async () => {
+    await truncateAll();
+    resetRateLimitStore();
+  });
+
+  it('changes password with correct current password', async () => {
+    const { tenant, user } = await createTenant('ChangePw', 'owner@changepw.com', 'Owner');
+
+    const app = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenant.id,
+      DEV_AUTH_USER_ID: user.id,
+      DEV_AUTH_ROLE: 'owner',
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/users/me/password',
+      payload: { currentPassword: 'test-password', newPassword: 'new-secure-pw' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().success).toBe(true);
+
+    // Verify new password works
+    const verifyRes = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/local/verify',
+      payload: { userId: user.id, password: 'new-secure-pw' },
+    });
+    expect(verifyRes.statusCode).toBe(200);
+  });
+
+  it('returns 401 for wrong current password', async () => {
+    const { tenant, user } = await createTenant('WrongPw', 'owner@wrongpw.com', 'Owner');
+
+    const app = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenant.id,
+      DEV_AUTH_USER_ID: user.id,
+      DEV_AUTH_ROLE: 'owner',
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/users/me/password',
+      payload: { currentPassword: 'wrong-password', newPassword: 'new-secure-pw' },
+    });
+
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('returns 400 for too-short new password', async () => {
+    const { tenant, user } = await createTenant('ShortPw', 'owner@shortpw.com', 'Owner');
+
+    const app = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenant.id,
+      DEV_AUTH_USER_ID: user.id,
+      DEV_AUTH_ROLE: 'owner',
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/users/me/password',
+      payload: { currentPassword: 'test-password', newPassword: 'short' },
+    });
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  it('returns 404 in cognito mode', async () => {
+    const { tenant, user } = await createTenant('CogMode', 'owner@cogmode.com', 'Owner');
+
+    const app = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenant.id,
+      DEV_AUTH_USER_ID: user.id,
+      DEV_AUTH_ROLE: 'owner',
+      AUTH_MODE: 'cognito',
+      COGNITO_USER_POOL_ID: 'us-east-1_test',
+      COGNITO_CLIENT_ID: 'test-client-id',
+      COGNITO_REGION: 'us-east-1',
+    }, {
+      jwtVerifier: { verify: async () => ({ tenantId: tenant.id, userId: user.id, role: 'owner' }) },
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/users/me/password',
+      headers: { authorization: 'Bearer fake-token' },
+      payload: { currentPassword: 'old', newPassword: 'new-secure-pw' },
+    });
+
+    expect(res.statusCode).toBe(404);
+  });
+});

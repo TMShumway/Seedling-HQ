@@ -6,7 +6,7 @@ import type { UnitOfWork } from '../../../application/ports/unit-of-work.js';
 import type { AuditEventRepository } from '../../../application/ports/audit-event-repository.js';
 import type { CognitoProvisioner } from '../../../application/ports/cognito-provisioner.js';
 import { CreateUserUseCase } from '../../../application/usecases/create-user.js';
-import { NotFoundError, ForbiddenError } from '../../../shared/errors.js';
+import { NotFoundError, ForbiddenError, UnauthorizedError } from '../../../shared/errors.js';
 import { hashPassword, verifyPassword } from '../../../shared/password.js';
 import { buildAuthMiddleware } from '../middleware/auth-middleware.js';
 import { buildRateLimiter } from '../middleware/rate-limit.js';
@@ -190,6 +190,74 @@ export function buildUserRoutes(deps: UserRoutesDeps) {
             eventName: 'user.password_reset',
             subjectType: 'user',
             subjectId: id,
+            correlationId: request.id as string,
+          });
+        } catch {
+          // Best-effort
+        }
+
+        return { success: true };
+      },
+    );
+
+    // POST /v1/users/me/password — change own password (local mode, any role)
+    server.post(
+      '/v1/users/me/password',
+      {
+        preHandler: authMiddleware,
+        schema: {
+          body: z.object({
+            currentPassword: z.string().min(1),
+            newPassword: z.string().min(8).max(128),
+          }),
+          response: {
+            200: z.object({ success: z.boolean() }),
+            404: z.object({ error: z.object({ code: z.string(), message: z.string() }) }),
+          },
+        },
+      },
+      async (request, reply) => {
+        if (deps.config.AUTH_MODE !== 'local') {
+          return reply.status(404).send({
+            error: { code: 'NOT_FOUND', message: 'Not Found' },
+          });
+        }
+
+        const { currentPassword, newPassword } = request.body;
+        const user = await deps.userRepo.getById(
+          request.authContext.tenant_id,
+          request.authContext.user_id,
+        );
+        if (!user) {
+          throw new NotFoundError('User not found');
+        }
+
+        if (!user.passwordHash) {
+          throw new UnauthorizedError('No password set');
+        }
+
+        const valid = await verifyPassword(currentPassword, user.passwordHash);
+        if (!valid) {
+          throw new UnauthorizedError('Current password is incorrect');
+        }
+
+        const newHash = await hashPassword(newPassword);
+        await deps.userRepo.updatePasswordHash(
+          request.authContext.tenant_id,
+          request.authContext.user_id,
+          newHash,
+        );
+
+        // Best-effort audit
+        try {
+          await deps.auditRepo.record({
+            id: randomUUID(),
+            tenantId: request.authContext.tenant_id,
+            principalType: 'internal',
+            principalId: request.authContext.user_id,
+            eventName: 'user.password_changed',
+            subjectType: 'user',
+            subjectId: request.authContext.user_id,
             correlationId: request.id as string,
           });
         } catch {
