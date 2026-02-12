@@ -112,7 +112,21 @@ export function QuoteDetailPage() {
   });
 
   const sendMutation = useMutation({
-    mutationFn: () => apiClient.sendQuote(id!),
+    mutationFn: async () => {
+      // Auto-save current draft state before sending so the backend
+      // sees exactly what the user sees (title, line items, tax).
+      await apiClient.updateQuote(id!, {
+        title,
+        lineItems: lineItems.map((item) => ({
+          serviceItemId: item.serviceItemId,
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+        })),
+        tax: dollarsToCents(tax),
+      });
+      return apiClient.sendQuote(id!);
+    },
     onSuccess: (data: SendQuoteResponse) => {
       queryClient.invalidateQueries({ queryKey: ['quote', id] });
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
