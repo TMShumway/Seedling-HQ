@@ -28,10 +28,10 @@ Adds a calendar-based schedule view (week + day) and the ability to schedule/res
 - [x] **2.2: Implement ScheduleVisitUseCase**
 
 ## Phase 3: Visit Routes + Wiring
-- [ ] **3.1: Create visit-routes.ts with GET /v1/visits/unscheduled**
-- [ ] **3.2: Add GET /v1/visits with date range query**
-- [ ] **3.3: Add PATCH /v1/visits/:id/schedule**
-- [ ] **3.4: Wire buildVisitRoutes into app.ts**
+- [x] **3.1: Create visit-routes.ts with GET /v1/visits/unscheduled**
+- [x] **3.2: Add GET /v1/visits with date range query**
+- [x] **3.3: Add PATCH /v1/visits/:id/schedule**
+- [x] **3.4: Wire buildVisitRoutes into app.ts**
 
 ## Phase 4: Seed Data Updates
 - [ ] **4.1: Give existing demo visit scheduled times**
@@ -65,9 +65,10 @@ Adds a calendar-based schedule view (week + day) and the ability to schedule/res
 
 ## Resume context
 ### Last completed
+- Phase 3: Visit Routes + Wiring
+  - `apps/api/src/adapters/http/routes/visit-routes.ts` — 3 endpoints: GET /v1/visits/unscheduled, GET /v1/visits (date range), PATCH /v1/visits/:id/schedule
+  - `apps/api/src/app.ts` — wired buildVisitRoutes
 - Phase 2: DTO + Use Case
-  - `apps/api/src/application/dto/schedule-visit-dto.ts` — ScheduleVisitInput/Output DTOs
-  - `apps/api/src/application/usecases/schedule-visit.ts` — ScheduleVisitUseCase with status guard, auto-computed end, first-schedule vs reschedule audit metadata
 - Phase 1: DB Schema + Repository Extensions
   - `apps/api/src/infra/db/schema.ts` — added `metadata` JSONB column to `auditEvents`, added `visits_tenant_scheduled_start_idx` index
   - `apps/api/src/application/ports/audit-event-repository.ts` — added `metadata?: Record<string, unknown> | null` to `AuditEvent` interface
@@ -78,7 +79,7 @@ Adds a calendar-based schedule view (week + day) and the ability to schedule/res
 ### In progress
 - None
 ### Next up
-- Phase 3: Visit Routes + Wiring
+- Phase 4: Seed Data Updates
 ### Blockers / open questions
 - None
 
