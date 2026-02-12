@@ -568,6 +568,19 @@ export const apiClient = {
     return request<{ count: number }>('GET', `/v1/jobs/count${qs}`);
   },
 
+  // Visits (schedule)
+  listVisits: (params: { from: string; to: string; status?: string }) => {
+    const qs = new URLSearchParams({ from: params.from, to: params.to });
+    if (params.status) qs.set('status', params.status);
+    return request<{ data: VisitWithContextResponse[] }>('GET', `/v1/visits?${qs.toString()}`);
+  },
+
+  listUnscheduledVisits: () =>
+    request<{ data: VisitWithContextResponse[] }>('GET', '/v1/visits/unscheduled'),
+
+  scheduleVisit: (id: string, body: { scheduledStart: string; scheduledEnd?: string }) =>
+    request<{ visit: VisitResponse }>('PATCH', `/v1/visits/${id}/schedule`, body),
+
   // Team
   listUsers: () =>
     request<{ users: UserResponse[] }>('GET', '/v1/users'),
@@ -789,6 +802,12 @@ export interface CreateJobResponse {
   visit: VisitResponse;
   suggestedDurationMinutes: number;
   alreadyExisted: boolean;
+}
+
+export interface VisitWithContextResponse extends VisitResponse {
+  jobTitle: string;
+  clientName: string;
+  propertyAddress: string | null;
 }
 
 export { ApiClientError };
