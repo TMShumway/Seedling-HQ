@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { BusinessSettingsForm } from '@/components/business-settings/BusinessSettingsForm';
+import { ChangePasswordForm } from '@/components/settings/ChangePasswordForm';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiClient } from '@/lib/api-client';
 
@@ -36,6 +37,7 @@ export function SettingsPage() {
         </p>
       </div>
       <BusinessSettingsForm initialData={settingsQuery.data} />
+      <ChangePasswordForm />
     </div>
   );
 }

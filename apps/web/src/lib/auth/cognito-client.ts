@@ -124,6 +124,62 @@ export class CognitoAuthClient {
     this.storage.clear();
   }
 
+  forgotPassword(username: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const user = new CognitoUser({
+        Username: username,
+        Pool: this.pool,
+        Storage: this.storage,
+      });
+
+      user.forgotPassword({
+        onSuccess: () => resolve(),
+        onFailure: (err) => reject(err),
+        inputVerificationCode: () => resolve(),
+      });
+    });
+  }
+
+  confirmForgotPassword(username: string, code: string, newPassword: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const user = new CognitoUser({
+        Username: username,
+        Pool: this.pool,
+        Storage: this.storage,
+      });
+
+      user.confirmPassword(code, newPassword, {
+        onSuccess: () => resolve(),
+        onFailure: (err) => reject(err),
+      });
+    });
+  }
+
+  changePassword(oldPassword: string, newPassword: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const user = this.getCurrentUser();
+      if (!user) {
+        reject(new Error('No authenticated user'));
+        return;
+      }
+
+      user.getSession((err: Error | null, session: CognitoUserSession | null) => {
+        if (err || !session) {
+          reject(err || new Error('No session'));
+          return;
+        }
+
+        user.changePassword(oldPassword, newPassword, (changeErr) => {
+          if (changeErr) {
+            reject(changeErr);
+            return;
+          }
+          resolve();
+        });
+      });
+    });
+  }
+
   getCurrentUser(): CognitoUser | null {
     return this.pool.getCurrentUser();
   }

@@ -29,6 +29,9 @@ export interface AuthContextValue {
   selectAccount: (account: LoginAccount) => boolean;
   authenticate: (password: string) => Promise<{ newPasswordRequired: boolean }>;
   handleNewPassword: (newPassword: string) => Promise<void>;
+  forgotPassword: () => Promise<void>;
+  confirmForgotPassword: (code: string, newPassword: string) => Promise<void>;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
   getAccessToken: () => Promise<string>;
   logout: () => Promise<void>;
 }
@@ -296,6 +299,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const forgotPassword = useCallback(async (): Promise<void> => {
+    setError(null);
+    const account = selectedAccountRef.current;
+    if (!account) {
+      setError('No account selected');
+      return;
+    }
+
+    if (mode === 'local') {
+      throw new Error('Forgot password is not available in local mode');
+    }
+
+    const client = cognitoClientRef.current;
+    if (!client) {
+      setError('Auth client not initialized');
+      return;
+    }
+
+    await client.forgotPassword(account.userId);
+  }, [mode]);
+
+  const confirmForgotPassword = useCallback(
+    async (code: string, newPassword: string): Promise<void> => {
+      setError(null);
+      const account = selectedAccountRef.current;
+      if (!account) {
+        setError('No account selected');
+        return;
+      }
+
+      const client = cognitoClientRef.current;
+      if (!client) {
+        setError('Auth client not initialized');
+        return;
+      }
+
+      await client.confirmForgotPassword(account.userId, code, newPassword);
+    },
+    [],
+  );
+
+  const changePassword = useCallback(
+    async (oldPassword: string, newPassword: string): Promise<void> => {
+      setError(null);
+
+      if (mode === 'local') {
+        await apiClient.changeMyPassword(oldPassword, newPassword);
+        return;
+      }
+
+      const client = cognitoClientRef.current;
+      if (!client) {
+        setError('Auth client not initialized');
+        return;
+      }
+
+      await client.changePassword(oldPassword, newPassword);
+    },
+    [mode],
+  );
+
   const getAccessToken = useCallback(async (): Promise<string> => {
     if (mode === 'local') return '';
 
@@ -349,6 +413,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     selectAccount,
     authenticate,
     handleNewPassword,
+    forgotPassword,
+    confirmForgotPassword,
+    changePassword,
     getAccessToken,
     logout,
   };
