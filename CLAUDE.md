@@ -62,7 +62,7 @@
 | Testing | Vitest + Playwright + axe-core | S-0001 | |
 | DB schema management | `db:push` (local), `db:generate` + `db:migrate` (prod) | S-0001 | Migrations introduced as schema evolves |
 | Service catalog | Two-level: categories → items | S-0003 | Soft delete via `active` flag; prices in integer cents |
-| Nav order | Dashboard, Services, Requests, Clients, Quotes, then remaining items | S-0009 | Quotes enabled in S-0009; Jobs enabled in S-0012; Schedule, Invoices still disabled |
+| Nav order | Dashboard, Services, Requests, Clients, Quotes, then remaining items | S-0009 | Quotes enabled in S-0009; Jobs enabled in S-0012; Schedule enabled in S-0013; Invoices still disabled |
 | Client/Property model | Two-level: clients → properties | S-0004 | Soft delete with cascade; nullable email (phone-only clients OK) |
 | Pagination | Cursor-based keyset pagination | S-0004 | `PaginatedResult<T>` with `(created_at DESC, id DESC)`, fetch limit+1 |
 | Server-side search | ILIKE across multiple columns | S-0004 | `?search=term` on `GET /v1/clients` |
@@ -139,6 +139,13 @@
 | Visit duration aggregation | Sum `estimatedDurationMinutes` from quote line items' service items; default 60 | S-0012 | Decoupled from service item changes after creation |
 | Job-to-Quote lookup | `GET /v1/jobs/by-quote/:quoteId` | S-0012 | Enables deterministic navigation from scheduled quote to its job |
 | Job detail visits | Embedded visits array in `GET /v1/jobs/:id` response | S-0012 | Few visits per job; avoids extra round-trip |
+| Visit scheduling | `ScheduleVisitUseCase` — no UoW, direct repo + best-effort audit | S-0013 | Single entity write; `updateSchedule` WHERE status='scheduled' for race safety |
+| Visit routes | Flat `/v1/visits/*` for calendar operations | S-0013 | 3 endpoints: GET range, GET unscheduled, PATCH schedule; separate from embedded visits in job response |
+| Audit metadata | JSONB `metadata` column on `audit_events` | S-0013 | `visit.time_set` + `visit.rescheduled` with timestamp metadata; nullable, existing events have null |
+| Calendar UI | Hand-built CSS Grid week view | S-0013 | No calendar library; 7-day columns, time gutter, PX_PER_HOUR positioning |
+| Calendar date range | Max 8-day window on `GET /v1/visits` | S-0013 | Prevents unbounded queries; week view is 7 days |
+| Week navigation | URL query param `?week=YYYY-MM-DD` | S-0013 | Deep-linkable; defaults to current week's Monday |
+| Schedule modal | Card-based overlay (ResetPasswordDialog pattern) | S-0013 | `<input type="datetime-local">`, auto-computed end from duration |
 
 ---
 
@@ -219,6 +226,10 @@
 | Job routes (5 endpoints) | S-0012 | `GET /v1/jobs`, `GET /v1/jobs/count`, `GET /v1/jobs/by-quote/:quoteId`, `POST /v1/jobs`, `GET /v1/jobs/:id`; count and by-quote registered before `:id` |
 | RespondToQuoteUseCase scheduled idempotency | S-0012 | When `action === 'approve'` and `quote.status === 'scheduled'`: return idempotent success (quote was approved then progressed) |
 | PublicQuoteViewPage scheduled support | S-0012 | `['approved', 'scheduled'].includes(quote.status)` for "already approved" banner display |
+| ScheduleVisitUseCase (no UoW) | S-0013 | Direct repo + best-effort audit; status guard in `updateSchedule` SQL; emits `visit.time_set` (first) or `visit.rescheduled` (subsequent) with metadata JSONB |
+| Visit routes (3 endpoints) | S-0013 | `GET /v1/visits` (date range), `GET /v1/visits/unscheduled`, `PATCH /v1/visits/:id/schedule`; unscheduled registered before `:id`; range limit 8 days |
+| VisitWithContext JOIN query | S-0013 | `listByDateRange` and `listUnscheduled` JOIN jobs+clients+LEFT JOIN properties for calendar context fields |
+| Audit metadata JSONB | S-0013 | Nullable `metadata` column on `audit_events`; used for structured context (timestamps) in `visit.time_set`/`visit.rescheduled` |
 
 ### Frontend
 
@@ -274,6 +285,10 @@
 | JobDetailPage with embedded visits | S-0012 | Client/property/quote info cards, visits section with VisitStatusBadge; back to Jobs list; `data-testid="job-detail-page"` |
 | Create Job from quote detail | S-0012 | "Create Job" button on approved quotes → `createJobFromQuote()` mutation → navigate to `/jobs/:id`; "View Job" link on scheduled quotes via `getJobByQuoteId()` |
 | QuotesPage Scheduled filter/badge | S-0012 | Added `scheduled` to STATUS_FILTERS and badge colors on QuotesPage + QuoteDetailPage |
+| SchedulePage week calendar | S-0013 | CSS Grid week view (`hidden lg:block`) + mobile day view (`lg:hidden`); `?week=YYYY-MM-DD` URL param; `useQuery(['visits', weekParam])` for range data |
+| Unscheduled panel | S-0013 | Horizontal scroll of amber-styled cards above calendar; `useQuery(['unscheduled-visits'])`; click opens ScheduleVisitModal |
+| ScheduleVisitModal | S-0013 | Card overlay with `<input type="datetime-local">`; auto-computed end; `useMutation` → `scheduleVisit` → invalidate `['visits']` + `['unscheduled-visits']` |
+| JobDetailPage schedule actions | S-0013 | Scheduled visits: time is `<Link>` to `/schedule?week=YYYY-MM-DD`; unscheduled visits: "Schedule" button navigates to `/schedule` |
 
 ### Testing
 
