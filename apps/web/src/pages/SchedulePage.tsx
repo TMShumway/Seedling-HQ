@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { apiClient } from '@/lib/api-client';
 import type { VisitWithContextResponse } from '@/lib/api-client';
+import { useAuth } from '@/lib/auth/auth-context';
 import { ScheduleVisitModal } from '@/components/schedule/ScheduleVisitModal';
 
 // --- Date helpers ---
@@ -92,6 +93,9 @@ function VisitBlock({ visit, onClick }: VisitBlockProps) {
     >
       <p className="font-medium text-indigo-900 truncate">{visit.jobTitle}</p>
       <p className="text-indigo-700 truncate">{visit.clientName}</p>
+      {visit.assignedUserName && (
+        <p className="text-indigo-600 truncate" data-testid="visit-block-assignee">{visit.assignedUserName}</p>
+      )}
       <p className="text-indigo-600 truncate">{startTime} – {endTime}</p>
     </button>
   );
@@ -101,6 +105,10 @@ function VisitBlock({ visit, onClick }: VisitBlockProps) {
 
 export function SchedulePage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
+
+  // "My Visits" toggle from URL
+  const myVisitsOnly = searchParams.get('mine') === 'true';
 
   // Parse week param or default to current week's Monday
   const weekStart = useMemo(() => {
@@ -127,13 +135,17 @@ export function SchedulePage() {
   });
   const selectedDay = weekDays[selectedDayIndex];
 
+  // Build filter params
+  const assignedUserId = myVisitsOnly ? user?.userId : undefined;
+
   // Fetch visits for the week
   const visitsQuery = useQuery({
-    queryKey: ['visits', formatDateParam(weekStart)],
+    queryKey: ['visits', formatDateParam(weekStart), assignedUserId ?? 'all'],
     queryFn: () =>
       apiClient.listVisits({
         from: weekStart.toISOString(),
         to: weekEnd.toISOString(),
+        assignedUserId,
       }),
   });
 
@@ -141,8 +153,8 @@ export function SchedulePage() {
 
   // Fetch unscheduled visits
   const unscheduledQuery = useQuery({
-    queryKey: ['unscheduled-visits'],
-    queryFn: () => apiClient.listUnscheduledVisits(),
+    queryKey: ['unscheduled-visits', assignedUserId ?? 'all'],
+    queryFn: () => apiClient.listUnscheduledVisits(assignedUserId ? { assignedUserId } : undefined),
   });
   const unscheduledVisits = unscheduledQuery.data?.data ?? [];
 
@@ -160,24 +172,35 @@ export function SchedulePage() {
     return map;
   }, [visits]);
 
-  // Navigation
+  // Navigation — preserve `mine` param
+  function updateParams(newWeek: string) {
+    const params: Record<string, string> = { week: newWeek };
+    if (myVisitsOnly) params.mine = 'true';
+    setSearchParams(params);
+  }
+
   function navigateWeek(offset: number) {
     const newWeek = addDays(weekStart, offset * 7);
-    setSearchParams({ week: formatDateParam(newWeek) });
+    updateParams(formatDateParam(newWeek));
   }
 
   function goToToday() {
     const monday = getMonday(new Date());
-    setSearchParams({ week: formatDateParam(monday) });
+    updateParams(formatDateParam(monday));
     const today = new Date();
     const day = today.getDay();
     setSelectedDayIndex(day === 0 ? 6 : day - 1);
   }
 
-  // Visit click — will be handled by parent in Phase 7
+  function toggleMyVisits() {
+    const params: Record<string, string> = { week: formatDateParam(weekStart) };
+    if (!myVisitsOnly) params.mine = 'true';
+    setSearchParams(params);
+  }
+
+  // Visit click — opens modal
   const [selectedVisit, setSelectedVisit] = useState<VisitWithContextResponse | null>(null);
 
-  // Expose selectedVisit setter for Phase 7 modal wiring
   const handleVisitClick = (visit: VisitWithContextResponse) => {
     setSelectedVisit(visit);
   };
@@ -187,12 +210,23 @@ export function SchedulePage() {
 
   const gridHeight = HOURS.length * PX_PER_HOUR;
 
+  const hasNoVisits = visits.length === 0 && !visitsQuery.isLoading;
+  const hasNoUnscheduled = unscheduledVisits.length === 0 && !unscheduledQuery.isLoading;
+
   return (
     <div className="space-y-4" data-testid="schedule-page">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl font-semibold">Schedule</h1>
         <div className="flex items-center gap-2">
+          <Button
+            variant={myVisitsOnly ? 'default' : 'outline'}
+            size="sm"
+            onClick={toggleMyVisits}
+            data-testid="my-visits-toggle"
+          >
+            {myVisitsOnly ? 'My Visits' : 'All Visits'}
+          </Button>
           <Button variant="outline" size="sm" onClick={() => navigateWeek(-1)} data-testid="prev-week" aria-label="Previous week">
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -224,6 +258,9 @@ export function SchedulePage() {
               >
                 <p className="font-medium text-amber-900 truncate max-w-[200px]">{v.jobTitle}</p>
                 <p className="text-amber-700 truncate max-w-[200px]">{v.clientName}</p>
+                <p className="text-xs text-amber-600 truncate max-w-[200px]" data-testid="unscheduled-assignee">
+                  {v.assignedUserName ?? 'Unassigned'}
+                </p>
                 <p className="flex items-center gap-1 text-xs text-amber-600 mt-0.5">
                   <Clock className="h-3 w-3" />
                   {v.estimatedDurationMinutes} min
@@ -231,6 +268,13 @@ export function SchedulePage() {
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Empty states for "My Visits" */}
+      {myVisitsOnly && hasNoUnscheduled && unscheduledVisits.length === 0 && !unscheduledQuery.isLoading && (
+        <div className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground" data-testid="no-unscheduled-mine">
+          No unscheduled visits assigned to you
         </div>
       )}
 
@@ -286,6 +330,13 @@ export function SchedulePage() {
             </div>
           ))}
         </div>
+
+        {/* Empty state overlay for My Visits */}
+        {myVisitsOnly && hasNoVisits && (
+          <div className="py-8 text-center text-sm text-muted-foreground" data-testid="no-visits-mine">
+            No visits assigned to you this week
+          </div>
+        )}
       </div>
 
       {/* Mobile Day View */}
