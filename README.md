@@ -23,6 +23,7 @@ Seedling HQ is under active development. Here's what's working today:
 | Create standalone quotes | Done | Create quotes directly for existing clients (no request needed) |
 | Send quotes via secure link | Done | One-click send generates a secure link; quote is viewable without login |
 | Customer approves/declines | Done | Customers approve or decline quotes from the secure link |
+| Team management | Done | Invite members, assign roles (owner/admin/member), reset passwords, change own password |
 | Scheduling + jobs | Planned | Calendar view, visit tracking, technician "Today" page |
 | Invoicing + payments | Planned | Invoice generation, Stripe payments via secure link |
 
@@ -68,6 +69,7 @@ The seed data creates a ready-to-explore demo tenant. After `make deps` and `pnp
 3. **Clients** — 3 seeded clients (John Smith, Jane Johnson, Bob Wilson) each with a property
 4. **Requests** — 3 incoming requests from the public form, all with status "New"
 5. **Quotes** — 1 draft quote and 2 sent quotes (with secure links you can follow)
+6. **Team** — 3 seeded members (Demo Owner, Demo Admin, Demo Member) with role badges; try inviting a new member or resetting a password
 
 To try the full flow yourself:
 1. Submit a request at http://localhost:5173/request/demo
@@ -186,9 +188,9 @@ pnpm exec playwright test e2e/tests/quotes.spec.ts --project=desktop-chrome
 ### Test Coverage
 
 ```
-Unit:        251 tests (201 API + 50 web)
-Integration: 165 tests (requires Postgres)
-E2E:         108 tests (74 run + 34 skipped on non-desktop projects)
+Unit:        267 tests (214 API + 53 web)
+Integration: 183 tests (requires Postgres)
+E2E:         126 tests (63 desktop-chrome + 63 mobile-chrome, 39 skipped non-desktop)
 ```
 
 ## Multi-Tenancy
@@ -207,6 +209,9 @@ Under the hood, the frontend stores tenant/user IDs in `localStorage` and sends 
 // Run in browser console
 localStorage.removeItem('dev_tenant_id');
 localStorage.removeItem('dev_user_id');
+localStorage.removeItem('dev_user_role');
+localStorage.removeItem('dev_user_name');
+localStorage.removeItem('dev_tenant_name');
 location.reload();
 ```
 
@@ -243,6 +248,10 @@ Customers access quotes (and eventually invoices) via secure links like `http://
 | GET | `/v1/users/me` | Required | Get current user |
 | GET | `/v1/tenants/me/settings` | Required | Get business settings (null if not configured) |
 | PUT | `/v1/tenants/me/settings` | Required | Create or update business settings |
+| GET | `/v1/users` | Required | List team members |
+| POST | `/v1/users` | Required | Create/invite user (owner/admin only) |
+| POST | `/v1/users/:id/reset-password` | Required | Reset user password (owner/admin only) |
+| POST | `/v1/users/me/password` | Required | Change own password |
 
 ### Services
 

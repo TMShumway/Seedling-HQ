@@ -265,10 +265,11 @@ Use a consistent error strategy:
 - Domain throws typed domain errors (no HTTP concerns)
 - Application catches and maps to application errors (still no HTTP concerns)
 - HTTP adapter maps to:
-  - 400 validation
-  - 401/403 auth
-  - 404 not found (prefer to avoid leaking existence cross-tenant)
-  - 409 conflict (invalid transitions)
+  - 400 validation (`ValidationError`)
+  - 401 unauthorized (`UnauthorizedError`)
+  - 403 forbidden (`ForbiddenError`, S-0031 — role-based access guard)
+  - 404 not found (`NotFoundError` — prefer to avoid leaking existence cross-tenant)
+  - 409 conflict (`ConflictError` — invalid transitions, unique violations)
   - 500 unexpected
 
 Return a consistent JSON error shape (define in your API standards doc when created).

@@ -191,6 +191,7 @@ Minimum audit events for MVP:
 - `request.created`
 - `quote.created` (S-0008), `quote.updated` (S-0009)
 - `quote.sent` (S-0010), `quote.viewed` (S-0010), `quote.approved` (S-0011), `quote.declined` (S-0011)
+- `user.created` (S-0031), `user.reprovisioned` (S-0031), `user.password_reset` (S-0031), `user.password_changed` (S-0031)
 - `visit.scheduled`, `visit.rescheduled`, `visit.completed`
 - `invoice.sent`, `invoice.viewed`, `invoice.paid`
 - `message.sent` (email/SMS) with outbox id linkage
