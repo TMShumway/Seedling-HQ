@@ -24,8 +24,8 @@ Adds a calendar-based schedule view (week + day) and the ability to schedule/res
 - [x] **1.6: Implement listUnscheduled() in DrizzleVisitRepository**
 
 ## Phase 2: DTO + Use Case
-- [ ] **2.1: Create ScheduleVisitInput/Output DTOs**
-- [ ] **2.2: Implement ScheduleVisitUseCase**
+- [x] **2.1: Create ScheduleVisitInput/Output DTOs**
+- [x] **2.2: Implement ScheduleVisitUseCase**
 
 ## Phase 3: Visit Routes + Wiring
 - [ ] **3.1: Create visit-routes.ts with GET /v1/visits/unscheduled**
@@ -65,6 +65,9 @@ Adds a calendar-based schedule view (week + day) and the ability to schedule/res
 
 ## Resume context
 ### Last completed
+- Phase 2: DTO + Use Case
+  - `apps/api/src/application/dto/schedule-visit-dto.ts` — ScheduleVisitInput/Output DTOs
+  - `apps/api/src/application/usecases/schedule-visit.ts` — ScheduleVisitUseCase with status guard, auto-computed end, first-schedule vs reschedule audit metadata
 - Phase 1: DB Schema + Repository Extensions
   - `apps/api/src/infra/db/schema.ts` — added `metadata` JSONB column to `auditEvents`, added `visits_tenant_scheduled_start_idx` index
   - `apps/api/src/application/ports/audit-event-repository.ts` — added `metadata?: Record<string, unknown> | null` to `AuditEvent` interface
@@ -75,7 +78,7 @@ Adds a calendar-based schedule view (week + day) and the ability to schedule/res
 ### In progress
 - None
 ### Next up
-- Phase 2: DTO + Use Case (ScheduleVisitUseCase)
+- Phase 3: Visit Routes + Wiring
 ### Blockers / open questions
 - None
 
