@@ -508,6 +508,10 @@ Tenant
 | `quote.viewed` | quote | Client opens secure link | S-0010 |
 | `quote.approved` | quote | Client approves quote via secure link (`principalType: 'external'`) | S-0011 |
 | `quote.declined` | quote | Client declines quote via secure link (`principalType: 'external'`) | S-0011 |
+| `user.created` | user | User created by owner/admin | S-0031 |
+| `user.reprovisioned` | user | Disabled user re-enabled and re-provisioned | S-0031 |
+| `user.password_reset` | user | Password reset triggered by admin | S-0031 |
+| `user.password_changed` | user | User changed own password | S-0031 |
 
 > **Note (S-0007):** New request notifications are tracked via `message_outbox` records (not audit events). The `message.sent` audit event is planned for S-0021 when the SMS worker is implemented.
 
@@ -625,5 +629,5 @@ All audit events share this structure:
 | Story | Title | Notes |
 |-------|-------|-------|
 | S-0030 | Frontend Cognito SDK integration | Completed — dual-mode auth (local/cognito), token storage, refresh, NEW_PASSWORD_REQUIRED |
-| S-0031 | Cognito user provisioning | Admin creates Cognito users via backend API; `username = users.id` enforcement |
+| S-0031 | Cognito user provisioning + team management | Completed — user CRUD, team UI, password management, CognitoProvisioner port, ForbiddenError, DB CHECK constraints |
 | S-0032 | In-app notification center | Revisit when 3+ notification types exist |

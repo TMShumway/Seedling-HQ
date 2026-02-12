@@ -168,6 +168,15 @@ sequenceDiagram
   - **Frontend auth** (added in S-0030): `AuthProvider` context (`auth-context.tsx`) + `useAuth()` hook provide dual-mode auth state. `api-client.ts` uses `setAuthProvider()` to inject `Authorization: Bearer <token>` in cognito mode with 401 retry (forceRefresh → retry → onAuthFailure → logout). `SignupPage` shows "Contact your administrator" in cognito mode.
   - The `AuthContext` interface is **identical** in both modes — use cases and domain logic never know which mode produced it.
   - The mock middleware must refuse to activate if `NODE_ENV=production`.
+  - **User provisioning + team management** (added in S-0031):
+    - `GET /v1/users` — list team members (owner/admin only)
+    - `POST /v1/users` — create user (owner/admin only; mode-specific body: local requires password, cognito provisions via AWS SDK)
+    - `POST /v1/users/:id/reset-password` — reset user password (owner/admin only; role hierarchy: owner can reset admin+member, admin can reset member only)
+    - `POST /v1/users/me/password` — change own password (any role, local mode only; requires current password)
+    - `CognitoProvisioner` port with `AwsCognitoProvisioner` (prod) and `NoopCognitoProvisioner` (local dev) implementations
+    - `ForbiddenError` (403, `FORBIDDEN`) for role-based permission violations — distinct from `UnauthorizedError` (401)
+    - DB CHECK constraints on `users.role` (owner/admin/member) and `users.status` (active/disabled)
+    - Frontend `TeamPage` with invite form, reset password dialog, and role/status badges
 
 #### External auth is unchanged
 External customers continue to use **loginless secure-link tokens** (see Sections 6.2 and 7.2). Cognito is only for internal principals.

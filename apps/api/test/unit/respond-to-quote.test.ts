@@ -98,6 +98,10 @@ describe('RespondToQuoteUseCase', () => {
       getByIdGlobal: vi.fn(),
       getByEmail: vi.fn(),
       listActiveByEmail: vi.fn().mockResolvedValue([]),
+      listByTenantId: vi.fn(),
+      updatePasswordHash: vi.fn(),
+      updateStatus: vi.fn(),
+      updateUser: vi.fn(),
     };
 
     outboxRepo = {

@@ -26,6 +26,10 @@ function makeUserRepo(overrides: Partial<UserRepository> = {}): UserRepository {
     getByEmail: vi.fn(async () => null),
     getOwnerByTenantId: vi.fn(async () => null),
     listActiveByEmail: vi.fn(async () => []),
+    listByTenantId: vi.fn(async () => []),
+    updatePasswordHash: vi.fn(async () => null),
+    updateStatus: vi.fn(async () => null),
+    updateUser: vi.fn(async () => null),
     ...overrides,
   };
 }

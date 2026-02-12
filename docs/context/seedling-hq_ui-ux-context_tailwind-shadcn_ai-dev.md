@@ -74,7 +74,8 @@ Primary navigation (internal users), in sidebar order:
 6) **Schedule** — stubbed (S-0012+)
 7) **Jobs** — stubbed (S-0012+)
 8) **Invoices** — stubbed (S-0017+)
-9) **Settings** — active (S-0002): business profile and hours
+9) **Team** — active (S-0031): member list, invite, reset password
+10) **Settings** — active (S-0002): business profile, hours, change own password (S-0031)
 
 > **Note (S-0003 decision):** Services is placed early (after Dashboard) because it's a setup-phase item that owners configure before taking on clients.
 
@@ -341,7 +342,7 @@ When an AI agent adds UI:
 
 1) App shell (sidebar + mobile drawer) with placeholder pages — **DONE** (S-0001): Sidebar, TopBar, MobileDrawer in `apps/web/src/app-shell/`
 2) Page header component pattern (title + actions) — **DONE** (S-0001/S-0002): consistent pattern in DashboardPage, SettingsPage, ServicesPage
-3) Badge/status system — **PARTIAL** (S-0006/S-0009): `StatusBadge` implemented in RequestsPage (new=amber, reviewed=blue, converted=green, declined=gray) and QuotesPage (draft=gray, sent=blue, approved=green, declined=red, expired=amber); extend for Job/Invoice statuses (S-0012+/S-0017+)
+3) Badge/status system — **PARTIAL** (S-0006/S-0009/S-0031): `StatusBadge` implemented in RequestsPage (new=amber, reviewed=blue, converted=green, declined=gray) and QuotesPage (draft=gray, sent=blue, approved=green, declined=red, expired=amber); role badges on TeamPage (owner=blue, admin=purple, member=gray); user status badges (active=green, invited=amber, disabled=gray); extend for Job/Invoice statuses (S-0012+/S-0017+)
 4) Form components + validation approach + error summary — **DONE** (S-0002): Input, Select, Textarea, Checkbox in `apps/web/src/components/ui/`; validation via controlled state + Zod schemas
 5) List patterns (desktop table + mobile cards) — **PARTIAL** (S-0003+): ServicesPage has category accordion + item rows (S-0003); ClientsPage has card list + search + cursor pagination (S-0004); RequestsPage has card list + search + status badges + click-through to detail (S-0006/S-0008); QuotesPage has card list + search + status filter pills + "New Quote" button + cursor pagination (S-0009/S-0026)
    - Remaining: Invoices (S-0017+)
@@ -351,6 +352,7 @@ When an AI agent adds UI:
    - Invoice view/pay — planned (S-0017+)
    - Client Hub — planned (future)
 7) Login page (dual-mode auth) — **DONE** (S-0027, updated S-0030): `LoginPage` at `/login` outside AppShell, combined email + password form → account picker (if multiple tenants), `AuthGuard` wraps authenticated routes, logout buttons in Sidebar + MobileDrawer
+8) Team management — **DONE** (S-0031): `TeamPage` with member table (role/status badges), `InviteMemberForm` (mode-specific: password for local, info for cognito), `ResetPasswordDialog` (password + confirm), `ChangePasswordForm` on SettingsPage
 
 ---
 

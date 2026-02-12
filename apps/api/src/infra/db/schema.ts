@@ -1,4 +1,5 @@
-import { pgTable, uuid, varchar, text, timestamp, index, unique, jsonb, integer, boolean, smallint } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, timestamp, index, unique, jsonb, integer, boolean, smallint, check } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 export const tenants = pgTable('tenants', {
   id: uuid('id').primaryKey(),
@@ -27,6 +28,8 @@ export const users = pgTable(
   (table) => [
     unique('users_tenant_email_unique').on(table.tenantId, table.email),
     index('users_tenant_id_idx').on(table.tenantId),
+    check('users_role_check', sql`${table.role} IN ('owner', 'admin', 'member')`),
+    check('users_status_check', sql`${table.status} IN ('active', 'disabled')`),
   ],
 );
 

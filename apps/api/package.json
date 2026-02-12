@@ -18,6 +18,7 @@
     "gen": "tsx --env-file=../../.env src/gen-openapi.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.988.0",
     "@fastify/cors": "^11.0.0",
     "@fastify/swagger": "^9.4.0",
     "@fastify/swagger-ui": "^5.2.0",

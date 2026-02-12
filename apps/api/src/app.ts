@@ -41,6 +41,8 @@ import { DrizzleQuoteRepository } from './infra/db/repositories/drizzle-quote-re
 import { DrizzleMessageOutboxRepository } from './infra/db/repositories/drizzle-message-outbox-repository.js';
 import { DrizzleUnitOfWork } from './infra/db/drizzle-unit-of-work.js';
 import { NodemailerEmailSender } from './infra/email/nodemailer-email-sender.js';
+import { AwsCognitoProvisioner } from './infra/auth/aws-cognito-provisioner.js';
+import type { CognitoProvisioner } from './application/ports/cognito-provisioner.js';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -95,13 +97,19 @@ export async function createApp({ config, db, jwtVerifier: jwtVerifierOverride }
   const uow = new DrizzleUnitOfWork(db);
   const emailSender = new NodemailerEmailSender(config.SMTP_HOST, config.SMTP_PORT);
 
+  // Cognito provisioner (only created when AUTH_MODE=cognito)
+  let cognitoProvisioner: CognitoProvisioner | undefined;
+  if (config.AUTH_MODE === 'cognito') {
+    cognitoProvisioner = new AwsCognitoProvisioner(config);
+  }
+
   // Decorator for external auth context (secure link tokens)
   app.decorateRequest('externalAuthContext', null);
 
   // Routes
   await app.register(healthRoutes);
   await app.register(buildTenantRoutes({ tenantRepo, uow, config, jwtVerifier }));
-  await app.register(buildUserRoutes({ userRepo, config, jwtVerifier }));
+  await app.register(buildUserRoutes({ userRepo, auditRepo, uow, config, jwtVerifier, cognitoProvisioner }));
   await app.register(buildBusinessSettingsRoutes({ settingsRepo, auditRepo, config, jwtVerifier }));
   await app.register(buildServiceCategoryRoutes({ categoryRepo, serviceItemRepo, auditRepo, config, jwtVerifier }));
   await app.register(buildServiceItemRoutes({ serviceItemRepo, categoryRepo, auditRepo, config, jwtVerifier }));

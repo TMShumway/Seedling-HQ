@@ -44,6 +44,9 @@ test.describe('Login Flow', () => {
     await page.evaluate(() => {
       localStorage.setItem('dev_tenant_id', '00000000-0000-0000-0000-000000000001');
       localStorage.setItem('dev_user_id', '00000000-0000-0000-0000-000000000010');
+      localStorage.setItem('dev_user_role', 'owner');
+      localStorage.setItem('dev_user_name', 'Demo Owner');
+      localStorage.setItem('dev_tenant_name', 'Demo Business');
     });
     await page.goto('/dashboard');
     await expect(page.getByTestId('tenant-name')).toBeVisible({ timeout: 10000 });

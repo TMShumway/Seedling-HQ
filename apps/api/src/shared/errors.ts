@@ -33,6 +33,12 @@ export class UnauthorizedError extends AppError {
   }
 }
 
+export class ForbiddenError extends AppError {
+  constructor(message = 'Forbidden') {
+    super(message, 'FORBIDDEN', 403);
+  }
+}
+
 /** SQL state 23505 — unique_violation. Works with pg / node-postgres errors. */
 export function isUniqueViolation(err: unknown): boolean {
   return typeof err === 'object' && err !== null && 'code' in err && (err as { code: unknown }).code === '23505';

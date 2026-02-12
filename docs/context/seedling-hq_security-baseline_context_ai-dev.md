@@ -110,6 +110,22 @@ API middleware validates Cognito Access tokens using `jose` library (`CognitoJwt
 - Login endpoint (`POST /v1/auth/local/login`, S-0027): cross-tenant email lookup, rate-limited (10 req/min per IP), returns 404 when `AUTH_MODE !== 'local'`. Password verify endpoint (`POST /v1/auth/local/verify`, S-0030): rate-limited (10 req/min per IP), returns 404 when `AUTH_MODE !== 'local'`. Frontend `AuthGuard` redirects unauthenticated users to `/login`.
 - This is acceptable only for `NODE_ENV=development`. The mock middleware must refuse to activate if `NODE_ENV=production`.
 
+### 3.5 Internal role-based access control (RBAC) — Implemented in S-0031
+
+Role hierarchy: **Owner > Admin > Member**
+
+| Action | Owner | Admin | Member |
+|--------|-------|-------|--------|
+| Create user (invite) | Yes (any role) | Yes (member only) | No |
+| Reset user password | Yes (admin, member) | Yes (member only) | No |
+| Change own password | Yes | Yes | Yes |
+| View team list | Yes | Yes | Yes |
+| Manage business settings | Yes | Yes | Read-only |
+
+**Implementation:** Role checks are inline in use cases/routes using `if (callerRole !== 'owner') throw new ForbiddenError(...)`. Full declarative RBAC guard system deferred to S-0036.
+
+**Enforcement chain:** Cognito groups (`cognito:groups` claim) → JWT middleware extracts role → `authContext.role` → use case checks. Local dev mock middleware derives role from user record in DB (via auth headers). The `users.role` column has a CHECK constraint enforcing valid values at the DB layer.
+
 ---
 
 ## 4) Secure link token policy (MVP)

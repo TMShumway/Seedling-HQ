@@ -6,6 +6,8 @@ import { hashPassword } from '../../shared/password.js';
 
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 const DEMO_USER_ID = '00000000-0000-0000-0000-000000000010';
+const DEMO_ADMIN_ID = '00000000-0000-0000-0000-000000000011';
+const DEMO_MEMBER_ID = '00000000-0000-0000-0000-000000000012';
 
 const DEMO_CATEGORY_IDS = {
   lawnCare: '00000000-0000-0000-0000-000000000200',
@@ -50,6 +52,40 @@ async function seed() {
     .onConflictDoUpdate({
       target: users.id,
       set: { email: 'owner@demo.local', fullName: 'Demo Owner', role: 'owner', passwordHash: demoPasswordHash, status: 'active' },
+    });
+
+  // Upsert demo admin user (password: "password")
+  await db
+    .insert(users)
+    .values({
+      id: DEMO_ADMIN_ID,
+      tenantId: DEMO_TENANT_ID,
+      email: 'admin@demo.local',
+      fullName: 'Demo Admin',
+      role: 'admin',
+      passwordHash: demoPasswordHash,
+      status: 'active',
+    })
+    .onConflictDoUpdate({
+      target: users.id,
+      set: { email: 'admin@demo.local', fullName: 'Demo Admin', role: 'admin', passwordHash: demoPasswordHash, status: 'active' },
+    });
+
+  // Upsert demo member user (password: "password")
+  await db
+    .insert(users)
+    .values({
+      id: DEMO_MEMBER_ID,
+      tenantId: DEMO_TENANT_ID,
+      email: 'member@demo.local',
+      fullName: 'Demo Member',
+      role: 'member',
+      passwordHash: demoPasswordHash,
+      status: 'active',
+    })
+    .onConflictDoUpdate({
+      target: users.id,
+      set: { email: 'member@demo.local', fullName: 'Demo Member', role: 'member', passwordHash: demoPasswordHash, status: 'active' },
     });
 
   // Note: business_settings intentionally NOT seeded — onboarding flow

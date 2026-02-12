@@ -29,6 +29,9 @@ export interface AuthContextValue {
   selectAccount: (account: LoginAccount) => boolean;
   authenticate: (password: string) => Promise<{ newPasswordRequired: boolean }>;
   handleNewPassword: (newPassword: string) => Promise<void>;
+  forgotPassword: () => Promise<void>;
+  confirmForgotPassword: (code: string, newPassword: string) => Promise<void>;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
   getAccessToken: () => Promise<string>;
   logout: () => Promise<void>;
 }
@@ -66,7 +69,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userId = localStorage.getItem('dev_user_id');
       if (tenantId && userId) {
         setIsAuthenticated(true);
-        setUser({ tenantId, userId, fullName: '', role: '', tenantName: '' });
+        setUser({
+          tenantId,
+          userId,
+          fullName: localStorage.getItem('dev_user_name') ?? '',
+          role: localStorage.getItem('dev_user_role') ?? '',
+          tenantName: localStorage.getItem('dev_tenant_name') ?? '',
+        });
       }
       setIsLoading(false);
     } else {
@@ -199,6 +208,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await apiClient.localVerify(account.userId, password);
         localStorage.setItem('dev_tenant_id', account.tenantId);
         localStorage.setItem('dev_user_id', account.userId);
+        localStorage.setItem('dev_user_role', account.role);
+        localStorage.setItem('dev_user_name', account.fullName);
+        localStorage.setItem('dev_tenant_name', account.tenantName);
         const authUser: AuthUser = {
           tenantId: account.tenantId,
           userId: account.userId,
@@ -296,6 +308,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const forgotPassword = useCallback(async (): Promise<void> => {
+    setError(null);
+    const account = selectedAccountRef.current;
+    if (!account) {
+      setError('No account selected');
+      return;
+    }
+
+    if (mode === 'local') {
+      throw new Error('Forgot password is not available in local mode');
+    }
+
+    const client = cognitoClientRef.current;
+    if (!client) {
+      setError('Auth client not initialized');
+      return;
+    }
+
+    await client.forgotPassword(account.userId);
+  }, [mode]);
+
+  const confirmForgotPassword = useCallback(
+    async (code: string, newPassword: string): Promise<void> => {
+      setError(null);
+      const account = selectedAccountRef.current;
+      if (!account) {
+        setError('No account selected');
+        return;
+      }
+
+      const client = cognitoClientRef.current;
+      if (!client) {
+        setError('Auth client not initialized');
+        return;
+      }
+
+      await client.confirmForgotPassword(account.userId, code, newPassword);
+    },
+    [],
+  );
+
+  const changePassword = useCallback(
+    async (oldPassword: string, newPassword: string): Promise<void> => {
+      setError(null);
+
+      if (mode === 'local') {
+        await apiClient.changeMyPassword(oldPassword, newPassword);
+        return;
+      }
+
+      const client = cognitoClientRef.current;
+      if (!client) {
+        setError('Auth client not initialized');
+        return;
+      }
+
+      await client.changePassword(oldPassword, newPassword);
+    },
+    [mode],
+  );
+
   const getAccessToken = useCallback(async (): Promise<string> => {
     if (mode === 'local') return '';
 
@@ -322,6 +395,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (mode === 'local') {
       localStorage.removeItem('dev_tenant_id');
       localStorage.removeItem('dev_user_id');
+      localStorage.removeItem('dev_user_role');
+      localStorage.removeItem('dev_user_name');
+      localStorage.removeItem('dev_tenant_name');
     } else {
       clearAuthProvider();
       cognitoClientRef.current?.signOut();
@@ -349,6 +425,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     selectAccount,
     authenticate,
     handleNewPassword,
+    forgotPassword,
+    confirmForgotPassword,
+    changePassword,
     getAccessToken,
     logout,
   };

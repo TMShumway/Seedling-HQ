@@ -94,4 +94,47 @@ describe('api-client 401 retry', () => {
     expect(mockForceRefresh).not.toHaveBeenCalled();
     expect(mockOnAuthFailure).not.toHaveBeenCalled();
   });
+
+  it('does NOT log out when retry returns non-401 error (e.g. 500)', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(401, { error: { code: 'UNAUTHORIZED', message: 'expired' } }))
+      .mockResolvedValueOnce(jsonResponse(500, { error: { code: 'INTERNAL', message: 'Server error' } }));
+    mockForceRefresh.mockResolvedValue('refreshed-token');
+
+    await expect(apiClient.getTenantMe()).rejects.toThrow('Server error');
+
+    expect(mockForceRefresh).toHaveBeenCalledOnce();
+    expect(mockOnAuthFailure).not.toHaveBeenCalled();
+  });
+
+  it('awaits onAuthFailure when forceRefresh fails', async () => {
+    let resolved = false;
+    mockOnAuthFailure.mockImplementation(() =>
+      new Promise<void>((resolve) => setTimeout(() => { resolved = true; resolve(); }, 10)),
+    );
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(401, { error: { code: 'UNAUTHORIZED', message: 'expired' } }));
+    mockForceRefresh.mockRejectedValue(new Error('Refresh failed'));
+
+    await expect(apiClient.getTenantMe()).rejects.toThrow();
+
+    expect(mockOnAuthFailure).toHaveBeenCalledOnce();
+    expect(resolved).toBe(true);
+  });
+
+  it('awaits onAuthFailure when retry returns 401', async () => {
+    let resolved = false;
+    mockOnAuthFailure.mockImplementation(() =>
+      new Promise<void>((resolve) => setTimeout(() => { resolved = true; resolve(); }, 10)),
+    );
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(401, { error: { code: 'UNAUTHORIZED', message: 'expired' } }))
+      .mockResolvedValueOnce(jsonResponse(401, { error: { code: 'UNAUTHORIZED', message: 'still invalid' } }));
+    mockForceRefresh.mockResolvedValue('refreshed-token');
+
+    await expect(apiClient.getTenantMe()).rejects.toThrow();
+
+    expect(mockOnAuthFailure).toHaveBeenCalledOnce();
+    expect(resolved).toBe(true);
+  });
 });
