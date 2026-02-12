@@ -1,4 +1,4 @@
-# S-0032: Service Agreement Entity + CRUD
+# S-0033: Service Agreement Entity + CRUD
 
 **Status**: Post-MVP (not scheduled)
 **Priority**: P0 — critical for recurring revenue model
@@ -101,4 +101,4 @@ Optional "Convert to recurring" button on quote or job detail page. Pre-fills li
 
 ## Why P0
 
-Recurring service agreements are the foundation of the entire Recurring Services epic. Without this entity, visit generation (S-0033) and recurring invoicing (S-0034) have nothing to drive them. Most lawn care and landscaping revenue comes from recurring contracts, making this the highest-priority post-MVP feature.
+Recurring service agreements are the foundation of the entire Recurring Services epic. Without this entity, visit generation (S-0034) and recurring invoicing (S-0035) have nothing to drive them. Most lawn care and landscaping revenue comes from recurring contracts, making this the highest-priority post-MVP feature.

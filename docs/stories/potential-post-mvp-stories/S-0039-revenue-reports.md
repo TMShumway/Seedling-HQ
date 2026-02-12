@@ -1,4 +1,4 @@
-# S-0038: Revenue Reports Dashboard
+# S-0039: Revenue Reports Dashboard
 
 **Status:** Post-MVP (not scheduled)
 **Priority:** P0 — owners need to know if they're making money

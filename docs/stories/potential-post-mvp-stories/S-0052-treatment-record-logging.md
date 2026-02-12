@@ -1,4 +1,4 @@
-# S-0051: Treatment Record Logging
+# S-0052: Treatment Record Logging
 
 **Status:** Post-MVP (not scheduled)
 **Priority:** P2 — legal compliance for lawn care/pest control
@@ -26,5 +26,5 @@ Allow technicians to log chemical/treatment applications during visit completion
 - [ ] Should treatment logging be optional or required based on service type?
 - [ ] State-specific compliance formats (e.g., some states require specific PDF report formats)?
 - [ ] Should the product lookup table be pre-seeded with common lawn care products?
-- [ ] Integration with weather data (S-0055) for wind/temperature auto-fill?
-- [ ] Customer notice generation (see S-0052) — required in many states within 24 hours of application
+- [ ] Integration with weather data (S-0056) for wind/temperature auto-fill?
+- [ ] Customer notice generation (see S-0053) — required in many states within 24 hours of application

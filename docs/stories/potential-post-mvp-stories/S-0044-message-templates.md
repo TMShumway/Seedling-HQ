@@ -1,4 +1,4 @@
-# S-0043: Message Templates + Quick-Send
+# S-0044: Message Templates + Quick-Send
 
 Status: Post-MVP (not scheduled)
 Priority: P1 — reduces repetitive typing

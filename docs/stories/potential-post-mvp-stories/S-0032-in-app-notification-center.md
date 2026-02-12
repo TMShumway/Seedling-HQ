@@ -1,4 +1,4 @@
-# S-0031: In-App Notification Center (Post-MVP)
+# S-0032: In-App Notification Center (Post-MVP)
 
 **Status**: Post-MVP (not scheduled)
 **Priority**: Low — revisit when 3+ notification types exist (quotes, invoices, visits)

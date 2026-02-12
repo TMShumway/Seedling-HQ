@@ -1,4 +1,4 @@
-# S-0047: Quote Expiration + Auto-Follow-Up
+# S-0048: Quote Expiration + Auto-Follow-Up
 
 **Status:** Post-MVP (not scheduled)
 **Priority:** P2 — improves close rate
@@ -22,7 +22,7 @@ Auto-expire quotes after a configurable period and send follow-up reminders befo
   - Day 3 after send: "Just checking in" reminder
   - Day 7: "Your quote expires soon" with urgency
   - Day 14 (or 2 days before expiry): "Last chance" final reminder
-  - Sequence is configurable via message templates (S-0043)
+  - Sequence is configurable via message templates (S-0044)
 - Snooze: client can request more time via the quote link -> extends expires_at
 - Re-quote: expired quotes can be "re-sent" (creates new version with fresh expiry)
 - Dashboard widget: "Quotes expiring this week" count

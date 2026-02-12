@@ -1,4 +1,4 @@
-# S-0053: PWA Manifest + Service Worker Caching
+# S-0054: PWA Manifest + Service Worker Caching
 
 **Status:** Post-MVP (not scheduled)
 **Priority:** P2 — improves field reliability
@@ -20,7 +20,7 @@ Make the web app installable as a PWA with service worker caching for core asset
 - Cache key API responses: today's schedule, assigned visit details, client addresses — the data techs need most
 - Install prompt: show "Add to Home Screen" banner on first mobile visit, suppress after dismissal
 - Offline indicator: banner at top of screen when offline, "Data may be outdated" warning
-- Background sync: when connectivity returns, sync any queued actions (see S-0054)
+- Background sync: when connectivity returns, sync any queued actions (see S-0055)
 - Cache invalidation: clear stale data on login, after a configurable TTL
 
 ## Open questions

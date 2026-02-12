@@ -1,9 +1,9 @@
-# S-0034: Recurring Invoicing + Billing Cycles
+# S-0035: Recurring Invoicing + Billing Cycles
 
 **Status**: Post-MVP (not scheduled)
 **Priority**: P0 — monetizes recurring services
 **Epic**: E-0012 (Recurring Services)
-**Depends on**: S-0032 (Service agreement entity), S-0017 (Generate invoice)
+**Depends on**: S-0033 (Service agreement entity), S-0017 (Generate invoice)
 
 ---
 
@@ -111,4 +111,4 @@ next_billing_date       date (nullable — computed for query efficiency)
 
 ## Why P0
 
-Revenue collection is the end goal of the recurring services workflow. Agreements define the work (S-0032), visit generation schedules it (S-0033), and this story ensures the business gets paid for it. Without automated recurring invoicing, the owner must manually create invoices for every billing cycle, which negates much of the value of the recurring services feature.
+Revenue collection is the end goal of the recurring services workflow. Agreements define the work (S-0033), visit generation schedules it (S-0034), and this story ensures the business gets paid for it. Without automated recurring invoicing, the owner must manually create invoices for every billing cycle, which negates much of the value of the recurring services feature.

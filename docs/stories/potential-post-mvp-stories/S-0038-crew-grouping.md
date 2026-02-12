@@ -1,9 +1,9 @@
-# S-0037: Crew Grouping + Multi-Tech Visit Assignment
+# S-0038: Crew Grouping + Multi-Tech Visit Assignment
 
 Status: Post-MVP (not scheduled)
 Priority: P1 — important for larger teams
 Epic: E-0013 (RBAC + Team Management)
-Depends on: S-0035 (Role-based permissions), S-0014 (Assign technician)
+Depends on: S-0036 (Role-based permissions), S-0014 (Assign technician)
 
 ## Context
 

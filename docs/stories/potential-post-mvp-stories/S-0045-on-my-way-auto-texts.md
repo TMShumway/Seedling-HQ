@@ -1,4 +1,4 @@
-# S-0044: On-My-Way + Job Completion Auto-Texts
+# S-0045: On-My-Way + Job Completion Auto-Texts
 
 Status: Post-MVP (not scheduled)
 Priority: P1 — clients love proactive communication
@@ -13,10 +13,10 @@ Recommended approach:
 - Triggered by visit status transitions (not manual send):
   - `en_route` → send "on my way" template to client
   - `completed` → send "job complete" template to client (with optional photo attachment)
-- Use message templates (S-0043) for the content, with visit-specific variables
+- Use message templates (S-0044) for the content, with visit-specific variables
 - Business settings toggle: enable/disable each auto-text type (some owners may not want this)
 - Per-client opt-out: `communication_preferences` on client record (sms_opt_in, email_opt_in)
-- ETA estimation: if route data available (S-0041), include estimated arrival time in the "on my way" message
+- ETA estimation: if route data available (S-0042), include estimated arrival time in the "on my way" message
 - Job completion summary: include services performed, tech name, any notes; optionally attach before/after photos
 - Channel priority: SMS preferred (faster), email as fallback if no phone number
 

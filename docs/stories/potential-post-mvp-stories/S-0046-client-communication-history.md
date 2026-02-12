@@ -1,4 +1,4 @@
-# S-0045: Client Communication History
+# S-0046: Client Communication History
 
 Status: Post-MVP (not scheduled)
 Priority: P1 — provides full context for client interactions
@@ -15,7 +15,7 @@ Recommended approach:
 - Display: timestamp, channel (email/SMS icon), subject/preview, status (sent/delivered/failed/queued), click to expand full content
 - Filter by channel (all / email / SMS) and status
 - Link messages to context: "Re: Appointment on Jan 15" → click through to the visit
-- Include system-generated messages (notifications, reminders) and manual sends (quick-send from S-0043)
+- Include system-generated messages (notifications, reminders) and manual sends (quick-send from S-0044)
 - Future: two-way SMS — show inbound replies inline (requires Twilio webhook integration, defer to later)
 
 Open questions:
