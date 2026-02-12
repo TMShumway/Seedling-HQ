@@ -69,6 +69,19 @@ Introduces the **Job** and **Visit** domain entities and the workflow to create 
 - [x] Update CLAUDE.md
 - [x] Update domain model doc
 
+## Resume context
+### Last completed
+- All 7 phases complete, PR #74 open at https://github.com/TMShumway/Seedling-HQ/pull/74
+- Fixed 3 P1 typecheck issues from PR review: missing `scheduledAt: null` in `send-quote.test.ts` and `update-quote.test.ts` fixtures, missing `listBySubjects` in `create-job-from-quote.test.ts` auditRepo mock
+- Pushed fix as commit `1e8a2c5`
+### In progress
+- Nothing — story is complete, awaiting PR merge
+### Next up
+- Merge PR #74 (use merge commit per convention: `gh pr merge --merge`)
+- After merge, next story is S-0013 (Calendar view + schedule/reschedule)
+### Blockers / open questions
+- None
+
 ## Test summary
 - **Unit**: 229 total (15 new — 14 CreateJobFromQuoteUseCase + 1 RespondToQuoteUseCase)
 - **Integration**: 199 total (14 new)
