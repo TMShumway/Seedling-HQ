@@ -3,7 +3,7 @@ import type { VisitRepository, VisitWithContext, ListVisitsFilters } from '../..
 import type { Visit } from '../../../domain/entities/visit.js';
 import type { VisitStatus } from '../../../domain/types/visit-status.js';
 import type { Database } from '../client.js';
-import { visits, jobs, clients, properties } from '../schema.js';
+import { visits, jobs, clients, properties, users } from '../schema.js';
 
 function toEntity(row: typeof visits.$inferSelect): Visit {
   return {
@@ -84,6 +84,27 @@ export class DrizzleVisitRepository implements VisitRepository {
     return rows[0] ? toEntity(rows[0]) : null;
   }
 
+  async updateAssignedUser(
+    tenantId: string,
+    id: string,
+    assignedUserId: string | null,
+  ): Promise<Visit | null> {
+    const rows = await this.db
+      .update(visits)
+      .set({
+        assignedUserId,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(visits.tenantId, tenantId),
+          eq(visits.id, id),
+        ),
+      )
+      .returning();
+    return rows[0] ? toEntity(rows[0]) : null;
+  }
+
   async listByDateRange(
     tenantId: string,
     from: Date,
@@ -100,6 +121,10 @@ export class DrizzleVisitRepository implements VisitRepository {
       conditions.push(eq(visits.status, filters.status));
     }
 
+    if (filters?.assignedUserId) {
+      conditions.push(eq(visits.assignedUserId, filters.assignedUserId));
+    }
+
     const rows = await this.db
       .select({
         visit: visits,
@@ -107,11 +132,13 @@ export class DrizzleVisitRepository implements VisitRepository {
         clientFirstName: clients.firstName,
         clientLastName: clients.lastName,
         propertyAddressLine1: properties.addressLine1,
+        assignedUserFullName: users.fullName,
       })
       .from(visits)
       .innerJoin(jobs, eq(visits.jobId, jobs.id))
       .innerJoin(clients, eq(jobs.clientId, clients.id))
       .leftJoin(properties, eq(jobs.propertyId, properties.id))
+      .leftJoin(users, and(eq(visits.assignedUserId, users.id), eq(visits.tenantId, users.tenantId)))
       .where(and(...conditions))
       .orderBy(asc(visits.scheduledStart));
 
@@ -121,10 +148,21 @@ export class DrizzleVisitRepository implements VisitRepository {
       clientFirstName: r.clientFirstName,
       clientLastName: r.clientLastName,
       propertyAddressLine1: r.propertyAddressLine1,
+      assignedUserName: r.assignedUserFullName ?? null,
     }));
   }
 
-  async listUnscheduled(tenantId: string): Promise<VisitWithContext[]> {
+  async listUnscheduled(tenantId: string, filters?: ListVisitsFilters): Promise<VisitWithContext[]> {
+    const conditions = [
+      eq(visits.tenantId, tenantId),
+      isNull(visits.scheduledStart),
+      eq(visits.status, 'scheduled'),
+    ];
+
+    if (filters?.assignedUserId) {
+      conditions.push(eq(visits.assignedUserId, filters.assignedUserId));
+    }
+
     const rows = await this.db
       .select({
         visit: visits,
@@ -132,18 +170,14 @@ export class DrizzleVisitRepository implements VisitRepository {
         clientFirstName: clients.firstName,
         clientLastName: clients.lastName,
         propertyAddressLine1: properties.addressLine1,
+        assignedUserFullName: users.fullName,
       })
       .from(visits)
       .innerJoin(jobs, eq(visits.jobId, jobs.id))
       .innerJoin(clients, eq(jobs.clientId, clients.id))
       .leftJoin(properties, eq(jobs.propertyId, properties.id))
-      .where(
-        and(
-          eq(visits.tenantId, tenantId),
-          isNull(visits.scheduledStart),
-          eq(visits.status, 'scheduled'),
-        ),
-      )
+      .leftJoin(users, and(eq(visits.assignedUserId, users.id), eq(visits.tenantId, users.tenantId)))
+      .where(and(...conditions))
       .orderBy(asc(visits.createdAt));
 
     return rows.map((r) => ({
@@ -152,6 +186,7 @@ export class DrizzleVisitRepository implements VisitRepository {
       clientFirstName: r.clientFirstName,
       clientLastName: r.clientLastName,
       propertyAddressLine1: r.propertyAddressLine1,
+      assignedUserName: r.assignedUserFullName ?? null,
     }));
   }
 }

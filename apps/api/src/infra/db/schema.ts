@@ -340,5 +340,6 @@ export const visits = pgTable(
     index('visits_job_id_idx').on(table.jobId),
     index('visits_tenant_status_idx').on(table.tenantId, table.status),
     index('visits_tenant_scheduled_start_idx').on(table.tenantId, table.scheduledStart),
+    index('visits_tenant_assigned_idx').on(table.tenantId, table.assignedUserId),
   ],
 );
