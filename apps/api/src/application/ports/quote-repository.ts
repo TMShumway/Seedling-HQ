@@ -20,6 +20,7 @@ export interface QuoteStatusFields {
   sentAt?: Date;
   approvedAt?: Date;
   declinedAt?: Date;
+  scheduledAt?: Date;
 }
 
 export interface QuoteRepository {
