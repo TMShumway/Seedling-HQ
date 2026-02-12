@@ -98,7 +98,7 @@ export function PublicQuoteViewPage() {
   // Determine which banner to show
   const showApprovedBanner = respondStatus === 'success' && respondAction === 'approve';
   const showDeclinedBanner = respondStatus === 'success' && respondAction === 'decline';
-  const alreadyApproved = quote.status === 'approved' && respondStatus !== 'success';
+  const alreadyApproved = (quote.status === 'approved' || quote.status === 'scheduled') && respondStatus !== 'success';
   const alreadyDeclined = quote.status === 'declined' && respondStatus !== 'success';
   const canRespond = quote.status === 'sent' && respondStatus !== 'success';
 

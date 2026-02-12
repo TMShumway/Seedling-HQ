@@ -543,6 +543,31 @@ export const apiClient = {
   declineQuote: (token: string) =>
     publicRequest<QuoteRespondResponse>('POST', `/v1/ext/quotes/${token}/decline`),
 
+  // Jobs
+  createJobFromQuote: (quoteId: string) =>
+    request<CreateJobResponse>('POST', '/v1/jobs', { quoteId }),
+
+  listJobs: (params?: { limit?: number; cursor?: string; search?: string; status?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.limit) qs.set('limit', String(params.limit));
+    if (params?.cursor) qs.set('cursor', params.cursor);
+    if (params?.search) qs.set('search', params.search);
+    if (params?.status) qs.set('status', params.status);
+    const q = qs.toString();
+    return request<PaginatedResponse<JobResponse>>('GET', `/v1/jobs${q ? `?${q}` : ''}`);
+  },
+
+  getJob: (id: string) =>
+    request<JobResponse>('GET', `/v1/jobs/${id}`),
+
+  getJobByQuoteId: (quoteId: string) =>
+    request<JobResponse>('GET', `/v1/jobs/by-quote/${quoteId}`),
+
+  countJobs: (status?: string) => {
+    const qs = status ? `?status=${status}` : '';
+    return request<{ count: number }>('GET', `/v1/jobs/count${qs}`);
+  },
+
   // Team
   listUsers: () =>
     request<{ users: UserResponse[] }>('GET', '/v1/users'),
@@ -652,6 +677,7 @@ export interface QuoteResponse {
   sentAt: string | null;
   approvedAt: string | null;
   declinedAt: string | null;
+  scheduledAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -728,6 +754,41 @@ export interface QuoteRespondResponse {
     approvedAt: string | null;
     declinedAt: string | null;
   };
+}
+
+export interface VisitResponse {
+  id: string;
+  tenantId: string;
+  jobId: string;
+  assignedUserId: string | null;
+  scheduledStart: string | null;
+  scheduledEnd: string | null;
+  estimatedDurationMinutes: number;
+  status: string;
+  notes: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JobResponse {
+  id: string;
+  tenantId: string;
+  quoteId: string;
+  clientId: string;
+  propertyId: string | null;
+  title: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  visits?: VisitResponse[];
+}
+
+export interface CreateJobResponse {
+  job: JobResponse;
+  visit: VisitResponse;
+  suggestedDurationMinutes: number;
+  alreadyExisted: boolean;
 }
 
 export { ApiClientError };

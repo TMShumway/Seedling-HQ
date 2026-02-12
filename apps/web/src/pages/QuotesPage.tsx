@@ -14,6 +14,7 @@ const STATUS_FILTERS = [
   { label: 'Sent', value: 'sent' },
   { label: 'Approved', value: 'approved' },
   { label: 'Declined', value: 'declined' },
+  { label: 'Scheduled', value: 'scheduled' },
 ] as const;
 
 function QuoteStatusBadge({ status }: { status: string }) {
@@ -23,6 +24,7 @@ function QuoteStatusBadge({ status }: { status: string }) {
     approved: 'bg-green-100 text-green-800',
     declined: 'bg-red-100 text-red-800',
     expired: 'bg-amber-100 text-amber-800',
+    scheduled: 'bg-indigo-100 text-indigo-800',
   };
 
   return (

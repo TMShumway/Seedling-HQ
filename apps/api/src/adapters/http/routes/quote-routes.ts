@@ -40,6 +40,7 @@ const quoteResponseSchema = z.object({
   sentAt: z.string().nullable(),
   approvedAt: z.string().nullable(),
   declinedAt: z.string().nullable(),
+  scheduledAt: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -66,6 +67,7 @@ function serializeQuote(q: Quote) {
     sentAt: q.sentAt?.toISOString() ?? null,
     approvedAt: q.approvedAt?.toISOString() ?? null,
     declinedAt: q.declinedAt?.toISOString() ?? null,
+    scheduledAt: q.scheduledAt?.toISOString() ?? null,
     createdAt: q.createdAt.toISOString(),
     updatedAt: q.updatedAt.toISOString(),
   };
