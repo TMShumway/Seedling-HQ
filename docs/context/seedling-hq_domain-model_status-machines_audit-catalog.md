@@ -1,6 +1,6 @@
 # Seedling-HQ — Domain Model, Status Machines, and Audit Event Catalog
 
-_Last updated: 2026-02-09 (America/Chihuahua)_
+_Last updated: 2026-02-12 (America/Chihuahua)_
 
 > Purpose: Canonical reference for all domain entities, their fields, status machines, relationships, and audit events.
 > This is the single source of truth for entity shapes — use cases and repositories must conform to these definitions.
@@ -9,7 +9,7 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 
 ## 1) Entity overview
 
-### 1.1 Implemented entities (S-0001 through S-0011, plus S-0026–S-0029)
+### 1.1 Implemented entities (S-0001 through S-0012, plus S-0026–S-0031)
 
 | Entity | Story | Tenant-scoped | Singleton | Soft delete |
 |--------|-------|---------------|-----------|-------------|
@@ -25,13 +25,13 @@ _Last updated: 2026-02-09 (America/Chihuahua)_
 | MessageOutbox | S-0007 | Yes | No | No (append-only) |
 | Quote | S-0008 | Yes | No | No |
 | SecureLinkToken | S-0010 | Yes | No | No |
+| Job | S-0012 | Yes | No | No |
+| Visit | S-0012 | Yes | No | No |
 
 ### 1.2 Planned entities (future stories)
 
 | Entity | Story | Description |
 |--------|-------|-------------|
-| Job | S-0012 | Work order created from an approved quote |
-| Visit | S-0012 | Individual scheduled service visit within a job |
 | Invoice | S-0017 | Bill generated from completed work |
 | QuoteFollowUp | S-0023 | Automated follow-up schedule for unapproved quotes (24h/72h cadence) |
 | InvoiceReminder | S-0024 | Automated reminder schedule for unpaid invoices (tenant-configurable cadence) |
@@ -280,7 +280,7 @@ interface MessageOutbox {
 ### Quote
 
 ```typescript
-type QuoteStatus = 'draft' | 'sent' | 'approved' | 'declined' | 'expired';
+type QuoteStatus = 'draft' | 'sent' | 'approved' | 'declined' | 'expired' | 'scheduled';
 
 interface QuoteLineItem {
   serviceItemId: string | null;
@@ -305,6 +305,7 @@ interface Quote {
   sentAt: Date | null;
   approvedAt: Date | null;
   declinedAt: Date | null;
+  scheduledAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -313,7 +314,7 @@ interface Quote {
 **Indexes:** `(tenant_id)`, `(client_id)`, `(request_id)`, `(tenant_id, status)`
 **Status machine:**
 ```
-draft → sent → approved
+draft → sent → approved → scheduled
              → declined
              → expired
 ```
@@ -323,58 +324,88 @@ draft → sent → approved
 - `approved`: client accepted (S-0011)
 - `declined`: client explicitly rejected (S-0011)
 - `expired`: token TTL passed without action (S-0010)
+- `scheduled`: job created from approved quote (S-0012)
 
 **Creation via conversion (S-0008):** `POST /v1/requests/:id/convert` atomically creates client + property + quote draft + updates request status to `converted`. The quote is created with empty `lineItems`, zero totals, and `draft` status.
 **Standalone creation (S-0026):** `POST /v1/quotes` creates a draft quote for an existing client without a request. Validates client (exists, active, same tenant) and optional property (exists, active, belongs to client). Quote starts with empty `lineItems`, zero totals, and `draft` status — line items added via `PUT /v1/quotes/:id`.
 **Authenticated endpoints (S-0009/S-0026):** `POST /v1/quotes`, `GET /v1/quotes` (paginated), `GET /v1/quotes/:id`, `PUT /v1/quotes/:id`, `GET /v1/quotes/count`
 
----
+### Job
 
-## 3) Planned entity definitions and status machines
+```typescript
+type JobStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
 
-> These definitions are **draft specifications** for upcoming stories. Finalize during story planning.
-
-### Job (S-0012)
-
-```
-Job {
-  id, tenantId, quoteId, clientId, propertyId,
-  title, status, createdAt, updatedAt
+interface Job {
+  id: string;              // UUID
+  tenantId: string;        // FK → tenants.id
+  quoteId: string;         // FK → quotes.id
+  clientId: string;        // FK → clients.id
+  propertyId: string | null; // FK → properties.id
+  title: string;
+  status: JobStatus;
+  createdAt: Date;
+  updatedAt: Date;
 }
 ```
 
+**Uniqueness:** `(tenantId, quoteId)` — one job per quote (1:1 cardinality)
+**Indexes:** `(tenant_id)`, `(tenant_id, status)`, `(client_id)`
 **Status machine:**
 ```
 scheduled → in_progress → completed
                        → cancelled
 ```
 
-- `scheduled`: job created from approved quote
-- `in_progress`: at least one visit started
-- `completed`: all visits completed
-- `cancelled`: job cancelled by owner
+- `scheduled`: job created from approved quote (S-0012)
+- `in_progress`: at least one visit started (future)
+- `completed`: all visits completed (future)
+- `cancelled`: job cancelled by owner (future)
 
-### Visit (S-0012)
+**Creation (S-0012):** `POST /v1/jobs` with `{ quoteId }` atomically creates job + first visit + transitions quote to `scheduled` inside UoW. Idempotent: if quote is already `scheduled`, returns existing job. Scoped unique violation catch for race conditions.
+**Authenticated endpoints (S-0012):** `POST /v1/jobs`, `GET /v1/jobs` (paginated), `GET /v1/jobs/:id` (with embedded visits), `GET /v1/jobs/count`, `GET /v1/jobs/by-quote/:quoteId`
 
-```
-Visit {
-  id, tenantId, jobId, assignedUserId,
-  scheduledDate, scheduledStartTime, scheduledEndTime,
-  status, notes, completedAt, createdAt, updatedAt
+### Visit
+
+```typescript
+type VisitStatus = 'scheduled' | 'en_route' | 'started' | 'completed' | 'cancelled';
+
+interface Visit {
+  id: string;              // UUID
+  tenantId: string;        // FK → tenants.id
+  jobId: string;           // FK → jobs.id
+  assignedUserId: string | null; // FK → users.id
+  scheduledStart: Date | null;   // timestamp with timezone
+  scheduledEnd: Date | null;     // timestamp with timezone
+  estimatedDurationMinutes: number;
+  status: VisitStatus;
+  notes: string | null;
+  completedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 ```
 
+**Indexes:** `(tenant_id)`, `(job_id)`, `(tenant_id, status)`
 **Status machine:**
 ```
 scheduled → en_route → started → completed
                               → cancelled
 ```
 
-- `scheduled`: visit created with date/time
-- `en_route`: member heading to site (optional)
-- `started`: member on-site, work in progress
-- `completed`: work done, notes/photos captured
-- `cancelled`: visit cancelled
+- `scheduled`: visit created, awaiting time assignment (S-0012 creates with null scheduledStart/End)
+- `en_route`: member heading to site (optional, future)
+- `started`: member on-site, work in progress (future)
+- `completed`: work done, notes/photos captured (future)
+- `cancelled`: visit cancelled (future)
+
+**Duration calculation (S-0012):** Sum of `estimatedDurationMinutes` from quote line items' service items; defaults to 60 if sum is 0 or all items have null duration.
+**Embedded response:** Visits are returned as an array within `GET /v1/jobs/:id` and `GET /v1/jobs/by-quote/:quoteId` (no separate visit endpoints).
+
+---
+
+## 3) Planned entity definitions and status machines
+
+> These definitions are **draft specifications** for upcoming stories. Finalize during story planning.
 
 ### Invoice (S-0017)
 
@@ -480,7 +511,7 @@ Tenant
 
 ## 5) Audit event catalog
 
-### Implemented events (S-0001 through S-0029)
+### Implemented events (S-0001 through S-0012, plus S-0026–S-0031)
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
@@ -512,6 +543,9 @@ Tenant
 | `user.reprovisioned` | user | Disabled user re-enabled and re-provisioned | S-0031 |
 | `user.password_reset` | user | Password reset triggered by admin | S-0031 |
 | `user.password_changed` | user | User changed own password | S-0031 |
+| `job.created` | job | Job created from approved quote | S-0012 |
+| `visit.scheduled` | visit | First visit created with job | S-0012 |
+| `quote.scheduled` | quote | Quote transitioned to scheduled (job created) | S-0012 |
 
 > **Note (S-0007):** New request notifications are tracked via `message_outbox` records (not audit events). The `message.sent` audit event is planned for S-0021 when the SMS worker is implemented.
 
@@ -519,8 +553,6 @@ Tenant
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
-| `job.created` | job | Job created from approved quote | S-0012 |
-| `visit.scheduled` | visit | Visit date/time assigned | S-0012 |
 | `visit.rescheduled` | visit | Visit date/time changed | S-0013 |
 | `visit.completed` | visit | Tech marks visit done | S-0015/S-0016 |
 | `invoice.created` | invoice | Invoice generated from visit | S-0017 |
@@ -604,12 +636,14 @@ All audit events share this structure:
 | S-0027 | Local login/logout page | platform | E-0001 |
 | S-0028 | Cognito User Pool infrastructure (CDK) | platform | E-0001 |
 | S-0029 | Cognito JWT validation | platform | E-0001 |
+| S-0030 | Frontend Cognito SDK integration | platform | E-0001 |
+| S-0031 | Cognito user provisioning + team management | platform | E-0001 |
+| S-0012 | Create job + first visit from approved quote | scheduling | E-0005 |
 
 ### Planned (MVP — Release R1)
 
 | Story | Title | Area | Epic | Priority |
 |-------|-------|------|------|----------|
-| S-0012 | Create job + first visit from approved quote | scheduling | E-0005 | P0 |
 | S-0013 | Calendar view (week/day) + schedule/reschedule | scheduling | E-0005 | P0 |
 | S-0014 | Assign technician to visit | scheduling | E-0005 | P0 |
 | S-0015 | Tech "Today" view (mobile web) | field | E-0006 | P0 |
@@ -628,6 +662,4 @@ All audit events share this structure:
 
 | Story | Title | Notes |
 |-------|-------|-------|
-| S-0030 | Frontend Cognito SDK integration | Completed — dual-mode auth (local/cognito), token storage, refresh, NEW_PASSWORD_REQUIRED |
-| S-0031 | Cognito user provisioning + team management | Completed — user CRUD, team UI, password management, CognitoProvisioner port, ForbiddenError, DB CHECK constraints |
 | S-0032 | In-app notification center | Revisit when 3+ notification types exist |

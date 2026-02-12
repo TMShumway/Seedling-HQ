@@ -62,7 +62,7 @@
 | Testing | Vitest + Playwright + axe-core | S-0001 | |
 | DB schema management | `db:push` (local), `db:generate` + `db:migrate` (prod) | S-0001 | Migrations introduced as schema evolves |
 | Service catalog | Two-level: categories → items | S-0003 | Soft delete via `active` flag; prices in integer cents |
-| Nav order | Dashboard, Services, Requests, Clients, Quotes, then remaining items | S-0009 | Quotes enabled in S-0009; Schedule, Jobs, Invoices still disabled |
+| Nav order | Dashboard, Services, Requests, Clients, Quotes, then remaining items | S-0009 | Quotes enabled in S-0009; Jobs enabled in S-0012; Schedule, Invoices still disabled |
 | Client/Property model | Two-level: clients → properties | S-0004 | Soft delete with cascade; nullable email (phone-only clients OK) |
 | Pagination | Cursor-based keyset pagination | S-0004 | `PaginatedResult<T>` with `(created_at DESC, id DESC)`, fetch limit+1 |
 | Server-side search | ILIKE across multiple columns | S-0004 | `?search=term` on `GET /v1/clients` |
@@ -133,6 +133,12 @@
 | Team management routes | `GET /v1/users`, `POST /v1/users`, `POST /v1/users/:id/reset-password` | S-0031 | Owner/admin only; mode-specific Zod schemas (local requires password) |
 | Change own password | `POST /v1/users/me/password` (local mode only) | S-0031 | Any authenticated role; requires current password; scrypt hashing |
 | Local auth localStorage | Persist role/name/tenantName alongside tenant_id/user_id | S-0031 | Fixes role-gated UI after page refresh in local mode |
+| Job/Visit entities | Job (1:1 to Quote via unique constraint) + Visit (1:* to Job) | S-0012 | Created atomically from approved quote inside UoW |
+| Quote `scheduled` status | `approved → scheduled` transition with `scheduledAt` timestamp | S-0012 | Tracks when job was created; cross-cutting: RespondToQuoteUseCase treats as idempotent approve, PublicQuoteViewPage treats as approved |
+| Job creation idempotency | Pre-check (status=scheduled → lookup) + scoped unique violation catch | S-0012 | Two-layer idempotency: status-based fast path + DB constraint fallback |
+| Visit duration aggregation | Sum `estimatedDurationMinutes` from quote line items' service items; default 60 | S-0012 | Decoupled from service item changes after creation |
+| Job-to-Quote lookup | `GET /v1/jobs/by-quote/:quoteId` | S-0012 | Enables deterministic navigation from scheduled quote to its job |
+| Job detail visits | Embedded visits array in `GET /v1/jobs/:id` response | S-0012 | Few visits per job; avoids extra round-trip |
 
 ---
 
@@ -209,6 +215,10 @@
 | Role hierarchy inline guards | S-0031 | Owner > Admin > Member — checked inline in use case/route; `ForbiddenError` on violation; full RBAC deferred to S-0036 |
 | User CRUD routes (3 endpoints) | S-0031 | `GET /v1/users` (list), `POST /v1/users` (create), `POST /v1/users/:id/reset-password`; owner/admin only; mode-specific Zod body schemas |
 | Change own password route | S-0031 | `POST /v1/users/me/password` (local mode, any role); requires `currentPassword`; scrypt verify + re-hash; best-effort audit |
+| CreateJobFromQuoteUseCase (atomic + idempotent) | S-0012 | Inside `uow.run()`: updateStatus(approved→scheduled) + create job + create visit + 3 audit events; pre-check for scheduled status; scoped unique violation catch |
+| Job routes (5 endpoints) | S-0012 | `GET /v1/jobs`, `GET /v1/jobs/count`, `GET /v1/jobs/by-quote/:quoteId`, `POST /v1/jobs`, `GET /v1/jobs/:id`; count and by-quote registered before `:id` |
+| RespondToQuoteUseCase scheduled idempotency | S-0012 | When `action === 'approve'` and `quote.status === 'scheduled'`: return idempotent success (quote was approved then progressed) |
+| PublicQuoteViewPage scheduled support | S-0012 | `['approved', 'scheduled'].includes(quote.status)` for "already approved" banner display |
 
 ### Frontend
 
@@ -260,6 +270,10 @@
 | ChangePasswordForm in SettingsPage | S-0031 | Current + new + confirm fields; calls `auth.changePassword()`; dual-mode (local calls API, cognito calls SDK) |
 | Forgot password in LoginPage | S-0031 | Cognito: code + confirm steps; local: "contact admin" message; triggered from password step |
 | Local auth localStorage persistence | S-0031 | `authenticate()` stores `dev_user_role`, `dev_user_name`, `dev_tenant_name`; init reads them back; logout clears all 5 keys |
+| JobsPage with status filter + search | S-0012 | Status filter pills (All/Scheduled/In Progress/Completed/Cancelled), debounced search, `useInfiniteQuery`, `JobCard` component; follows QuotesPage pattern |
+| JobDetailPage with embedded visits | S-0012 | Client/property/quote info cards, visits section with VisitStatusBadge; back to Jobs list; `data-testid="job-detail-page"` |
+| Create Job from quote detail | S-0012 | "Create Job" button on approved quotes → `createJobFromQuote()` mutation → navigate to `/jobs/:id`; "View Job" link on scheduled quotes via `getJobByQuoteId()` |
+| QuotesPage Scheduled filter/badge | S-0012 | Added `scheduled` to STATUS_FILTERS and badge colors on QuotesPage + QuoteDetailPage |
 
 ### Testing
 
