@@ -46,6 +46,7 @@ export const auditEvents = pgTable(
     subjectType: varchar('subject_type', { length: 255 }).notNull(),
     subjectId: varchar('subject_id', { length: 255 }).notNull(),
     correlationId: varchar('correlation_id', { length: 255 }).notNull(),
+    metadata: jsonb('metadata'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
@@ -338,5 +339,6 @@ export const visits = pgTable(
     index('visits_tenant_id_idx').on(table.tenantId),
     index('visits_job_id_idx').on(table.jobId),
     index('visits_tenant_status_idx').on(table.tenantId, table.status),
+    index('visits_tenant_scheduled_start_idx').on(table.tenantId, table.scheduledStart),
   ],
 );

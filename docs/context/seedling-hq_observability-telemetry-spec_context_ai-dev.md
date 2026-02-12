@@ -181,6 +181,7 @@ Audit events must be durable (stored in Postgres) and include:
 - `event_name`
 - `subject_type` (quote, invoice, visit, client_hub, etc.)
 - `subject_id`
+- `metadata` (nullable JSONB, S-0013 — structured event-specific data, e.g., `{ newStart, newEnd }`)
 - `created_at`
 - optional: `correlation_id`, `ip`, `user_agent`
 
@@ -192,7 +193,9 @@ Minimum audit events for MVP:
 - `quote.created` (S-0008), `quote.updated` (S-0009)
 - `quote.sent` (S-0010), `quote.viewed` (S-0010), `quote.approved` (S-0011), `quote.declined` (S-0011)
 - `user.created` (S-0031), `user.reprovisioned` (S-0031), `user.password_reset` (S-0031), `user.password_changed` (S-0031)
-- `visit.scheduled`, `visit.rescheduled`, `visit.completed`
+- `job.created` (S-0012), `quote.scheduled` (S-0012), `visit.scheduled` (S-0012)
+- `visit.time_set` (S-0013, metadata: `{ newStart, newEnd }`), `visit.rescheduled` (S-0013, metadata: `{ previousStart, previousEnd, newStart, newEnd }`)
+- `visit.completed`
 - `invoice.sent`, `invoice.viewed`, `invoice.paid`
 - `message.sent` (email/SMS) with outbox id linkage
 - `hub.viewed`

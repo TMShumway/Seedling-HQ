@@ -71,8 +71,8 @@ Primary navigation (internal users), in sidebar order:
 3) **Requests** — active (S-0006): public request form + authenticated list
 4) **Clients** — active (S-0004): client/property management
 5) **Quotes** — active (S-0009)
-6) **Schedule** — stubbed (S-0012+)
-7) **Jobs** — stubbed (S-0012+)
+6) **Schedule** — active (S-0013): CSS Grid week/day calendar, unscheduled panel, schedule/reschedule modal
+7) **Jobs** — active (S-0012): job list with status filters, job detail with embedded visits
 8) **Invoices** — stubbed (S-0017+)
 9) **Team** — active (S-0031): member list, invite, reset password
 10) **Settings** — active (S-0002): business profile, hours, change own password (S-0031)
@@ -222,9 +222,10 @@ External (secure link):
 
 ### 7.4 Scheduling / Jobs / Visits
 Internal:
-- Calendar view: week/day
-- Job detail: status + visits list
-- Visit edit modal/page
+- Calendar view: week/day **— DONE (S-0013)**: `SchedulePage` with CSS Grid week view (desktop) + single-column day view (mobile), `?week=` URL param navigation, unscheduled visits panel
+- Job detail: status + visits list **— DONE (S-0012)**: `JobDetailPage` with client/property/quote cards, embedded visits with status badges
+- Visit schedule/reschedule modal **— DONE (S-0013)**: `ScheduleVisitModal` with datetime-local input, auto-computed end time
+- Job list with status filters **— DONE (S-0012)**: `JobsPage` with filter pills, search, card layout
 
 Tech (internal user, mobile-first):
 - “Today” page:
@@ -342,7 +343,7 @@ When an AI agent adds UI:
 
 1) App shell (sidebar + mobile drawer) with placeholder pages — **DONE** (S-0001): Sidebar, TopBar, MobileDrawer in `apps/web/src/app-shell/`
 2) Page header component pattern (title + actions) — **DONE** (S-0001/S-0002): consistent pattern in DashboardPage, SettingsPage, ServicesPage
-3) Badge/status system — **PARTIAL** (S-0006/S-0009/S-0031): `StatusBadge` implemented in RequestsPage (new=amber, reviewed=blue, converted=green, declined=gray) and QuotesPage (draft=gray, sent=blue, approved=green, declined=red, expired=amber); role badges on TeamPage (owner=blue, admin=purple, member=gray); user status badges (active=green, invited=amber, disabled=gray); extend for Job/Invoice statuses (S-0012+/S-0017+)
+3) Badge/status system — **PARTIAL** (S-0006/S-0009/S-0012/S-0013/S-0031): `StatusBadge` implemented in RequestsPage (new=amber, reviewed=blue, converted=green, declined=gray) and QuotesPage (draft=gray, sent=blue, approved=green, declined=red, expired=amber, scheduled=indigo); role badges on TeamPage (owner=blue, admin=purple, member=gray); user status badges (active=green, invited=amber, disabled=gray); `JobStatusBadge` (scheduled=indigo, in_progress=blue, completed=green, cancelled=gray) on JobsPage/JobDetailPage (S-0012); `VisitStatusBadge` (scheduled=indigo, en_route=yellow, started=blue, completed=green, cancelled=gray) on JobDetailPage (S-0012); extend for Invoice statuses (S-0017+)
 4) Form components + validation approach + error summary — **DONE** (S-0002): Input, Select, Textarea, Checkbox in `apps/web/src/components/ui/`; validation via controlled state + Zod schemas
 5) List patterns (desktop table + mobile cards) — **PARTIAL** (S-0003+): ServicesPage has category accordion + item rows (S-0003); ClientsPage has card list + search + cursor pagination (S-0004); RequestsPage has card list + search + status badges + click-through to detail (S-0006/S-0008); QuotesPage has card list + search + status filter pills + "New Quote" button + cursor pagination (S-0009/S-0026)
    - Remaining: Invoices (S-0017+)

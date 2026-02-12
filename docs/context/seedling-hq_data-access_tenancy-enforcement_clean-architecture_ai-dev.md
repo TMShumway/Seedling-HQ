@@ -33,15 +33,15 @@ Examples (implemented):
 - `UserRepository` (includes `getOwnerByTenantId` for notification recipient lookup, `listActiveByEmail` for cross-tenant login, `getByIdGlobal(id)` for cross-tenant user lookup by ID, `listByTenantId` for team roster, `updatePasswordHash`, `updateStatus`, `updateUser` for user management, S-0027/S-0030/S-0031)
 - `CognitoProvisioner` (S-0031 — `provisionUser`, `setUserPassword`; implemented by `AwsCognitoProvisioner` and `NoopCognitoProvisioner`)
 - `TenantRepository` (`create`, `getById`, `getBySlug`)
-- `AuditEventRepository` (`create`, `listBySubjects`)
+- `AuditEventRepository` (`create`, `listBySubjects`; `metadata` JSONB column added S-0013)
 - `EmailSender` (port for SMTP — implemented by `NodemailerEmailSender`)
 - `JwtVerifier` (S-0029 — `verify(token)` returns `{ tenantId, userId, role }`; implemented by `CognitoJwtVerifier`)
+- `SecureLinkTokenRepository` (S-0010 — `create`, `getByTokenHash`, `updateLastUsedAt`, `revokeBySubject`)
+- `JobRepository` (S-0012 — `create`, `getById`, `getByQuoteId`, `list`, `count`, `countByStatus`)
+- `VisitRepository` (S-0012/S-0013 — `create`, `getById`, `listByJobId`, `updateSchedule`, `listByDateRange`, `listUnscheduled`)
 
 Examples (planned):
 - `InvoiceRepository`
-
-Implemented (S-0010):
-- `SecureLinkTokenRepository` (`create`, `getByTokenHash`, `updateLastUsedAt`, `revokeBySubject`)
 
 Rules:
 - Ports use **domain/application types**, not DB row types.
@@ -109,6 +109,7 @@ Common patterns:
 - `(tenant_id, created_at desc)`
 - `(tenant_id, status, created_at desc)`
 - `(tenant_id, client_id, created_at desc)` for timelines
+- `(tenant_id, scheduled_start)` on visits for calendar range queries (S-0013)
 
 Search:
 - If doing basic search by name/email/phone:
@@ -199,7 +200,7 @@ Atomic writes use a `UnitOfWork` port (`application/ports/unit-of-work.ts`) back
 - `UnitOfWork.run(fn)` provides transaction-scoped repo instances to the callback.
 - Use cases take `(readRepo, uow)` — reads stay outside the transaction, writes go inside `uow.run()`.
 - Drizzle's `PgTransaction extends PgDatabase`, so repos that accept `Database` work with `tx` directly — no casts needed.
-- **TransactionRepos (S-0008):** `{ tenantRepo, userRepo, auditRepo, clientRepo, propertyRepo, requestRepo, quoteRepo }` — all available inside `uow.run()` callback.
+- **TransactionRepos (S-0008/S-0010/S-0012):** `{ tenantRepo, userRepo, auditRepo, clientRepo, propertyRepo, requestRepo, quoteRepo, secureLinkTokenRepo, jobRepo, visitRepo }` — all 10 repos available inside `uow.run()` callback.
 
 Example:
 ```ts

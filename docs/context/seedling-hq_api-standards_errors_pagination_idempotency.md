@@ -1,9 +1,9 @@
 # Seedling-HQ — API Standards: Errors, Pagination, Idempotency, and Response Conventions
 
-_Last updated: 2026-02-09 (America/Chihuahua)_
+_Last updated: 2026-02-12 (America/Chihuahua)_
 
 > Purpose: Define consistent API behavior so agents and humans build endpoints the same way.
-> This doc captures conventions established in S-0001 through S-0029 and defines standards for future stories.
+> This doc captures conventions established in S-0001 through S-0013 (plus S-0026–S-0031) and defines standards for future stories.
 
 ---
 
@@ -72,12 +72,16 @@ AppError (base)
 | Send + create token | 200 | `{ quote, token, link }` | `POST /v1/quotes/:id/send` (S-0010) |
 | External token read | 200 | Quote view data | `GET /v1/ext/quotes/:token` (S-0010) |
 | External approve/decline | 200 | `{ quote: { id, status, approvedAt, declinedAt } }` | `POST /v1/ext/quotes/:token/approve` / `/decline` (S-0011) |
+| Idempotent job creation | 200 | Existing job | `POST /v1/jobs` when quote already scheduled (S-0012) |
+| Date range query | 200 | `{ data: VisitWithContext[] }` | `GET /v1/visits?from=...&to=...` (S-0013, max 8-day window) |
+| Partial update (PATCH) | 200 | Updated entity | `PATCH /v1/visits/:id/schedule` (S-0013) |
 
 ### Conventions
 
 - **GET returns 200 with `null`** for singleton entities that don't exist yet (not 404). This distinguishes "not configured" from "not found."
 - **DELETE returns 204** with no response body. The frontend `request()` function handles 204 by returning `undefined` instead of parsing JSON.
-- **PUT is full-replace** for the resource. In practice, some PUT endpoints accept optional fields for partial updates (e.g., `PUT /v1/quotes/:id` — all body fields are optional). Future stories may introduce PATCH for clarity.
+- **PUT is full-replace** for the resource. In practice, some PUT endpoints accept optional fields for partial updates (e.g., `PUT /v1/quotes/:id` — all body fields are optional).
+- **PATCH is for targeted partial updates** on a specific sub-operation (S-0013). Example: `PATCH /v1/visits/:id/schedule` updates only `scheduledStart`/`scheduledEnd`. PATCH is idempotent for the same input.
 - **POST creates a new entity** each time — it is not idempotent.
 - **Composite POST** (e.g., `POST /v1/requests/:id/convert`) returns 200 (not 201) since it modifies an existing resource and creates multiple new ones. The status gate (`new`/`reviewed` only) prevents repeated execution. A concurrent double-convert race is guarded by `updateStatus(..., expectedStatuses)` which adds `WHERE status IN (...)` to the SQL UPDATE — if another transaction already converted the request, 0 rows are updated, the transaction rolls back, and a 409 `CONFLICT` is returned.
 
@@ -237,6 +241,7 @@ GET /v1/clients?limit=50&cursor=<opaque_string>
 |------|------------|-------|
 | GET | Yes | Read-only |
 | PUT | Yes | Full-replace semantics; singleton upsert via `onConflictDoUpdate` |
+| PATCH | Yes | Targeted partial update; same input produces same result (S-0013) |
 | DELETE | Yes | Soft-delete sets `active = false`; repeated calls are no-ops |
 | POST | No | Creates a new entity each time |
 

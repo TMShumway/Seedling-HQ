@@ -24,7 +24,9 @@ Seedling HQ is under active development. Here's what's working today:
 | Send quotes via secure link | Done | One-click send generates a secure link; quote is viewable without login |
 | Customer approves/declines | Done | Customers approve or decline quotes from the secure link |
 | Team management | Done | Invite members, assign roles (owner/admin/member), reset passwords, change own password |
-| Scheduling + jobs | Planned | Calendar view, visit tracking, technician "Today" page |
+| Jobs + visits | Done | Approved quotes create jobs with visits; job list with status filters |
+| Schedule calendar | Done | Week/day calendar view, schedule/reschedule visits via modal |
+| Technician assignment | Planned | Assign technicians to visits, tech "Today" page |
 | Invoicing + payments | Planned | Invoice generation, Stripe payments via secure link |
 
 ## Prerequisites
@@ -68,8 +70,10 @@ The seed data creates a ready-to-explore demo tenant. After `make deps` and `pnp
 2. **Services** — browse Lawn Care, Tree Service, and Landscaping categories with 8 service items
 3. **Clients** — 3 seeded clients (John Smith, Jane Johnson, Bob Wilson) each with a property
 4. **Requests** — 3 incoming requests from the public form, all with status "New"
-5. **Quotes** — 1 draft quote and 2 sent quotes (with secure links you can follow)
-6. **Team** — 3 seeded members (Demo Owner, Demo Admin, Demo Member) with role badges; try inviting a new member or resetting a password
+5. **Quotes** — 1 draft quote, 2 sent quotes, and 1 scheduled quote (with secure links you can follow)
+6. **Schedule** — week calendar showing scheduled visits; unscheduled visits panel for drag-free scheduling
+7. **Jobs** — 2 seeded jobs created from approved quotes, each with a visit
+8. **Team** — 3 seeded members (Demo Owner, Demo Admin, Demo Member) with role badges; try inviting a new member or resetting a password
 
 To try the full flow yourself:
 1. Submit a request at http://localhost:5173/request/demo
@@ -78,7 +82,10 @@ To try the full flow yourself:
 4. Edit the draft quote — add line items, set pricing
 5. Click "Send Quote" — copy the secure link
 6. Open the secure link in an incognito window to see the customer view
-7. Approve or decline the quote
+7. Approve the quote — this creates a job with a visit
+8. Go to **Jobs** to see the new job and its visits
+9. Go to **Schedule** and click an unscheduled visit to set a date/time
+10. The scheduled visit appears on the calendar — click it to reschedule
 
 ## Project Structure
 
@@ -170,7 +177,7 @@ To restore a clean database (e.g. after E2E tests leave test data behind):
 pnpm --filter @seedling/api run db:reset && pnpm --filter @seedling/api run db:push && pnpm --filter @seedling/api run db:seed
 ```
 
-**Tables:** tenants, users, audit_events, business_settings, service_categories, service_items, clients, properties, requests, message_outbox, quotes, secure_link_tokens
+**Tables:** tenants, users, audit_events, business_settings, service_categories, service_items, clients, properties, requests, message_outbox, quotes, secure_link_tokens, jobs, visits
 
 ### Running a Single Test
 
@@ -188,9 +195,9 @@ pnpm exec playwright test e2e/tests/quotes.spec.ts --project=desktop-chrome
 ### Test Coverage
 
 ```
-Unit:        267 tests (214 API + 53 web)
-Integration: 183 tests (requires Postgres)
-E2E:         126 tests (63 desktop-chrome + 63 mobile-chrome, 39 skipped non-desktop)
+Unit:        293 tests (240 API + 53 web)
+Integration: 214 tests (requires Postgres)
+E2E:         154 tests (77 desktop-chrome + 77 mobile-chrome, 51 skipped non-desktop)
 ```
 
 ## Multi-Tenancy
@@ -308,6 +315,24 @@ Customers access quotes (and eventually invoices) via secure links like `http://
 | GET | `/v1/ext/quotes/:token` | Secure link | View quote (customer-facing) |
 | POST | `/v1/ext/quotes/:token/approve` | Secure link | Approve quote (idempotent) |
 | POST | `/v1/ext/quotes/:token/decline` | Secure link | Decline quote (idempotent) |
+
+### Jobs
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/v1/jobs` | Required | List jobs (`?search=`, `?status=`, `?cursor=`) |
+| GET | `/v1/jobs/count` | Required | Count jobs (`?status=`) |
+| GET | `/v1/jobs/by-quote/:quoteId` | Required | Get job by source quote |
+| POST | `/v1/jobs` | Required | Create job from approved quote (idempotent) |
+| GET | `/v1/jobs/:id` | Required | Get job with embedded visits |
+
+### Visits
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/v1/visits` | Required | List visits by date range (`?from=`, `?to=`, max 8 days) |
+| GET | `/v1/visits/unscheduled` | Required | List unscheduled visits |
+| PATCH | `/v1/visits/:id/schedule` | Required | Schedule or reschedule a visit |
 
 ## Environment Variables
 

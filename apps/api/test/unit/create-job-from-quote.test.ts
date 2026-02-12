@@ -92,6 +92,9 @@ describe('CreateJobFromQuoteUseCase', () => {
       create: vi.fn(),
       getById: vi.fn(),
       listByJobId: vi.fn(),
+      updateSchedule: vi.fn(),
+      listByDateRange: vi.fn(),
+      listUnscheduled: vi.fn(),
     };
 
     serviceItemRepo = {
@@ -133,6 +136,9 @@ describe('CreateJobFromQuoteUseCase', () => {
         create: vi.fn(),
         getById: vi.fn(),
         listByJobId: vi.fn(),
+        updateSchedule: vi.fn(),
+        listByDateRange: vi.fn(),
+        listUnscheduled: vi.fn(),
       },
     } as TransactionRepos;
 

@@ -27,6 +27,7 @@ import { buildQuoteRoutes } from './adapters/http/routes/quote-routes.js';
 import { buildExternalQuoteRoutes } from './adapters/http/routes/external-quote-routes.js';
 import { buildAuthRoutes } from './adapters/http/routes/auth-routes.js';
 import { buildJobRoutes } from './adapters/http/routes/job-routes.js';
+import { buildVisitRoutes } from './adapters/http/routes/visit-routes.js';
 import { DrizzleSecureLinkTokenRepository } from './infra/db/repositories/drizzle-secure-link-token-repository.js';
 import type { ExternalAuthContext } from './adapters/http/middleware/external-token-middleware.js';
 import { DrizzleTenantRepository } from './infra/db/repositories/drizzle-tenant-repository.js';
@@ -124,6 +125,7 @@ export async function createApp({ config, db, jwtVerifier: jwtVerifierOverride }
   await app.register(buildQuoteRoutes({ quoteRepo, auditRepo, uow, emailSender, outboxRepo, clientRepo, propertyRepo, config, jwtVerifier }));
   await app.register(buildExternalQuoteRoutes({ secureLinkTokenRepo, quoteRepo, clientRepo, tenantRepo, propertyRepo, auditRepo, userRepo, outboxRepo, emailSender, config }));
   await app.register(buildJobRoutes({ jobRepo, visitRepo, quoteRepo, serviceItemRepo, auditRepo, uow, config, jwtVerifier }));
+  await app.register(buildVisitRoutes({ visitRepo, auditRepo, config, jwtVerifier }));
   await app.register(buildAuthRoutes({ userRepo, config }));
 
   return app;

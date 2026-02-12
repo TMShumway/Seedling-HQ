@@ -9,6 +9,7 @@ export interface AuditEvent {
   subjectType: string;
   subjectId: string;
   correlationId: string;
+  metadata?: Record<string, unknown> | null;
   createdAt: Date;
 }
 

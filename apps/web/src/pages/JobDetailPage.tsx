@@ -204,18 +204,35 @@ export function JobDetailPage() {
                     {visit.estimatedDurationMinutes} min
                   </span>
                 </div>
-                {visit.scheduledStart && (
-                  <p className="mt-1 text-sm">
-                    {new Date(visit.scheduledStart).toLocaleString()}
-                    {visit.scheduledEnd && (
-                      <> — {new Date(visit.scheduledEnd).toLocaleString()}</>
-                    )}
-                  </p>
-                )}
+                {visit.scheduledStart && (() => {
+                  const d = new Date(visit.scheduledStart);
+                  const monday = new Date(d);
+                  const day = monday.getDay();
+                  monday.setDate(monday.getDate() - (day === 0 ? 6 : day - 1));
+                  const weekParam = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+                  return (
+                    <p className="mt-1 text-sm">
+                      <Link to={`/schedule?week=${weekParam}`} className="text-primary hover:underline">
+                        {d.toLocaleString()}
+                        {visit.scheduledEnd && (
+                          <> — {new Date(visit.scheduledEnd).toLocaleString()}</>
+                        )}
+                      </Link>
+                    </p>
+                  );
+                })()}
                 {!visit.scheduledStart && (
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Not yet scheduled — assign a time in the schedule view
-                  </p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <p className="text-sm text-muted-foreground">Not yet scheduled</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate('/schedule')}
+                      data-testid="schedule-visit-btn"
+                    >
+                      Schedule
+                    </Button>
+                  </div>
                 )}
                 {visit.notes && (
                   <p className="mt-1 text-sm text-muted-foreground">{visit.notes}</p>
