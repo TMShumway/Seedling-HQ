@@ -334,7 +334,6 @@ describe('CreateJobFromQuoteUseCase', () => {
 
   it('handles unique violation with scoped idempotent return', async () => {
     const quote = makeApprovedQuote();
-    (quoteRepo.getById as ReturnType<typeof vi.fn>).mockResolvedValue(quote);
     (serviceItemRepo.getById as ReturnType<typeof vi.fn>).mockResolvedValue(makeServiceItem('00000000-0000-0000-0000-000000000300', 45));
 
     // Simulate unique violation from UoW
@@ -369,13 +368,19 @@ describe('CreateJobFromQuoteUseCase', () => {
     };
     const scheduledQuote = { ...quote, status: 'scheduled' as const, scheduledAt: new Date() };
 
+    // First getById returns approved (passes status gate), second returns scheduled (in catch path)
+    (quoteRepo.getById as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(quote)
+      .mockResolvedValueOnce(scheduledQuote);
     (jobRepo.getByQuoteId as ReturnType<typeof vi.fn>).mockResolvedValue(existingJob);
-    // getById is called again after unique violation catch
-    (quoteRepo.getById as ReturnType<typeof vi.fn>).mockResolvedValue(scheduledQuote);
     (visitRepo.listByJobId as ReturnType<typeof vi.fn>).mockResolvedValue([existingVisit]);
 
     const result = await useCase.execute({ tenantId: TENANT_ID, userId: USER_ID, quoteId: QUOTE_ID }, 'corr-1');
 
+    // Verify the catch path was actually exercised
+    expect(uow.run).toHaveBeenCalledOnce();
+    expect(quoteRepo.getById).toHaveBeenCalledTimes(2);
+    expect(jobRepo.getByQuoteId).toHaveBeenCalledOnce();
     expect(result.alreadyExisted).toBe(true);
     expect(result.job.id).toBe(existingJob.id);
   });

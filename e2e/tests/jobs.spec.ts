@@ -90,14 +90,30 @@ test.describe('Create Job from Approved Quote', () => {
   });
 
   test('new job appears in jobs list after creation', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop-chrome', 'Depends on previous test creating data');
+    test.skip(testInfo.project.name !== 'desktop-chrome', 'Stateful test runs only on desktop-chrome');
 
+    // Self-contained: create the job first, then verify it appears in the list
+    await page.goto('/quotes');
+    await expect(page.getByTestId('quotes-page')).toBeVisible({ timeout: 10000 });
+
+    const card = page.getByTestId('quote-card').filter({ hasText: 'Monthly Lawn Package for John Smith' });
+    await expect(card).toBeVisible();
+    await card.click();
+
+    await expect(page.getByTestId('quote-detail-page')).toBeVisible({ timeout: 10000 });
+    // Button may be gone if prior test already created the job — check for View Job link instead
+    const createBtn = page.getByTestId('create-job-btn');
+    if (await createBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await createBtn.click();
+      await expect(page.getByTestId('job-detail-page')).toBeVisible({ timeout: 10000 });
+    }
+
+    // Navigate to jobs list and verify
     await page.goto('/jobs');
     await expect(page.getByTestId('jobs-page')).toBeVisible({ timeout: 10000 });
 
-    // The job created from approved quote should now appear
-    const card = page.getByTestId('job-card').filter({ hasText: 'Monthly Lawn Package for John Smith' });
-    await expect(card).toBeVisible();
+    const jobCard = page.getByTestId('job-card').filter({ hasText: 'Monthly Lawn Package for John Smith' });
+    await expect(jobCard).toBeVisible();
   });
 });
 
