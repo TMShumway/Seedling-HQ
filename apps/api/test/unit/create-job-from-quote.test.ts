@@ -111,10 +111,29 @@ describe('CreateJobFromQuoteUseCase', () => {
       clientRepo: {} as any,
       propertyRepo: {} as any,
       requestRepo: {} as any,
-      quoteRepo: { updateStatus: vi.fn() },
+      quoteRepo: {
+        create: vi.fn(),
+        getById: vi.fn(),
+        list: vi.fn(),
+        update: vi.fn(),
+        updateStatus: vi.fn(),
+        count: vi.fn(),
+        countByStatus: vi.fn(),
+      },
       secureLinkTokenRepo: {} as any,
-      jobRepo: { create: vi.fn() },
-      visitRepo: { create: vi.fn() },
+      jobRepo: {
+        create: vi.fn(),
+        getById: vi.fn(),
+        getByQuoteId: vi.fn(),
+        list: vi.fn(),
+        count: vi.fn(),
+        countByStatus: vi.fn(),
+      },
+      visitRepo: {
+        create: vi.fn(),
+        getById: vi.fn(),
+        listByJobId: vi.fn(),
+      },
     } as TransactionRepos;
 
     uow = {
