@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { UsersRound, Mail, Plus } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import type { UserResponse } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth';
@@ -22,7 +23,7 @@ const statusBadgeColors: Record<string, string> = {
 
 function RoleBadge({ role }: { role: string }) {
   return (
-    <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${roleBadgeColors[role] ?? 'bg-gray-100 text-gray-800'}`}>
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${roleBadgeColors[role] ?? 'bg-gray-100 text-gray-800'}`}>
       {role.charAt(0).toUpperCase() + role.slice(1)}
     </span>
   );
@@ -30,7 +31,7 @@ function RoleBadge({ role }: { role: string }) {
 
 function StatusBadge({ status }: { status: string }) {
   return (
-    <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${statusBadgeColors[status] ?? 'bg-gray-100 text-gray-800'}`}>
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeColors[status] ?? 'bg-gray-100 text-gray-800'}`}>
       {status.charAt(0).toUpperCase() + status.slice(1)}
     </span>
   );
@@ -47,6 +48,62 @@ function canResetPassword(callerRole: string, targetRole: string): boolean {
   return false;
 }
 
+function getInitials(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? '';
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function MemberCard({
+  user,
+  callerRole,
+  currentUserId,
+  onResetPassword,
+}: {
+  user: UserResponse;
+  callerRole: string;
+  currentUserId: string | undefined;
+  onResetPassword: () => void;
+}) {
+  return (
+    <div
+      className="rounded-xl border border-border bg-card p-4"
+      data-testid="member-card"
+    >
+      <div className="flex items-start gap-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+          {getInitials(user.fullName)}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-medium">{user.fullName}</span>
+            <RoleBadge role={user.role} />
+            <StatusBadge status={user.status} />
+          </div>
+          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <Mail className="h-3 w-3" />
+              {user.email}
+            </span>
+            <span>Joined {new Date(user.createdAt).toLocaleDateString()}</span>
+          </div>
+        </div>
+        {canResetPassword(callerRole, user.role) && user.id !== currentUserId && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="shrink-0"
+            data-testid={`reset-pw-${user.id}`}
+            onClick={onResetPassword}
+          >
+            Reset Password
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function TeamPage() {
   const { user: authUser } = useAuth();
   const callerRole = authUser?.role ?? '';
@@ -61,26 +118,31 @@ export function TeamPage() {
 
   if (teamQuery.isLoading) {
     return (
-      <div className="mx-auto max-w-3xl space-y-4">
-        <div className="space-y-2">
+      <div className="mx-auto max-w-3xl space-y-4" data-testid="team-page">
+        <div className="flex items-center justify-between">
           <Skeleton className="h-8 w-32" />
-          <Skeleton className="h-5 w-56" />
+          <Skeleton className="h-9 w-32" />
         </div>
-        <Skeleton className="h-64 rounded-xl" />
+        <Skeleton className="h-20 rounded-xl" />
+        <Skeleton className="h-20 rounded-xl" />
+        <Skeleton className="h-20 rounded-xl" />
       </div>
     );
   }
 
   if (teamQuery.error) {
     return (
-      <div className="text-destructive">Failed to load team. Please try again.</div>
+      <div className="text-destructive" data-testid="team-page">
+        Failed to load team. Please try again.
+      </div>
     );
   }
 
   const users = teamQuery.data?.users ?? [];
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
+    <div className="mx-auto max-w-3xl space-y-4" data-testid="team-page">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Team</h1>
@@ -94,6 +156,7 @@ export function TeamPage() {
             onClick={() => setShowInviteForm(true)}
             disabled={showInviteForm}
           >
+            <Plus className="h-4 w-4" />
             Invite Member
           </Button>
         )}
@@ -106,49 +169,32 @@ export function TeamPage() {
         />
       )}
 
+      {/* Member list */}
       {users.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-          No team members yet.
+        <div className="rounded-xl border border-dashed border-border py-16 text-center" data-testid="empty-state">
+          <UsersRound className="mx-auto h-10 w-10 text-muted-foreground/50" />
+          <h3 className="mt-4 text-lg font-medium">No team members yet</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Invite your first team member to get started.
+          </p>
+          {canCreateUser(callerRole) && (
+            <Button className="mt-4" onClick={() => setShowInviteForm(true)}>
+              <Plus className="h-4 w-4" />
+              Invite Member
+            </Button>
+          )}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-4 py-3 text-left font-medium">Name</th>
-                <th className="px-4 py-3 text-left font-medium">Email</th>
-                <th className="px-4 py-3 text-left font-medium">Role</th>
-                <th className="px-4 py-3 text-left font-medium">Status</th>
-                <th className="px-4 py-3 text-left font-medium">Joined</th>
-                <th className="px-4 py-3 text-right font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id} className="border-b last:border-b-0">
-                  <td className="px-4 py-3 font-medium">{u.fullName}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{u.email}</td>
-                  <td className="px-4 py-3"><RoleBadge role={u.role} /></td>
-                  <td className="px-4 py-3"><StatusBadge status={u.status} /></td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {new Date(u.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {canResetPassword(callerRole, u.role) && u.id !== authUser?.userId && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        data-testid={`reset-pw-${u.id}`}
-                        onClick={() => setResetTarget(u)}
-                      >
-                        Reset Password
-                      </Button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-3">
+          {users.map((u) => (
+            <MemberCard
+              key={u.id}
+              user={u}
+              callerRole={callerRole}
+              currentUserId={authUser?.userId}
+              onResetPassword={() => setResetTarget(u)}
+            />
+          ))}
         </div>
       )}
 

@@ -11,17 +11,22 @@ test.describe('Team Management', () => {
     await page.goto('/team');
     await expect(page.getByRole('heading', { name: 'Team' })).toBeVisible({ timeout: 10000 });
 
-    // Should show 3 members from seed data
+    // Should show at least 3 members from seed data (may be 4+ if invite test ran first)
+    const cards = page.getByTestId('member-card');
+    await expect(cards.first()).toBeVisible();
+    expect(await cards.count()).toBeGreaterThanOrEqual(3);
+
     await expect(page.getByText('Demo Owner')).toBeVisible();
     await expect(page.getByText('Demo Admin')).toBeVisible();
     await expect(page.getByText('Demo Member')).toBeVisible();
 
-    // Role badges (exact match to avoid matching names like "Demo Owner")
-    const rows = page.locator('tbody tr');
-    await expect(rows).toHaveCount(3);
-    await expect(rows.nth(0).locator('span', { hasText: /^Owner$/ })).toBeVisible();
-    await expect(rows.nth(1).locator('span', { hasText: /^Admin$/ })).toBeVisible();
-    await expect(rows.nth(2).locator('span', { hasText: /^Member$/ })).toBeVisible();
+    // Role badges scoped to each member's card
+    const ownerCard = cards.filter({ hasText: 'Demo Owner' });
+    const adminCard = cards.filter({ hasText: 'Demo Admin' });
+    const memberCard = cards.filter({ hasText: 'Demo Member' });
+    await expect(ownerCard.locator('span', { hasText: /^Owner$/ })).toBeVisible();
+    await expect(adminCard.locator('span', { hasText: /^Admin$/ })).toBeVisible();
+    await expect(memberCard.locator('span', { hasText: /^Member$/ })).toBeVisible();
   });
 
   test('navigates to team page from sidebar', async ({ page }, testInfo) => {
@@ -50,8 +55,8 @@ test.describe('Team Management', () => {
     await page.getByTestId('invite-submit-btn').click();
 
     await expect(page.getByText('has been invited successfully')).toBeVisible({ timeout: 10000 });
-    // After the form closes, the new member should appear in the table
-    await expect(page.getByRole('cell', { name: 'E2E Invited Member' })).toBeVisible({ timeout: 10000 });
+    // After the form closes, the new member should appear in the card list
+    await expect(page.getByTestId('member-card').filter({ hasText: 'E2E Invited Member' })).toBeVisible({ timeout: 10000 });
   });
 
   test('resets a member password', async ({ page }, testInfo) => {
