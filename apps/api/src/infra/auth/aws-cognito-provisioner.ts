@@ -10,8 +10,6 @@ import {
 } from '@aws-sdk/client-cognito-identity-provider';
 import type { CognitoProvisioner } from '../../application/ports/cognito-provisioner.js';
 
-const KNOWN_GROUPS = ['owner', 'admin', 'member'];
-
 export class AwsCognitoProvisioner implements CognitoProvisioner {
   private readonly client: CognitoIdentityProviderClient;
   private readonly userPoolId: string;
@@ -52,7 +50,9 @@ export class AwsCognitoProvisioner implements CognitoProvisioner {
       }
     }
 
-    // Step 2: Normalize groups — remove all known groups to prevent multi-group drift
+    // Step 2: Normalize groups — remove ALL existing groups to prevent multi-group drift.
+    // The JWT verifier enforces exactly one cognito:groups entry, so any leftover
+    // group (including legacy ones like "technician") would lock the user out.
     try {
       const groupsResponse = await this.client.send(
         new AdminListGroupsForUserCommand({
@@ -62,15 +62,13 @@ export class AwsCognitoProvisioner implements CognitoProvisioner {
       );
       const existingGroups = (groupsResponse.Groups ?? []).map((g) => g.GroupName!);
       for (const group of existingGroups) {
-        if (KNOWN_GROUPS.includes(group)) {
-          await this.client.send(
-            new AdminRemoveUserFromGroupCommand({
-              UserPoolId: this.userPoolId,
-              Username: params.username,
-              GroupName: group,
-            }),
-          );
-        }
+        await this.client.send(
+          new AdminRemoveUserFromGroupCommand({
+            UserPoolId: this.userPoolId,
+            Username: params.username,
+            GroupName: group,
+          }),
+        );
       }
     } catch (err) {
       // If we created the user, clean up before rethrowing
