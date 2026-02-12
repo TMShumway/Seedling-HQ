@@ -39,6 +39,18 @@ export class RespondToQuoteUseCase {
       };
     }
 
+    // Idempotent: approve on a scheduled quote (approved → scheduled progression)
+    if (input.action === 'approve' && quote.status === 'scheduled') {
+      return {
+        quote: {
+          id: quote.id,
+          status: quote.status,
+          approvedAt: quote.approvedAt?.toISOString() ?? null,
+          declinedAt: quote.declinedAt?.toISOString() ?? null,
+        },
+      };
+    }
+
     // Cross-transition guard
     if (quote.status === oppositeStatus) {
       throw new ValidationError(`This quote has already been ${oppositeStatus}`);

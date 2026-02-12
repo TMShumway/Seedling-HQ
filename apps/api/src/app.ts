@@ -26,6 +26,7 @@ import { buildRequestRoutes } from './adapters/http/routes/request-routes.js';
 import { buildQuoteRoutes } from './adapters/http/routes/quote-routes.js';
 import { buildExternalQuoteRoutes } from './adapters/http/routes/external-quote-routes.js';
 import { buildAuthRoutes } from './adapters/http/routes/auth-routes.js';
+import { buildJobRoutes } from './adapters/http/routes/job-routes.js';
 import { DrizzleSecureLinkTokenRepository } from './infra/db/repositories/drizzle-secure-link-token-repository.js';
 import type { ExternalAuthContext } from './adapters/http/middleware/external-token-middleware.js';
 import { DrizzleTenantRepository } from './infra/db/repositories/drizzle-tenant-repository.js';
@@ -39,6 +40,8 @@ import { DrizzlePropertyRepository } from './infra/db/repositories/drizzle-prope
 import { DrizzleRequestRepository } from './infra/db/repositories/drizzle-request-repository.js';
 import { DrizzleQuoteRepository } from './infra/db/repositories/drizzle-quote-repository.js';
 import { DrizzleMessageOutboxRepository } from './infra/db/repositories/drizzle-message-outbox-repository.js';
+import { DrizzleJobRepository } from './infra/db/repositories/drizzle-job-repository.js';
+import { DrizzleVisitRepository } from './infra/db/repositories/drizzle-visit-repository.js';
 import { DrizzleUnitOfWork } from './infra/db/drizzle-unit-of-work.js';
 import { NodemailerEmailSender } from './infra/email/nodemailer-email-sender.js';
 import { AwsCognitoProvisioner } from './infra/auth/aws-cognito-provisioner.js';
@@ -94,6 +97,8 @@ export async function createApp({ config, db, jwtVerifier: jwtVerifierOverride }
   const quoteRepo = new DrizzleQuoteRepository(db);
   const outboxRepo = new DrizzleMessageOutboxRepository(db);
   const secureLinkTokenRepo = new DrizzleSecureLinkTokenRepository(db);
+  const jobRepo = new DrizzleJobRepository(db);
+  const visitRepo = new DrizzleVisitRepository(db);
   const uow = new DrizzleUnitOfWork(db);
   const emailSender = new NodemailerEmailSender(config.SMTP_HOST, config.SMTP_PORT);
 
@@ -118,6 +123,7 @@ export async function createApp({ config, db, jwtVerifier: jwtVerifierOverride }
   await app.register(buildRequestRoutes({ requestRepo, tenantRepo, auditRepo, userRepo, outboxRepo, emailSender, clientRepo, uow, config, jwtVerifier }));
   await app.register(buildQuoteRoutes({ quoteRepo, auditRepo, uow, emailSender, outboxRepo, clientRepo, propertyRepo, config, jwtVerifier }));
   await app.register(buildExternalQuoteRoutes({ secureLinkTokenRepo, quoteRepo, clientRepo, tenantRepo, propertyRepo, auditRepo, userRepo, outboxRepo, emailSender, config }));
+  await app.register(buildJobRoutes({ jobRepo, visitRepo, quoteRepo, serviceItemRepo, auditRepo, uow, config, jwtVerifier }));
   await app.register(buildAuthRoutes({ userRepo, config }));
 
   return app;
