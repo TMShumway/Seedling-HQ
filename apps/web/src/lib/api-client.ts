@@ -543,6 +543,19 @@ export const apiClient = {
   declineQuote: (token: string) =>
     publicRequest<QuoteRespondResponse>('POST', `/v1/ext/quotes/${token}/decline`),
 
+  // Team
+  listUsers: () =>
+    request<{ users: UserResponse[] }>('GET', '/v1/users'),
+
+  createUser: (input: CreateUserRequest) =>
+    request<{ user: UserResponse }>('POST', '/v1/users', input),
+
+  resetUserPassword: (userId: string, password: string) =>
+    request<{ success: boolean }>('POST', `/v1/users/${userId}/reset-password`, { password }),
+
+  changeMyPassword: (currentPassword: string, newPassword: string) =>
+    request<{ success: boolean }>('POST', '/v1/users/me/password', { currentPassword, newPassword }),
+
   // Timeline
   getClientTimeline: (clientId: string, params?: { limit?: number; cursor?: string; exclude?: string }) => {
     const qs = new URLSearchParams();
@@ -579,6 +592,13 @@ async function publicRequest<T>(method: string, path: string, body?: unknown): P
   }
 
   return res.json() as Promise<T>;
+}
+
+export interface CreateUserRequest {
+  email: string;
+  fullName: string;
+  role: 'admin' | 'member';
+  password?: string;
 }
 
 export interface PublicRequestPayload {
