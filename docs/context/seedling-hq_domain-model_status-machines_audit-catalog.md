@@ -9,7 +9,7 @@ _Last updated: 2026-02-12 (America/Chihuahua)_
 
 ## 1) Entity overview
 
-### 1.1 Implemented entities (S-0001 through S-0012, plus S-0026–S-0031)
+### 1.1 Implemented entities (S-0001 through S-0013, plus S-0026–S-0031)
 
 | Entity | Story | Tenant-scoped | Singleton | Soft delete |
 |--------|-------|---------------|-----------|-------------|
@@ -558,7 +558,6 @@ Tenant
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
-| `visit.rescheduled` | visit | Visit date/time changed | S-0013 |
 | `visit.completed` | visit | Tech marks visit done | S-0015/S-0016 |
 | `invoice.created` | invoice | Invoice generated from visit | S-0017 |
 | `invoice.sent` | invoice | Secure link sent to client | S-0017 |
@@ -588,6 +587,7 @@ All audit events share this structure:
   subjectType: string;       // e.g., 'quote'
   subjectId: string;         // UUID of the affected entity
   correlationId: string;
+  metadata?: Record<string, unknown> | null;  // optional JSONB, e.g. { newStart, newEnd } for visit.time_set (S-0013)
   createdAt: Date;           // append-only, never updated
 }
 ```
@@ -644,12 +644,12 @@ All audit events share this structure:
 | S-0030 | Frontend Cognito SDK integration | platform | E-0001 |
 | S-0031 | Cognito user provisioning + team management | platform | E-0001 |
 | S-0012 | Create job + first visit from approved quote | scheduling | E-0005 |
+| S-0013 | Calendar view (week/day) + schedule/reschedule visits | scheduling | E-0005 |
 
 ### Planned (MVP — Release R1)
 
 | Story | Title | Area | Epic | Priority |
 |-------|-------|------|------|----------|
-| S-0013 | Calendar view (week/day) + schedule/reschedule | scheduling | E-0005 | P0 |
 | S-0014 | Assign technician to visit | scheduling | E-0005 | P0 |
 | S-0015 | Tech "Today" view (mobile web) | field | E-0006 | P0 |
 | S-0016 | Job completion with notes + photos | field | E-0006 | P0 |

@@ -44,8 +44,8 @@ Seedling-HQ currently has ten context packs:
    - Secure-link token storage, outbox data model, S3 keying rules
 
 9) **Domain model + status machines + audit catalog**
-   - Implemented entity definitions (through S-0029) and planned entity definitions with status machines
-   - Audit event catalog (22 implemented + 17 planned), entity relationships
+   - Implemented entity definitions (through S-0013, plus S-0026–S-0031) and planned entity definitions with status machines
+   - Audit event catalog (30 implemented + 16 planned), entity relationships, audit metadata JSONB
 
 10) **API standards (errors, pagination, idempotency)**
     - Error shape and codes, response conventions, auth context contract
@@ -68,6 +68,8 @@ This foundation is strong. What remains are the "rails" that prevent agents (and
 - **S-0029 implemented (2026-02-11):** Cognito JWT validation. `JwtVerifier` port + `CognitoJwtVerifier` impl using `jose` library. Validates access tokens (not ID tokens) via JWKS, `client_id`, `token_use=access`, `custom:tenant_id`, `username`, exactly-one `cognito:groups`. CDK pre-token-generation V2 Lambda copies `custom:tenant_id` into access token. Group renamed `technician` → `member`. `AUTH_MODE` runtime validation, Cognito config vars conditionally required. Fail-fast verifier creation at startup. UUID format validation for `custom:tenant_id` and `username` claims. 194 unit, 150 integration tests passing.
 - **S-0030 implemented (2026-02-11):** Frontend Cognito SDK integration + local mode password verification. `amazon-cognito-identity-js` with `USER_PASSWORD_AUTH` flow, sessionStorage via custom `ICognitoStorage`, `AuthProvider` context + `useAuth()` hook for dual-mode auth (local/cognito). `POST /v1/auth/cognito/lookup` for email→username. `POST /v1/auth/local/verify` for password verification. Tenant creation gate (404 in cognito mode). `ownerPassword` required on signup. 401 retry with 3 failure paths (refresh fail → logout, retry 401 → logout, network error → no logout). Combined email+password login form. NEW_PASSWORD_REQUIRED challenge handling. `VITE_AUTH_MODE` build-time env var. Buffer polyfill for SDK in Vite. 201 API unit + 50 web unit, 165 integration, 74 E2E tests passing.
 - **S-0031 implemented (2026-02-11):** Cognito user provisioning + password management + team management. `CognitoProvisioner` port (`AwsCognitoProvisioner` + `NoopCognitoProvisioner`). `CreateUserUseCase` with new/re-provision paths. `ForbiddenError` (403) for role guards. DB CHECK constraints on `users.role` and `users.status`. 4 new user routes: `GET /v1/users`, `POST /v1/users`, `POST /v1/users/:id/reset-password`, `POST /v1/users/me/password`. Frontend: `TeamPage`, `InviteMemberForm`, `ResetPasswordDialog`, `ChangePasswordForm`. Local auth localStorage now persists `dev_user_role`, `dev_user_name`, `dev_tenant_name`. 214 API unit + 53 web unit, 183 integration, 126 E2E tests passing.
+- **S-0012 implemented (2026-02-12):** Job + Visit entities from approved quote. `CreateJobFromQuoteUseCase` (atomic in UoW, idempotent via status pre-check + unique constraint). `JobRepository` + `VisitRepository` ports, `TransactionRepos` extended to 10 repos. Quote `scheduled` status. Visit duration aggregated from line items. 5 job routes (`GET /v1/jobs`, `GET /v1/jobs/count`, `GET /v1/jobs/by-quote/:quoteId`, `POST /v1/jobs`, `GET /v1/jobs/:id`). Frontend: `JobsPage` with status filter pills, `JobDetailPage` with embedded visits. 229 API unit + 53 web unit, 199 integration, 140 E2E tests passing.
+- **S-0013 implemented (2026-02-12):** Calendar view + schedule/reschedule visits. `ScheduleVisitUseCase` (no UoW, direct repo + best-effort audit). `PATCH /v1/visits/:id/schedule` — first PATCH endpoint. `audit_events.metadata` JSONB column for structured event data. `visit.time_set` + `visit.rescheduled` audit events. 3 visit routes, CSS Grid week/day calendar, `ScheduleVisitModal`, unscheduled panel. 240 API unit + 53 web unit, 214 integration, 154 E2E tests passing.
 
 ---
 
@@ -75,7 +77,7 @@ This foundation is strong. What remains are the "rails" that prevent agents (and
 
 ### ~~1) Domain model + canonical status/state machines~~ — DONE
 > Covered by: `seedling-hq_domain-model_status-machines_audit-catalog.md`
-> Defines all implemented entities (Tenant, User, BusinessSettings, ServiceCategory, ServiceItem, Client, Property, Request, MessageOutbox, Quote, SecureLinkToken) with full field lists, planned entities with status machines (Job, Visit, Invoice), audit event catalog (22 implemented + 17 planned), entity relationships, and source-of-truth rules.
+> Defines all implemented entities (Tenant, User, BusinessSettings, ServiceCategory, ServiceItem, Client, Property, Request, MessageOutbox, Quote, SecureLinkToken, Job, Visit) with full field lists, planned entities with status machines (Invoice), audit event catalog (30 implemented + 16 planned), entity relationships, audit metadata JSONB, and source-of-truth rules.
 
 ### ~~2) API standards and conventions (behavioral contract)~~ — DONE
 > Covered by: `seedling-hq_api-standards_errors_pagination_idempotency.md`

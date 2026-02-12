@@ -10,7 +10,7 @@ Provisions the AWS Cognito User Pool, Groups, and App Client via CDK as a prereq
 - Decision: Username — Chosen: auto-generated UUID (NOT email) — Why: Enables same-email-across-tenants; each (tenant, email) pair gets its own Cognito user
 - Decision: Email attribute — Chosen: required, NOT unique, NOT an alias — Why: Multiple Cognito users can share an email; login goes through our lookup endpoint
 - Decision: Custom attribute — Chosen: `custom:tenant_id` (string, immutable) — Why: Binds JWT to tenant; immutable prevents cross-tenant moves
-- Decision: Groups — Chosen: `owner`, `admin`, `technician` — Why: Maps to application roles via `cognito:groups` claim
+- Decision: Groups — Chosen: `owner`, `admin`, `member` — Why: Maps to application roles via `cognito:groups` claim (renamed from `technician` to `member` in S-0029)
 - Decision: Auth flow — Chosen: PKCE (no client secret) — Why: Industry standard for SPAs; no secret exposure risk
 - Decision: Self-signup — Chosen: disabled — Why: Users created only via Admin API during tenant signup
 - Decision: Token TTLs — Chosen: access 1h, ID 1h, refresh 30d — Why: Short-lived access for security; 30d refresh for UX

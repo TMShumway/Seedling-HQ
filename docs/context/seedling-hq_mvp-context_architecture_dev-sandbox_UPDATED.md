@@ -299,7 +299,7 @@ Suggested table (name is up to you, e.g., `secure_link_tokens`):
 **Epic 0003 — Requests (lead intake)**
 - S-0006 Public request form (spam protection baseline: honeypot + rate limit) **— DONE**: public endpoint `/v1/public/requests/:tenantSlug`, honeypot + in-memory rate limiter, tenant resolution via slug, system audit principal
 - S-0007 New request notifications (email + optional outbound SMS via worker) **— DONE**: message outbox pattern, Nodemailer → Mailpit (local SMTP), best-effort notification, SMS queued for S-0021 worker
-- S-0008 Convert request → client + property + quote draft **— DONE**: atomic cross-entity conversion in single UoW, extended TransactionRepos (7 repos), race-guarded `updateStatus`, existing client match on convert
+- S-0008 Convert request → client + property + quote draft **— DONE**: atomic cross-entity conversion in single UoW, extended TransactionRepos (10 repos as of S-0012), race-guarded `updateStatus`, existing client match on convert
 
 **Epic 0004 — Quotes + approvals**
 - S-0009 Quote builder v1 (totals, draft/send states) **— DONE**: quote detail page with line-item editing, totals calculation, status machine (draft→sent→approved/declined/expired), quote list page with filters
@@ -307,9 +307,9 @@ Suggested table (name is up to you, e.g., `secure_link_tokens`):
 - S-0011 Customer approves quote **— DONE**: `RespondToQuoteUseCase` (approve/decline), token scope `quote:respond`, idempotent external actions (same-action → 200 no-op, cross-transition → 400), `principalType: 'external'` audit events, owner notification via outbox
 
 **Epic 0005 — Scheduling (jobs + visits)**
-- S-0012 Approved quote creates Job + first Visit draft
-- S-0013 Calendar view (schedule/reschedule) + customer notified
-- S-0014 Assign technician to visit + tech sees “My visits”
+- S-0012 Approved quote creates Job + first Visit draft **— DONE**: Job/Visit entities, atomic creation in UoW from approved quote, idempotent (status pre-check + unique constraint), visit duration from line items, 5 job routes + embedded visits in detail
+- S-0013 Calendar view (schedule/reschedule) + customer notified **— DONE**: CSS Grid week/day calendar, `?week=` URL param navigation, unscheduled panel, ScheduleVisitModal, `PATCH /v1/visits/:id/schedule`, audit metadata JSONB (`visit.time_set` / `visit.rescheduled`), 3 visit routes
+- S-0014 Assign technician to visit + tech sees "My visits"
 
 **Epic 0006 — Field execution (mobile-web v1)**
 - S-0015 Tech “Today” view (mobile) + status actions

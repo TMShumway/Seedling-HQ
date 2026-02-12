@@ -421,5 +421,6 @@ When an AI agent adds functionality:
 - `event_name`
 - `subject_type`
 - `subject_id`
+- `metadata` (nullable JSONB, S-0013 — e.g., `{ newStart, newEnd }` for `visit.time_set`)
 - `created_at`
 - optional: `ip`, `user_agent`

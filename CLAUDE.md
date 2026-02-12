@@ -189,7 +189,7 @@
 | Existing client match on convert | S-0008 | Optional `existingClientId` skips client creation; frontend searches by email with debounced query |
 | Quote list with status filter | S-0009 | `GET /v1/quotes?status=draft&search=term` with cursor pagination; `QuoteRepository.list()` follows `DrizzleRequestRepository.list()` pattern |
 | UpdateQuoteUseCase (no UoW) | S-0009 | Direct repo + best-effort audit (follows `UpdateClientUseCase` pattern); draft guard, line item validation, total recomputation |
-| Quote routes (4 endpoints) | S-0009 | `GET /v1/quotes`, `GET /v1/quotes/count`, `GET /v1/quotes/:id`, `PUT /v1/quotes/:id`; count registered before `:id` to avoid route conflict |
+| Quote routes (6 endpoints) | S-0009/S-0010/S-0026 | `GET /v1/quotes`, `GET /v1/quotes/count`, `POST /v1/quotes` (S-0026), `POST /v1/quotes/:id/send` (S-0010), `GET /v1/quotes/:id`, `PUT /v1/quotes/:id`; count registered before `:id` to avoid route conflict |
 | External token middleware | S-0010 | `buildExternalTokenMiddleware({ secureLinkTokenRepo, config, requiredScope, requiredSubjectType? })` — hashes incoming `:token` param, validates expiry/revocation/scope/subjectType, sets `request.externalAuthContext`; returns 403 `LINK_INVALID` on failure; missing referenced object also returns 403 (not 404) to avoid leaking existence |
 | hashToken utility | S-0010 | `hashToken(secret, rawToken)` in `shared/crypto.ts` — HMAC-SHA256, returns 64-char hex; used in both middleware and SendQuoteUseCase |
 | SendQuoteUseCase (atomic + best-effort) | S-0010 | Inside `uow.run()`: updateStatus(draft→sent) + create token + audit; after UoW (best-effort): get client email, create outbox, send email |
