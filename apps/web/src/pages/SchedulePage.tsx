@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { apiClient } from '@/lib/api-client';
 import type { VisitWithContextResponse } from '@/lib/api-client';
+import { ScheduleVisitModal } from '@/components/schedule/ScheduleVisitModal';
 
 // --- Date helpers ---
 
@@ -135,6 +136,13 @@ export function SchedulePage() {
 
   const visits = visitsQuery.data?.data ?? [];
 
+  // Fetch unscheduled visits
+  const unscheduledQuery = useQuery({
+    queryKey: ['unscheduled-visits'],
+    queryFn: () => apiClient.listUnscheduledVisits(),
+  });
+  const unscheduledVisits = unscheduledQuery.data?.data ?? [];
+
   // Group visits by day (0 = Mon, 6 = Sun)
   const visitsByDay = useMemo(() => {
     const map = new Map<number, VisitWithContextResponse[]>();
@@ -197,8 +205,31 @@ export function SchedulePage() {
         </div>
       </div>
 
-      {/* Unscheduled panel placeholder — filled in Phase 7 */}
-      <div id="unscheduled-panel-slot" />
+      {/* Unscheduled visits panel */}
+      {unscheduledVisits.length > 0 && (
+        <div data-testid="unscheduled-panel">
+          <h2 className="mb-2 text-sm font-medium text-muted-foreground">
+            Unscheduled ({unscheduledVisits.length})
+          </h2>
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {unscheduledVisits.map((v) => (
+              <button
+                key={v.id}
+                className="flex-shrink-0 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-left text-sm hover:bg-amber-100 transition-colors cursor-pointer"
+                onClick={() => setSelectedVisit(v)}
+                data-testid="unscheduled-card"
+              >
+                <p className="font-medium text-amber-900 truncate max-w-[200px]">{v.jobTitle}</p>
+                <p className="text-amber-700 truncate max-w-[200px]">{v.clientName}</p>
+                <p className="flex items-center gap-1 text-xs text-amber-600 mt-0.5">
+                  <Clock className="h-3 w-3" />
+                  {v.estimatedDurationMinutes} min
+                </p>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Desktop Week View */}
       <div className="hidden lg:block overflow-x-auto rounded-lg border border-border" data-testid="week-view">
@@ -312,13 +343,14 @@ export function SchedulePage() {
         </div>
       </div>
 
-      {/* Selected visit state exposed for Phase 7 modal */}
+      {/* Schedule/Reschedule modal */}
       {selectedVisit && (
-        <div className="sr-only" data-testid="selected-visit-id">{selectedVisit.id}</div>
+        <ScheduleVisitModal
+          visit={selectedVisit}
+          onClose={() => setSelectedVisit(null)}
+          onSuccess={() => setSelectedVisit(null)}
+        />
       )}
     </div>
   );
 }
-
-// Re-export for Phase 7 to extend
-export type { VisitWithContextResponse };

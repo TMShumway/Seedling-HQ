@@ -47,10 +47,10 @@ Adds a calendar-based schedule view (week + day) and the ability to schedule/res
 - [x] **6.4: Build day view (mobile)**
 
 ## Phase 7: Frontend — Unscheduled Panel + Schedule Modal
-- [ ] **7.1: Add unscheduled visits panel above calendar**
-- [ ] **7.2: Create ScheduleVisitModal component**
-- [ ] **7.3: Wire click interactions on SchedulePage**
-- [ ] **7.4: Update JobDetailPage with schedule actions**
+- [x] **7.1: Add unscheduled visits panel above calendar**
+- [x] **7.2: Create ScheduleVisitModal component**
+- [x] **7.3: Wire click interactions on SchedulePage**
+- [x] **7.4: Update JobDetailPage with schedule actions**
 
 ## Phase 8: Tests
 - [ ] **8.1: Unit tests for ScheduleVisitUseCase**
@@ -65,42 +65,79 @@ Adds a calendar-based schedule view (week + day) and the ability to schedule/res
 
 ## Resume context
 ### Last completed
-- Phase 6: Frontend SchedulePage + Calendar Grid
-  - `apps/web/src/app-shell/Sidebar.tsx` — enabled Schedule nav item (`active: true, href: '/schedule'`)
-  - `apps/web/src/App.tsx` — added `<Route path="/schedule">` + import SchedulePage
-  - `apps/web/src/pages/SchedulePage.tsx` — full calendar page with:
-    - Week navigation via `?week=YYYY-MM-DD` URL param (prev/next/today buttons)
-    - Date helpers: `getMonday`, `addDays`, `formatDateParam`, `formatDayHeader`, `isToday`
-    - `useQuery` for `listVisits` by week range
-    - CSS Grid week view (desktop, `hidden lg:block`): 7 day columns + time gutter (6AM–8PM), VisitBlock absolutely positioned by time
-    - Day view (mobile, `lg:hidden`): single column with day selector arrows
-    - VisitBlock component: shows jobTitle, clientName, time range; clickable → sets selectedVisit state (for Phase 7 modal)
-    - `visitsByDay` memo groups visits by day index
-
-### Summary of backend work (Phases 1–5)
-- Phase 1: DB schema (metadata JSONB on audit_events, scheduled_start index on visits), VisitRepository extensions
-- Phase 2: ScheduleVisitUseCase with status guard, auto-computed end, first-schedule vs reschedule audit metadata
-- Phase 3: visit-routes.ts (3 endpoints), wired in app.ts
-- Phase 4: Seed data with scheduled + unscheduled visits
-- Phase 5: api-client.ts VisitWithContextResponse + 3 API methods
+- Phase 7: Unscheduled Panel + Schedule Modal
+  - `apps/web/src/pages/SchedulePage.tsx` — added `useQuery(['unscheduled-visits'])`, horizontal scroll panel of amber-styled unscheduled cards above calendar, modal integration for both schedule + reschedule
+  - `apps/web/src/components/schedule/ScheduleVisitModal.tsx` — Card overlay modal with `<input type="datetime-local">`, auto-computed end display, `useMutation` calling `scheduleVisit`, invalidates queries on success
+  - `apps/web/src/pages/JobDetailPage.tsx` — scheduled visits: time is now a `<Link>` to `/schedule?week=YYYY-MM-DD`; unscheduled visits: "Schedule" button navigates to `/schedule`
+- Phases 1–6 all complete (backend + frontend calendar)
 
 ### Commits so far
-1. `0b77a14` — phase 1
-2. `99e788b` — phase 2
-3. `81548b6` — phase 3
-4. `c556eeb` — phase 4
-5. `9f4815d` — phase 5
-6. (pending) — phase 6
+1. `0b77a14` — phase 1 (DB + repos)
+2. `99e788b` — phase 2 (DTO + use case)
+3. `81548b6` — phase 3 (routes + wiring)
+4. `c556eeb` — phase 4 (seed data)
+5. `9f4815d` — phase 5 (API client)
+6. `cc357a8` — phase 6 (SchedulePage + calendar grid)
+7. (pending) — phase 7 (unscheduled panel + modal)
 
 ### In progress
 - None
+
 ### Next up
-- Phase 7: Unscheduled Panel + Schedule Modal
-  - Add `useQuery` for `listUnscheduledVisits()` in SchedulePage
-  - Build horizontal scroll panel of unscheduled visit cards above calendar
-  - Create `ScheduleVisitModal` component (Card overlay, `<input type="datetime-local">`, auto-computed end, useMutation)
-  - Wire click interactions: unscheduled card → open modal, calendar block → open modal pre-filled
-  - Update JobDetailPage: "Schedule" button on unscheduled visits, time link to `/schedule?week=` on scheduled visits
+- Phase 8: Tests
+  - **8.1: Unit tests** for `ScheduleVisitUseCase` — file: `apps/api/test/unit/schedule-visit.test.ts` (new)
+    - Happy paths: first schedule (emits `visit.time_set`), reschedule (emits `visit.rescheduled` with previous/new timestamps in metadata)
+    - Auto-computed end from `estimatedDurationMinutes`, custom end time accepted
+    - Rejections: end before start, non-scheduled status (→ ValidationError), missing visit (→ NotFoundError)
+    - ConflictError when `updateSchedule` returns null (concurrent status change)
+    - Audit failure doesn't propagate
+  - **8.2: Integration tests** for visit routes — file: `apps/api/test/integration/visit-routes.test.ts` (new)
+    - PATCH schedule: start only, start+end, reschedule, end-before-start 400, wrong status 400, not-found 404, concurrent conflict
+    - GET visits: range query returns correct visits, excludes out-of-range, includes context fields (jobTitle/clientName/propertyAddress), 400 for from >= to, 400 for range > 8 days
+    - GET unscheduled: returns only unscheduled visits
+    - Tenant isolation
+  - **8.3: Update existing test mocks** — grep all test files mocking VisitRepository, add `updateSchedule`, `listByDateRange`, `listUnscheduled`; verify audit metadata compatibility
+  - **8.4: E2E tests** — file: `e2e/tests/schedule.spec.ts` (new)
+    - Schedule page renders with week calendar
+    - Unscheduled visits panel visible
+    - Schedule a visit via modal
+    - Reschedule via calendar click
+    - Week navigation
+    - Accessibility check
+
+### Exhaustive file inventory (all changes in this story)
+**New files:**
+- `apps/api/src/application/dto/schedule-visit-dto.ts` — ScheduleVisitInput/Output
+- `apps/api/src/application/usecases/schedule-visit.ts` — ScheduleVisitUseCase
+- `apps/api/src/adapters/http/routes/visit-routes.ts` — 3 endpoints (GET /v1/visits, GET /v1/visits/unscheduled, PATCH /v1/visits/:id/schedule)
+- `apps/web/src/pages/SchedulePage.tsx` — Full calendar page (week + day view)
+- `apps/web/src/components/schedule/ScheduleVisitModal.tsx` — Schedule modal overlay
+- `docs/stories/S-0013-calendar-view-schedule-visits.md` — Story file
+
+**Modified files:**
+- `apps/api/src/infra/db/schema.ts` — added `metadata` JSONB column to `auditEvents` table, added `visits_tenant_scheduled_start_idx` index
+- `apps/api/src/application/ports/audit-event-repository.ts` — added `metadata?: Record<string, unknown> | null` to `AuditEvent` interface
+- `apps/api/src/infra/db/repositories/drizzle-audit-event-repository.ts` — passes metadata through in `record()` and `toEntity()`
+- `apps/api/src/application/ports/visit-repository.ts` — added `VisitWithContext`, `ListVisitsFilters`, 3 new methods
+- `apps/api/src/infra/db/repositories/drizzle-visit-repository.ts` — implemented `updateSchedule()`, `listByDateRange()`, `listUnscheduled()` with JOINs
+- `apps/api/src/app.ts` — wired `buildVisitRoutes`
+- `apps/api/src/infra/db/seed.ts` — `getTodayAt()` helper, scheduled times on existing visit, Bob Wilson quote/job/unscheduled visit
+- `apps/web/src/lib/api-client.ts` — `VisitWithContextResponse` type + `listVisits`, `listUnscheduledVisits`, `scheduleVisit` methods
+- `apps/web/src/app-shell/Sidebar.tsx` — enabled Schedule nav (`active: true, href: '/schedule'`)
+- `apps/web/src/App.tsx` — added `/schedule` route + import
+- `apps/web/src/pages/JobDetailPage.tsx` — scheduled visit times are links to `/schedule?week=`, unscheduled visits have "Schedule" button
+
+### Key implementation details for tests
+- `ScheduleVisitUseCase` constructor takes `(visitRepo, auditRepo)` — no UoW
+- `updateSchedule()` uses SQL `WHERE status='scheduled'` — returns null if status changed (→ ConflictError)
+- Audit uses `metadata` field: `{ newStart, newEnd }` for `visit.time_set`, `{ previousStart, previousEnd, newStart, newEnd }` for `visit.rescheduled`
+- Visit routes use `z.string().datetime({ offset: true })` for ISO datetime validation
+- GET /v1/visits enforces `from < to` and `to - from <= 8 days` at route level
+- GET /v1/visits/unscheduled registered BEFORE any `:id` routes in Fastify
+- Seed data IDs: DEMO_VISIT_ID=`...0950`, DEMO_BOB_VISIT_ID=`...0951`, DEMO_JOB_ID=`...0900`, DEMO_BOB_JOB_ID=`...0901`
+
+### Blockers / open questions
+- None
 ### Blockers / open questions
 - None
 
