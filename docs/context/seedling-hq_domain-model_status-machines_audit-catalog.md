@@ -357,9 +357,16 @@ scheduled → in_progress → completed
 ```
 
 - `scheduled`: job created from approved quote (S-0012)
-- `in_progress`: at least one visit started (future)
-- `completed`: all visits completed (future)
-- `cancelled`: job cancelled by owner (future)
+- `in_progress`: at least one visit started (S-0015 auto-derivation)
+- `completed`: all visits terminal, at least one completed (S-0015 auto-derivation)
+- `cancelled`: all visits cancelled (S-0015 auto-derivation)
+
+**Job auto-derivation (S-0015):** Job status is automatically derived from visit statuses inside `TransitionVisitStatusUseCase`:
+- When a visit transitions to `started` and the job is `scheduled` → job becomes `in_progress`
+- When a visit becomes terminal (`completed` or `cancelled`): fetch all visits for the job, then:
+  - If any visit is non-terminal → no change (work still in progress)
+  - If ALL visits are `cancelled` → job becomes `cancelled`
+  - If all terminal and at least one `completed` → job becomes `completed`
 
 **Creation (S-0012):** `POST /v1/jobs` with `{ quoteId }` atomically creates job + first visit + transitions quote to `scheduled` inside UoW. Idempotent: if quote is already `scheduled`, returns existing job. Scoped unique violation catch for race conditions.
 **Authenticated endpoints (S-0012):** `POST /v1/jobs`, `GET /v1/jobs` (paginated), `GET /v1/jobs/:id` (with embedded visits), `GET /v1/jobs/count`, `GET /v1/jobs/by-quote/:quoteId`
@@ -386,21 +393,39 @@ interface Visit {
 ```
 
 **Indexes:** `(tenant_id)`, `(job_id)`, `(tenant_id, status)`, `(tenant_id, scheduled_start)` (S-0013), `(tenant_id, assigned_user_id)` (S-0014)
-**Status machine:**
+**Status machine (S-0015):**
 ```
 scheduled → en_route → started → completed
-                              → cancelled
+         → started  → cancelled
+         → cancelled
+en_route → started → completed
+         → cancelled
+started → completed
+        → cancelled
 ```
+Valid transitions:
+- `scheduled` → `en_route`, `started`, `cancelled`
+- `en_route` → `started`, `cancelled`
+- `started` → `completed`, `cancelled`
+- `completed` → (terminal, no transitions)
+- `cancelled` → (terminal, no transitions)
+
+Note: `scheduled → completed` is NOT allowed (must pass through `started`). `en_route` is optional.
 
 - `scheduled`: visit created, awaiting time assignment (S-0012 creates with null scheduledStart/End)
-- `en_route`: member heading to site (optional, future)
-- `started`: member on-site, work in progress (future)
-- `completed`: work done, notes/photos captured (future)
-- `cancelled`: visit cancelled (future)
+- `en_route`: member heading to site (S-0015); optional — can skip directly to `started`
+- `started`: member on-site, work in progress (S-0015)
+- `completed`: work done; `completedAt` set atomically on transition (S-0015)
+- `cancelled`: visit cancelled by owner/admin (S-0015); members cannot cancel
+
+**Transition RBAC (S-0015):**
+- Cancel (`→ cancelled`): owner/admin only
+- Forward transitions (`→ en_route`, `→ started`, `→ completed`): owner/admin can transition any visit; member can only transition their own assigned visit
+- Race guard: `updateStatus(tenantId, id, status, expectedStatuses[])` — `WHERE status IN (expectedStatuses)` prevents concurrent transitions; returns null → ConflictError
 
 **Duration calculation (S-0012):** Sum of `estimatedDurationMinutes` from quote line items' service items; defaults to 60 if sum is 0 or all items have null duration.
 **Embedded response:** Visits are returned as an array within `GET /v1/jobs/:id` and `GET /v1/jobs/by-quote/:quoteId`.
-**Flat visit routes (S-0013/S-0014):** `GET /v1/visits` (date range), `GET /v1/visits/unscheduled`, `PATCH /v1/visits/:id/schedule`, `PATCH /v1/visits/:id/assign` (S-0014). Calendar queries return `VisitWithContext` (visit + jobTitle, clientName, propertyAddress, assignedUserName via JOINs). Both list endpoints support `?assignedUserId=` filter for "My Visits" (S-0014).
+**Flat visit routes (S-0013/S-0014/S-0015):** `GET /v1/visits` (date range), `GET /v1/visits/unscheduled`, `PATCH /v1/visits/:id/schedule`, `PATCH /v1/visits/:id/assign` (S-0014), `PATCH /v1/visits/:id/status` (S-0015). Calendar queries return `VisitWithContext` (visit + jobTitle, clientName, propertyAddress, assignedUserName, clientPhone, clientEmail via JOINs). Both list endpoints support `?assignedUserId=` filter for "My Visits" (S-0014).
 
 ---
 
@@ -553,6 +578,13 @@ Tenant
 | `visit.assigned` | visit | Technician assigned/reassigned to visit; metadata: `{ assignedUserId, assignedUserName }` (reassign adds `previousUserId`, `previousUserName`) | S-0014 |
 | `visit.unassigned` | visit | Technician removed from visit; metadata: `{ previousUserId, previousUserName }` | S-0014 |
 | `quote.scheduled` | quote | Quote transitioned to scheduled (job created) | S-0012 |
+| `visit.en_route` | visit | Visit transitioned to en_route; metadata: `{ previousStatus }` | S-0015 |
+| `visit.started` | visit | Visit transitioned to started; metadata: `{ previousStatus }` | S-0015 |
+| `visit.completed` | visit | Visit transitioned to completed; metadata: `{ previousStatus }` | S-0015 |
+| `visit.cancelled` | visit | Visit cancelled; metadata: `{ previousStatus }` | S-0015 |
+| `job.in_progress` | job | Job auto-derived to in_progress (first visit started); metadata: `{ previousStatus, triggerVisitId }` | S-0015 |
+| `job.completed` | job | Job auto-derived to completed (all visits terminal, >=1 completed); metadata: `{ previousStatus, triggerVisitId }` | S-0015 |
+| `job.cancelled` | job | Job auto-derived to cancelled (all visits cancelled); metadata: `{ previousStatus, triggerVisitId }` | S-0015 |
 
 > **Note (S-0007):** New request notifications are tracked via `message_outbox` records (not audit events). The `message.sent` audit event is planned for S-0021 when the SMS worker is implemented.
 
@@ -560,7 +592,6 @@ Tenant
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
-| `visit.completed` | visit | Tech marks visit done | S-0015/S-0016 |
 | `invoice.created` | invoice | Invoice generated from visit | S-0017 |
 | `invoice.sent` | invoice | Secure link sent to client | S-0017 |
 | `invoice.viewed` | invoice | Client opens secure link | S-0017 |

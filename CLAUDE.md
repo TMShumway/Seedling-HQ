@@ -62,7 +62,7 @@
 | Testing | Vitest + Playwright + axe-core | S-0001 | |
 | DB schema management | `db:push` (local), `db:generate` + `db:migrate` (prod) | S-0001 | Migrations introduced as schema evolves |
 | Service catalog | Two-level: categories → items | S-0003 | Soft delete via `active` flag; prices in integer cents |
-| Nav order | Dashboard, Services, Requests, Clients, Quotes, then remaining items | S-0009 | Quotes enabled in S-0009; Jobs enabled in S-0012; Schedule enabled in S-0013; Invoices still disabled |
+| Nav order | Dashboard, Today, Services, Requests, Clients, Quotes, then remaining items | S-0009 | Quotes enabled in S-0009; Jobs enabled in S-0012; Schedule enabled in S-0013; Today enabled in S-0015; Invoices still disabled |
 | Client/Property model | Two-level: clients → properties | S-0004 | Soft delete with cascade; nullable email (phone-only clients OK) |
 | Pagination | Cursor-based keyset pagination | S-0004 | `PaginatedResult<T>` with `(created_at DESC, id DESC)`, fetch limit+1 |
 | Server-side search | ILIKE across multiple columns | S-0004 | `?search=term` on `GET /v1/clients` |
@@ -151,6 +151,13 @@
 | VisitWithContext assignee | LEFT JOIN users for `assignedUserName` | S-0014 | Displayed on calendar blocks and unscheduled cards |
 | My Visits filter | `?assignedUserId=` on GET visit endpoints + `?mine=true` UI toggle | S-0014 | Filters both scheduled (calendar) and unscheduled panels |
 | Tech picker in modal | `<select>` dropdown in ScheduleVisitModal | S-0014 | Role-gated to owner/admin; dual mutation (schedule + assign) with partial success handling |
+| Visit status transition | `PATCH /v1/visits/:id/status` with `{ status }` body | S-0015 | Single endpoint for all transitions; `scheduled` excluded from body enum (cannot set back to scheduled) |
+| Visit status machine | `scheduled → [en_route, started, cancelled]`, `en_route → [started, cancelled]`, `started → [completed, cancelled]` | S-0015 | `scheduled → completed` NOT allowed (must pass through `started`); `en_route` optional; terminal: `completed`, `cancelled` |
+| Visit transition RBAC | Cancel = owner/admin only; forward = owner/admin any, member own assigned only | S-0015 | Members can only transition their own assigned visits; members cannot cancel |
+| Job auto-derivation | Inside TransitionVisitStatusUseCase after visit update, best-effort | S-0015 | `started` + job scheduled → in_progress; all terminal: all cancelled → cancelled, >=1 completed → completed |
+| VisitWithContext client contact | LEFT JOIN clients for `clientPhone` and `clientEmail` | S-0015 | Avoids N+1 for tel:/mailto: links on Today cards |
+| Today page | `/today` inside AppShell, CalendarCheck icon between Dashboard and Services | S-0015 | Mobile-first; shows visits assigned to current user for today; all roles see it |
+| Visit updateStatus race guard | `updateStatus(tenantId, id, status, expectedStatuses[])` | S-0015 | WHERE `status IN (expectedStatuses)` prevents concurrent transitions; returns null if 0 rows |
 
 ---
 
@@ -238,6 +245,10 @@
 | AssignVisitUseCase (no UoW) | S-0014 | Direct repo + best-effort audit; role guard (owner/admin); validates user active; no-op detection (same assignee); emits `visit.assigned`/`visit.unassigned` with user name metadata |
 | Visit routes (4 endpoints) | S-0014 | Added `PATCH /v1/visits/:id/assign`; extended GET endpoints with `?assignedUserId=` filter; `userRepo` passed to `buildVisitRoutes` |
 | VisitWithContext LEFT JOIN users | S-0014 | `listByDateRange` and `listUnscheduled` LEFT JOIN users for `assignedUserName` field |
+| TransitionVisitStatusUseCase (no UoW) | S-0015 | Direct repo + best-effort audit + best-effort job derivation; status machine validation via `getValidTransitions()`; RBAC: cancel owner/admin, forward transitions owner/admin any or member own assigned |
+| Visit routes (5 endpoints) | S-0015 | Added `PATCH /v1/visits/:id/status`; `jobRepo` added to `buildVisitRoutes` deps |
+| VisitWithContext LEFT JOIN clients | S-0015 | `listByDateRange` and `listUnscheduled` LEFT JOIN clients for `clientPhone` and `clientEmail` fields |
+| Job auto-derivation in use case | S-0015 | After visit status update: `started` + job `scheduled` → `in_progress`; all visits terminal: all cancelled → `cancelled`, >=1 completed → `completed`; non-terminal visits → no change |
 
 ### Frontend
 
@@ -301,6 +312,9 @@
 | My Visits toggle | S-0014 | `data-testid="my-visits-toggle"` button in SchedulePage header; toggles `?mine=true` URL param; filters both calendar and unscheduled panel by `assignedUserId` |
 | Calendar assignee display | S-0014 | Visit blocks show `assignedUserName` via `data-testid="visit-block-assignee"`; unscheduled cards show name or "Unassigned" via `data-testid="unscheduled-assignee"` |
 | JobDetailPage assignment display | S-0014 | Visit cards show "Assigned to: Name" or "Unassigned" via cached users list; owner/admin see "Assign" link to `/schedule` |
+| TodayPage with visit cards | S-0015 | `useQuery(['today-visits', userId, dateStr])` with `listVisits({ from, to, assignedUserId })`; `TodayVisitCard` with status badge, time window, duration, MapPin/Phone/Mail links; `useMutation` → `transitionVisitStatus` → invalidate `['today-visits']` + `['visits']` |
+| TodayPage status action buttons | S-0015 | Per-status: scheduled → En Route + Start, en_route → Start, started → Complete, completed → timestamp, cancelled → text; `data-testid="action-en-route"`, `"action-start"`, `"action-complete"`, `"completed-time"` |
+| JobDetailPage visit status actions | S-0015 | `VisitActions` component with status transition + cancel buttons; role-gated to owner/admin; cancel has confirmation toggle; invalidates `['job', id]`, `['visits']`, `['today-visits']` |
 
 ### Testing
 
@@ -311,6 +325,8 @@
 | Integration DB sharing | S-0001 | `pool: 'forks'` + `singleFork: true` in vitest config |
 | `setDemoAuth` E2E helper | S-0027/S-0031 | `e2e/helpers/auth.ts` — `page.addInitScript()` sets demo localStorage (tenant_id, user_id, role, name, tenant_name) before every page load; add to `test.beforeEach` in all authenticated E2E tests |
 | Logout E2E uses `page.evaluate` | S-0027 | Don't use `addInitScript` when testing logout — it re-sets localStorage on navigation; use `page.evaluate(() => localStorage.setItem(...))` instead |
+| E2E test isolation via dedicated seed data | S-0015 | When test file A mutates seeded data that test file B depends on, seed separate data for B. Today tests use John Smith's visit (2 PM) instead of Jane Johnson's (9 AM) which schedule.spec.ts mutates |
+| Scoped E2E locators within cards | S-0015 | Use `page.getByTestId('card').filter({ hasText: 'Name' })` then scope button clicks within that card to avoid cross-card interference |
 
 ---
 
