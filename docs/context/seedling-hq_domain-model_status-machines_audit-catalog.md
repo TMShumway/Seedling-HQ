@@ -9,7 +9,7 @@ _Last updated: 2026-02-12 (America/Chihuahua)_
 
 ## 1) Entity overview
 
-### 1.1 Implemented entities (S-0001 through S-0013, plus S-0026–S-0031)
+### 1.1 Implemented entities (S-0001 through S-0014, plus S-0026–S-0031)
 
 | Entity | Story | Tenant-scoped | Singleton | Soft delete |
 |--------|-------|---------------|-----------|-------------|
@@ -385,7 +385,7 @@ interface Visit {
 }
 ```
 
-**Indexes:** `(tenant_id)`, `(job_id)`, `(tenant_id, status)`, `(tenant_id, scheduled_start)` (S-0013)
+**Indexes:** `(tenant_id)`, `(job_id)`, `(tenant_id, status)`, `(tenant_id, scheduled_start)` (S-0013), `(tenant_id, assigned_user_id)` (S-0014)
 **Status machine:**
 ```
 scheduled → en_route → started → completed
@@ -400,7 +400,7 @@ scheduled → en_route → started → completed
 
 **Duration calculation (S-0012):** Sum of `estimatedDurationMinutes` from quote line items' service items; defaults to 60 if sum is 0 or all items have null duration.
 **Embedded response:** Visits are returned as an array within `GET /v1/jobs/:id` and `GET /v1/jobs/by-quote/:quoteId`.
-**Flat visit routes (S-0013):** `GET /v1/visits` (date range), `GET /v1/visits/unscheduled`, `PATCH /v1/visits/:id/schedule`. Calendar queries return `VisitWithContext` (visit + jobTitle, clientName, propertyAddress via JOINs).
+**Flat visit routes (S-0013/S-0014):** `GET /v1/visits` (date range), `GET /v1/visits/unscheduled`, `PATCH /v1/visits/:id/schedule`, `PATCH /v1/visits/:id/assign` (S-0014). Calendar queries return `VisitWithContext` (visit + jobTitle, clientName, propertyAddress, assignedUserName via JOINs). Both list endpoints support `?assignedUserId=` filter for "My Visits" (S-0014).
 
 ---
 
@@ -550,6 +550,8 @@ Tenant
 | `visit.scheduled` | visit | First visit created with job | S-0012 |
 | `visit.time_set` | visit | First time assignment on a visit; metadata: `{ newStart, newEnd }` | S-0013 |
 | `visit.rescheduled` | visit | Subsequent time change on a visit; metadata: `{ previousStart, previousEnd, newStart, newEnd }` | S-0013 |
+| `visit.assigned` | visit | Technician assigned/reassigned to visit; metadata: `{ assignedUserId, assignedUserName }` (reassign adds `previousUserId`, `previousUserName`) | S-0014 |
+| `visit.unassigned` | visit | Technician removed from visit; metadata: `{ previousUserId, previousUserName }` | S-0014 |
 | `quote.scheduled` | quote | Quote transitioned to scheduled (job created) | S-0012 |
 
 > **Note (S-0007):** New request notifications are tracked via `message_outbox` records (not audit events). The `message.sent` audit event is planned for S-0021 when the SMS worker is implemented.

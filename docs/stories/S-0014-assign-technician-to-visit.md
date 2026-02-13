@@ -1,6 +1,6 @@
 # S-0014: Assign Technician to Visit + "My Visits" Filter
 
-## Status: In Progress
+## Status: Complete
 
 ## Overview
 Third story in Epic 0005 (Scheduling). Makes the existing `assignedUserId` column on visits functional: API endpoint to assign/unassign, frontend tech picker in the schedule modal, "My Visits" toggle on the calendar, and audit trail.
@@ -96,44 +96,17 @@ Third story in Epic 0005 (Scheduling). Makes the existing `assignedUserId` colum
 ## Phase 9: Documentation
 **Goal:** Story file, CLAUDE.md, domain model doc.
 
-- [ ] **Task 9.1:** Update story file status to Complete
-- [ ] **Task 9.2:** Update CLAUDE.md with new decisions + patterns
-- [ ] **Task 9.3:** Update domain model doc with audit events
+- [x] **Task 9.1:** Update story file status to Complete
+- [x] **Task 9.2:** Update CLAUDE.md with new decisions + patterns
+- [x] **Task 9.3:** Update domain model doc with audit events
 
 ## Resume context
-### Last completed
-- Phase 1-7: All backend + frontend implementation complete
-  - `apps/api/src/infra/db/schema.ts` — new `visits_tenant_assigned_idx` index
-  - `apps/api/src/application/ports/visit-repository.ts` — extended with `updateAssignedUser`, `assignedUserName`, `ListVisitsFilters.assignedUserId`, `listUnscheduled` filters param
-  - `apps/api/src/infra/db/repositories/drizzle-visit-repository.ts` — implemented updateAssignedUser, LEFT JOIN users, assignedUserId filter
-  - `apps/api/src/application/dto/assign-visit-dto.ts` — new DTOs
-  - `apps/api/src/application/usecases/assign-visit.ts` — new use case
-  - `apps/api/src/adapters/http/routes/visit-routes.ts` — PATCH assign endpoint, assignedUserId query params, assignedUserName in response
-  - `apps/api/src/app.ts` — pass userRepo to buildVisitRoutes
-  - `apps/api/src/infra/db/seed.ts` — assign DEMO_MEMBER_ID to Jane Johnson's visit
-  - `apps/web/src/lib/api-client.ts` — assignedUserName, assignedUserId filter, assignVisit method
-  - `apps/web/src/components/schedule/ScheduleVisitModal.tsx` — tech picker, role-gated, dual mutation
-  - `apps/web/src/pages/SchedulePage.tsx` — assignee display, My Visits toggle, empty states
-  - `apps/web/src/pages/JobDetailPage.tsx` — assignment display, Assign link
-- Phase 8: Tests written and passing
-  - `apps/api/test/unit/assign-visit.test.ts` — 12 new unit tests, all pass (252 total)
-  - `apps/api/test/integration/visit-routes.test.ts` — 14 new integration tests, all pass (228 total)
-  - `apps/api/test/unit/schedule-visit.test.ts` — updated mock
-  - `apps/api/test/unit/create-job-from-quote.test.ts` — updated mocks (2 locations)
-  - `e2e/tests/schedule.spec.ts` — 5 new E2E tests written (not yet run)
-  - `apps/web` unit tests — all 53 pass
-
-### In progress
-- Phase 8 commit pending — need to commit test files, then run E2E tests
-### Next up
-- Phase 9: Documentation updates (CLAUDE.md, domain model doc)
-### Blockers / open questions
-- None
+_Story complete. All phases implemented, tested, and documented._
 
 ## Test summary
 - **Unit**: 252 total (12 new) — all passing
 - **Integration**: 228 total (14 new) — all passing
-- **E2E**: 5 new tests written in schedule.spec.ts — not yet run
+- **E2E**: 164 total (5 new), 108 passed + 56 skipped — all passing
 - **Web**: 53 total — all passing
 
 ## Commits (on `story/S-0014-assign-technician-to-visit`)
@@ -144,3 +117,4 @@ Third story in Epic 0005 (Scheduling). Makes the existing `assignedUserId` colum
 5. `139fd95` S-0014 phase 5: Frontend API client extensions
 6. `463798b` S-0014 phase 6: Tech picker in ScheduleVisitModal
 7. `1bbf745` S-0014 phase 7: Display assignee names and My Visits filter
+8. `f1a0bcb` S-0014 phase 8: Unit, integration, and E2E tests

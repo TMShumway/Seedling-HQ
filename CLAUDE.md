@@ -146,6 +146,11 @@
 | Calendar date range | Max 8-day window on `GET /v1/visits` | S-0013 | Prevents unbounded queries; week view is 7 days |
 | Week navigation | URL query param `?week=YYYY-MM-DD` | S-0013 | Deep-linkable; defaults to current week's Monday |
 | Schedule modal | Card-based overlay (ResetPasswordDialog pattern) | S-0013 | `<input type="datetime-local">`, auto-computed end from duration |
+| Visit assignment | `PATCH /v1/visits/:id/assign` separate from `/schedule` | S-0014 | Assign and schedule are orthogonal; `assignedUserId: null` to unassign |
+| Assignment RBAC | Owner + Admin can assign; Member cannot | S-0014 | Inline ForbiddenError guard; no status guard on assign |
+| VisitWithContext assignee | LEFT JOIN users for `assignedUserName` | S-0014 | Displayed on calendar blocks and unscheduled cards |
+| My Visits filter | `?assignedUserId=` on GET visit endpoints + `?mine=true` UI toggle | S-0014 | Filters both scheduled (calendar) and unscheduled panels |
+| Tech picker in modal | `<select>` dropdown in ScheduleVisitModal | S-0014 | Role-gated to owner/admin; dual mutation (schedule + assign) with partial success handling |
 
 ---
 
@@ -227,9 +232,12 @@
 | RespondToQuoteUseCase scheduled idempotency | S-0012 | When `action === 'approve'` and `quote.status === 'scheduled'`: return idempotent success (quote was approved then progressed) |
 | PublicQuoteViewPage scheduled support | S-0012 | `['approved', 'scheduled'].includes(quote.status)` for "already approved" banner display |
 | ScheduleVisitUseCase (no UoW) | S-0013 | Direct repo + best-effort audit; status guard in `updateSchedule` SQL; emits `visit.time_set` (first) or `visit.rescheduled` (subsequent) with metadata JSONB |
-| Visit routes (3 endpoints) | S-0013 | `GET /v1/visits` (date range), `GET /v1/visits/unscheduled`, `PATCH /v1/visits/:id/schedule`; unscheduled registered before `:id`; range limit 8 days |
+| Visit routes (4 endpoints) | S-0013/S-0014 | `GET /v1/visits` (date range), `GET /v1/visits/unscheduled`, `PATCH /v1/visits/:id/schedule`, `PATCH /v1/visits/:id/assign`; unscheduled registered before `:id`; range limit 8 days; `?assignedUserId=` filter on GETs (S-0014) |
 | VisitWithContext JOIN query | S-0013 | `listByDateRange` and `listUnscheduled` JOIN jobs+clients+LEFT JOIN properties for calendar context fields |
 | Audit metadata JSONB | S-0013 | Nullable `metadata` column on `audit_events`; used for structured context (timestamps) in `visit.time_set`/`visit.rescheduled` |
+| AssignVisitUseCase (no UoW) | S-0014 | Direct repo + best-effort audit; role guard (owner/admin); validates user active; no-op detection (same assignee); emits `visit.assigned`/`visit.unassigned` with user name metadata |
+| Visit routes (4 endpoints) | S-0014 | Added `PATCH /v1/visits/:id/assign`; extended GET endpoints with `?assignedUserId=` filter; `userRepo` passed to `buildVisitRoutes` |
+| VisitWithContext LEFT JOIN users | S-0014 | `listByDateRange` and `listUnscheduled` LEFT JOIN users for `assignedUserName` field |
 
 ### Frontend
 
@@ -289,6 +297,10 @@
 | Unscheduled panel | S-0013 | Horizontal scroll of amber-styled cards above calendar; `useQuery(['unscheduled-visits'])`; click opens ScheduleVisitModal |
 | ScheduleVisitModal | S-0013 | Card overlay with `<input type="datetime-local">`; auto-computed end; `useMutation` → `scheduleVisit` → invalidate `['visits']` + `['unscheduled-visits']` |
 | JobDetailPage schedule actions | S-0013 | Scheduled visits: time is `<Link>` to `/schedule?week=YYYY-MM-DD`; unscheduled visits: "Schedule" button navigates to `/schedule` |
+| ScheduleVisitModal tech picker | S-0014 | `useQuery(['users'])` for team list; `<select>` dropdown role-gated to owner/admin; dual mutation: schedule + assign with partial success warning |
+| My Visits toggle | S-0014 | `data-testid="my-visits-toggle"` button in SchedulePage header; toggles `?mine=true` URL param; filters both calendar and unscheduled panel by `assignedUserId` |
+| Calendar assignee display | S-0014 | Visit blocks show `assignedUserName` via `data-testid="visit-block-assignee"`; unscheduled cards show name or "Unassigned" via `data-testid="unscheduled-assignee"` |
+| JobDetailPage assignment display | S-0014 | Visit cards show "Assigned to: Name" or "Unassigned" via cached users list; owner/admin see "Assign" link to `/schedule` |
 
 ### Testing
 
