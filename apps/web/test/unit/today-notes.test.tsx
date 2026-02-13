@@ -17,12 +17,20 @@ vi.mock('@/lib/auth/auth-context', () => ({
 const mockUpdateVisitNotes = vi.fn();
 const mockTransitionVisitStatus = vi.fn();
 const mockListVisits = vi.fn();
+const mockListVisitPhotos = vi.fn();
+const mockCreateVisitPhoto = vi.fn();
+const mockConfirmVisitPhoto = vi.fn();
+const mockDeleteVisitPhoto = vi.fn();
 
 vi.mock('@/lib/api-client', () => ({
   apiClient: {
     listVisits: (...args: unknown[]) => mockListVisits(...args),
     updateVisitNotes: (...args: unknown[]) => mockUpdateVisitNotes(...args),
     transitionVisitStatus: (...args: unknown[]) => mockTransitionVisitStatus(...args),
+    listVisitPhotos: (...args: unknown[]) => mockListVisitPhotos(...args),
+    createVisitPhoto: (...args: unknown[]) => mockCreateVisitPhoto(...args),
+    confirmVisitPhoto: (...args: unknown[]) => mockConfirmVisitPhoto(...args),
+    deleteVisitPhoto: (...args: unknown[]) => mockDeleteVisitPhoto(...args),
   },
 }));
 
@@ -66,6 +74,7 @@ function renderWithProviders(ui: ReactNode) {
 describe('TodayPage visit notes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockListVisitPhotos.mockResolvedValue({ data: [] });
   });
 
   afterEach(() => {
@@ -198,5 +207,75 @@ describe('TodayPage visit notes', () => {
 
     const textarea = await screen.findByTestId('visit-notes-input') as HTMLTextAreaElement;
     expect(textarea.value).toBe('Existing notes');
+  });
+});
+
+describe('TodayPage completion confirmation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockListVisitPhotos.mockResolvedValue({ data: [] });
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('shows confirmation dialog when Complete is clicked', async () => {
+    const visit = makeVisit({ status: 'started' });
+    mockListVisits.mockResolvedValue({ data: [visit] });
+
+    renderWithProviders(<TodayPage />);
+
+    const completeBtn = await screen.findByTestId('action-complete');
+    fireEvent.click(completeBtn);
+
+    // Confirmation should appear
+    const confirmSection = screen.getByTestId('confirm-complete');
+    expect(confirmSection).toBeDefined();
+    expect(confirmSection.textContent).toContain('Any notes or photos to add?');
+
+    // Complete Anyway and Go Back buttons should be visible
+    expect(screen.getByTestId('complete-anyway')).toBeDefined();
+    expect(screen.getByTestId('cancel-complete')).toBeDefined();
+
+    // Original Complete button should be hidden
+    expect(screen.queryByTestId('action-complete')).toBeNull();
+  });
+
+  it('dismisses confirmation on Go Back', async () => {
+    const visit = makeVisit({ status: 'started' });
+    mockListVisits.mockResolvedValue({ data: [visit] });
+
+    renderWithProviders(<TodayPage />);
+
+    const completeBtn = await screen.findByTestId('action-complete');
+    fireEvent.click(completeBtn);
+
+    const goBackBtn = screen.getByTestId('cancel-complete');
+    fireEvent.click(goBackBtn);
+
+    // Confirmation should be gone
+    expect(screen.queryByTestId('confirm-complete')).toBeNull();
+
+    // Complete button should be back
+    expect(screen.getByTestId('action-complete')).toBeDefined();
+  });
+
+  it('triggers mutation on Complete Anyway', async () => {
+    const visit = makeVisit({ status: 'started' });
+    mockListVisits.mockResolvedValue({ data: [visit] });
+    mockTransitionVisitStatus.mockResolvedValue({ visit: { ...visit, status: 'completed' } });
+
+    renderWithProviders(<TodayPage />);
+
+    const completeBtn = await screen.findByTestId('action-complete');
+    fireEvent.click(completeBtn);
+
+    const completeAnywayBtn = screen.getByTestId('complete-anyway');
+    fireEvent.click(completeAnywayBtn);
+
+    await waitFor(() => {
+      expect(mockTransitionVisitStatus).toHaveBeenCalledWith('visit-1', 'completed');
+    });
   });
 });

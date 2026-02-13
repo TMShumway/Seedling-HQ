@@ -88,6 +88,7 @@ const NON_TERMINAL = ['scheduled', 'en_route', 'started'];
 function VisitActions({ visit, jobId, canManage }: { visit: VisitResponse; jobId: string; canManage: boolean }) {
   const queryClient = useQueryClient();
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [confirmingComplete, setConfirmingComplete] = useState(false);
 
   const mutation = useMutation({
     mutationFn: (newStatus: string) => apiClient.transitionVisitStatus(visit.id, newStatus),
@@ -96,6 +97,7 @@ function VisitActions({ visit, jobId, canManage }: { visit: VisitResponse; jobId
       queryClient.invalidateQueries({ queryKey: ['visits'] });
       queryClient.invalidateQueries({ queryKey: ['today-visits'] });
       setConfirmCancel(false);
+      setConfirmingComplete(false);
     },
   });
 
@@ -137,10 +139,10 @@ function VisitActions({ visit, jobId, canManage }: { visit: VisitResponse; jobId
             Start
           </Button>
         )}
-        {visit.status === 'started' && (
+        {visit.status === 'started' && !confirmingComplete && (
           <Button
             size="sm"
-            onClick={() => mutation.mutate('completed')}
+            onClick={() => setConfirmingComplete(true)}
             disabled={mutation.isPending}
             data-testid="action-complete"
           >
@@ -159,6 +161,32 @@ function VisitActions({ visit, jobId, canManage }: { visit: VisitResponse; jobId
           </Button>
         )}
       </div>
+      {confirmingComplete && (
+        <div className="flex flex-col gap-2 rounded border border-border bg-muted/50 p-2" data-testid="confirm-complete">
+          <p className="text-sm text-muted-foreground">Any notes or photos to add?</p>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={() => {
+                mutation.mutate('completed');
+                setConfirmingComplete(false);
+              }}
+              disabled={mutation.isPending}
+              data-testid="complete-anyway"
+            >
+              Complete Anyway
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConfirmingComplete(false)}
+              data-testid="cancel-complete"
+            >
+              Go Back
+            </Button>
+          </div>
+        </div>
+      )}
       {confirmCancel && (
         <div className="flex items-center gap-2 rounded border border-destructive/20 bg-destructive/5 p-2">
           <span className="text-sm text-destructive">Cancel this visit?</span>

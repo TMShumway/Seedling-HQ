@@ -118,6 +118,7 @@ function TodayVisitCard({ visit }: { visit: VisitWithContextResponse }) {
   const queryClient = useQueryClient();
   const showPhotos = ['en_route', 'started', 'completed'].includes(visit.status);
   const canEditPhotos = ['en_route', 'started'].includes(visit.status);
+  const [confirmingComplete, setConfirmingComplete] = useState(false);
 
   const mutation = useMutation({
     mutationFn: (newStatus: string) => apiClient.transitionVisitStatus(visit.id, newStatus),
@@ -245,15 +246,41 @@ function TodayVisitCard({ visit }: { visit: VisitWithContextResponse }) {
               Start
             </Button>
           )}
-          {visit.status === 'started' && (
+          {visit.status === 'started' && !confirmingComplete && (
             <Button
               size="sm"
-              onClick={() => mutation.mutate('completed')}
+              onClick={() => setConfirmingComplete(true)}
               disabled={mutation.isPending}
               data-testid="action-complete"
             >
               Complete
             </Button>
+          )}
+          {visit.status === 'started' && confirmingComplete && (
+            <div className="flex flex-col gap-2" data-testid="confirm-complete">
+              <p className="text-sm text-muted-foreground">Any notes or photos to add?</p>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    mutation.mutate('completed');
+                    setConfirmingComplete(false);
+                  }}
+                  disabled={mutation.isPending}
+                  data-testid="complete-anyway"
+                >
+                  Complete Anyway
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setConfirmingComplete(false)}
+                  data-testid="cancel-complete"
+                >
+                  Go Back
+                </Button>
+              </div>
+            </div>
           )}
           {visit.status === 'completed' && visit.completedAt && (
             <span className="text-sm text-green-700" data-testid="completed-time">
