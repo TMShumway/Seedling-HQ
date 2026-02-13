@@ -124,4 +124,21 @@ export class DrizzleJobRepository implements JobRepository {
       .where(and(eq(jobs.tenantId, tenantId), eq(jobs.status, status)));
     return result[0].count;
   }
+
+  async updateStatus(tenantId: string, id: string, status: JobStatus): Promise<Job | null> {
+    const rows = await this.db
+      .update(jobs)
+      .set({
+        status,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(jobs.tenantId, tenantId),
+          eq(jobs.id, id),
+        ),
+      )
+      .returning();
+    return rows[0] ? toEntity(rows[0]) : null;
+  }
 }
