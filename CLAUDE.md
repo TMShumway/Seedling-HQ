@@ -53,6 +53,20 @@
 
 ---
 
+## Testing patterns (quick reference)
+
+| Pattern | Story | Description |
+|---------|-------|-------------|
+| E2E DB isolation | S-0002 | `db:reset` → `db:push` → `db:seed` in globalSetup |
+| Cross-project skip | S-0002 | `test.skip(testInfo.project.name !== 'desktop-chrome', 'reason')` inside test body |
+| Integration DB sharing | S-0001 | `pool: 'forks'` + `singleFork: true` in vitest config |
+| `setDemoAuth` E2E helper | S-0027/S-0031 | `e2e/helpers/auth.ts` — `page.addInitScript()` sets demo localStorage (tenant_id, user_id, role, name, tenant_name) before every page load; add to `test.beforeEach` in all authenticated E2E tests |
+| Logout E2E uses `page.evaluate` | S-0027 | Don't use `addInitScript` when testing logout — it re-sets localStorage on navigation; use `page.evaluate(() => localStorage.setItem(...))` instead |
+| E2E test isolation via dedicated seed data | S-0015 | When test file A mutates seeded data that test file B depends on, seed separate data for B. Today tests use John Smith's visit (2 PM) instead of Jane Johnson's (9 AM) which schedule.spec.ts mutates |
+| Scoped E2E locators within cards | S-0015 | Use `page.getByTestId('card').filter({ hasText: 'Name' })` then scope button clicks within that card to avoid cross-card interference |
+
+---
+
 ## Deferred to later stories
 
 | Item | Deferred to | Reason |
