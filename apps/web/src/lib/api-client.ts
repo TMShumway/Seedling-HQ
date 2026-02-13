@@ -589,6 +589,9 @@ export const apiClient = {
   assignVisit: (id: string, body: { assignedUserId: string | null }) =>
     request<{ visit: VisitResponse }>('PATCH', `/v1/visits/${id}/assign`, body),
 
+  transitionVisitStatus: (id: string, status: string) =>
+    request<{ visit: VisitResponse }>('PATCH', `/v1/visits/${id}/status`, { status }),
+
   // Team
   listUsers: () =>
     request<{ users: UserResponse[] }>('GET', '/v1/users'),
@@ -817,6 +820,8 @@ export interface VisitWithContextResponse extends VisitResponse {
   clientName: string;
   propertyAddress: string | null;
   assignedUserName: string | null;
+  clientPhone: string | null;
+  clientEmail: string | null;
 }
 
 export { ApiClientError };
