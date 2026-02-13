@@ -487,6 +487,73 @@ async function seed() {
       set: { scheduledStart: null, scheduledEnd: null, estimatedDurationMinutes: 60, status: 'scheduled' },
     });
 
+  // Upsert scheduled quote + job + visit for John Smith (Today page demo — assigned to Demo Member, today at 2 PM)
+  const DEMO_SMITH_QUOTE_ID = '00000000-0000-0000-0000-000000000706';
+  const DEMO_SMITH_JOB_ID = '00000000-0000-0000-0000-000000000902';
+  const DEMO_SMITH_VISIT_ID = '00000000-0000-0000-0000-000000000952';
+  const smithQuoteLineItems = [
+    { serviceItemId: '00000000-0000-0000-0000-000000000300', description: 'Weekly Mowing', quantity: 1, unitPrice: 4500, total: 4500 },
+    { serviceItemId: '00000000-0000-0000-0000-000000000301', description: 'Edging & Trimming', quantity: 1, unitPrice: 2500, total: 2500 },
+  ];
+  await db
+    .insert(quotes)
+    .values({
+      id: DEMO_SMITH_QUOTE_ID,
+      tenantId: DEMO_TENANT_ID,
+      requestId: null,
+      clientId: DEMO_CLIENT_IDS.johnSmith,
+      propertyId: '00000000-0000-0000-0000-000000000500',
+      title: 'Lawn Mowing for John Smith',
+      lineItems: smithQuoteLineItems,
+      subtotal: 7000,
+      tax: 500,
+      total: 7500,
+      status: 'scheduled',
+      sentAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      approvedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      scheduledAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    })
+    .onConflictDoUpdate({
+      target: quotes.id,
+      set: { title: 'Lawn Mowing for John Smith', lineItems: smithQuoteLineItems, subtotal: 7000, tax: 500, total: 7500, status: 'scheduled' },
+    });
+
+  await db
+    .insert(jobs)
+    .values({
+      id: DEMO_SMITH_JOB_ID,
+      tenantId: DEMO_TENANT_ID,
+      quoteId: DEMO_SMITH_QUOTE_ID,
+      clientId: DEMO_CLIENT_IDS.johnSmith,
+      propertyId: '00000000-0000-0000-0000-000000000500',
+      title: 'Lawn Mowing for John Smith',
+      status: 'scheduled',
+    })
+    .onConflictDoUpdate({
+      target: jobs.id,
+      set: { title: 'Lawn Mowing for John Smith', status: 'scheduled' },
+    });
+
+  const smithVisitStart = getTodayAt(14, 0);
+  const smithVisitEnd = new Date(smithVisitStart.getTime() + 75 * 60 * 1000);
+  await db
+    .insert(visits)
+    .values({
+      id: DEMO_SMITH_VISIT_ID,
+      tenantId: DEMO_TENANT_ID,
+      jobId: DEMO_SMITH_JOB_ID,
+      assignedUserId: DEMO_MEMBER_ID,
+      scheduledStart: smithVisitStart,
+      scheduledEnd: smithVisitEnd,
+      estimatedDurationMinutes: 75,
+      status: 'scheduled',
+      notes: null,
+    })
+    .onConflictDoUpdate({
+      target: visits.id,
+      set: { assignedUserId: DEMO_MEMBER_ID, scheduledStart: smithVisitStart, scheduledEnd: smithVisitEnd, estimatedDurationMinutes: 75, status: 'scheduled' },
+    });
+
   // Insert audit events (idempotent: check first)
   const existing = await db
     .select({ count: sql<number>`count(*)::int` })
