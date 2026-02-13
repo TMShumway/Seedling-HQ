@@ -206,6 +206,9 @@ export function JobDetailPage() {
               const assignedUser = visit.assignedUserId
                 ? usersQuery.data?.users.find((u) => u.id === visit.assignedUserId)
                 : null;
+              const assignLabel = visit.assignedUserId
+                ? (assignedUser ? `Assigned to: ${assignedUser.fullName}` : 'Assigned')
+                : 'Unassigned';
 
               return (
                 <div
@@ -220,9 +223,7 @@ export function JobDetailPage() {
                     </span>
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground" data-testid="visit-assigned-to">
-                    {assignedUser
-                      ? `Assigned to: ${assignedUser.fullName}`
-                      : 'Unassigned'}
+                    {assignLabel}
                     {canAssign && (
                       <> — <Link to="/schedule" className="text-primary hover:underline text-xs">Assign</Link></>
                     )}

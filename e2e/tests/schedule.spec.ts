@@ -2,6 +2,14 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { setDemoAuth } from '../helpers/auth';
 
+/** Build a datetime-local string for N days from today at the given hour. */
+function futureDatetime(daysFromNow: number, hour: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + daysFromNow);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(hour)}:00`;
+}
+
 test.beforeEach(async ({ page }) => {
   await setDemoAuth(page);
 });
@@ -66,9 +74,9 @@ test.describe('Schedule Page', () => {
     await expect(page.getByTestId('schedule-modal')).toBeVisible();
     await expect(page.getByText('Schedule Visit')).toBeVisible();
 
-    // Fill in start time
+    // Fill in start time — use tomorrow at 9 AM (relative to today)
     const startInput = page.getByTestId('schedule-start-input');
-    await startInput.fill('2026-02-15T09:00');
+    await startInput.fill(futureDatetime(1, 9));
 
     // Click schedule
     await page.getByTestId('schedule-submit').click();
@@ -105,8 +113,8 @@ test.describe('Schedule Page', () => {
     const value = await startInput.inputValue();
     expect(value).not.toBe('');
 
-    // Change the time and submit
-    await startInput.fill('2026-02-16T14:00');
+    // Change the time and submit — use 2 days from now at 2 PM
+    await startInput.fill(futureDatetime(2, 14));
     await page.getByTestId('schedule-submit').click();
 
     // Modal should close
@@ -147,20 +155,28 @@ test.describe('Schedule Page', () => {
 });
 
 test.describe('Assign Technician', () => {
-  // Helper: find Jane Johnson's visit block, navigating weeks if needed
-  // (prior Schedule Page tests may reschedule her to a different week)
+  // Helper: find Jane Johnson's visit block, searching current and nearby weeks.
+  // Prior Schedule Page tests may reschedule her to a different week via relative dates.
   async function findJaneJohnsonBlock(page: import('@playwright/test').Page) {
     await page.goto('/schedule');
     await expect(page.getByTestId('schedule-page')).toBeVisible({ timeout: 10000 });
 
-    const visitBlock = page.getByTestId('visit-block').filter({ hasText: 'Jane Johnson' }).first();
-    const visible = await visitBlock.isVisible().catch(() => false);
-    if (!visible) {
-      // Reschedule test may have moved her to 2026-02-16 — navigate next week
-      await page.getByTestId('next-week').click();
-      await expect(visitBlock).toBeVisible({ timeout: 10000 });
+    const janeBlock = page.getByTestId('visit-block').filter({ hasText: 'Jane Johnson' }).first();
+
+    // Check current week first, then navigate forward up to 2 weeks.
+    // On each week, wait briefly for visit data to load before deciding.
+    for (let i = 0; i < 3; i++) {
+      try {
+        await expect(janeBlock).toBeVisible({ timeout: 3000 });
+        return janeBlock;
+      } catch {
+        if (i < 2) await page.getByTestId('next-week').click();
+      }
     }
-    return visitBlock;
+
+    // Final assertion with clear error if not found after searching
+    await expect(janeBlock).toBeVisible({ timeout: 5000 });
+    return janeBlock;
   }
 
   test('shows assigned technician name on calendar visit block', async ({ page }, testInfo) => {
@@ -235,17 +251,8 @@ test.describe('Assign Technician', () => {
     await page.getByTestId('schedule-submit').click();
     await expect(page.getByTestId('schedule-modal')).not.toBeVisible({ timeout: 10000 });
 
-    // Refresh and verify assignment changed
-    await page.reload();
-    await expect(page.getByTestId('schedule-page')).toBeVisible({ timeout: 10000 });
-
-    // Jane may be on current or next week — check both
-    const updatedBlock = page.getByTestId('visit-block').filter({ hasText: 'Jane Johnson' }).first();
-    const visible = await updatedBlock.isVisible().catch(() => false);
-    if (!visible) {
-      await page.getByTestId('next-week').click();
-    }
-    await expect(updatedBlock).toBeVisible({ timeout: 10000 });
+    // Refresh and verify assignment changed — reuse helper to find her
+    const updatedBlock = await findJaneJohnsonBlock(page);
     const assignee = updatedBlock.getByTestId('visit-block-assignee');
     await expect(assignee).toHaveText('Demo Owner');
   });
