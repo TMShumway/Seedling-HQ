@@ -86,6 +86,7 @@ describe('CreateJobFromQuoteUseCase', () => {
       list: vi.fn(),
       count: vi.fn(),
       countByStatus: vi.fn(),
+      updateStatus: vi.fn(),
     };
 
     visitRepo = {
@@ -94,6 +95,7 @@ describe('CreateJobFromQuoteUseCase', () => {
       listByJobId: vi.fn(),
       updateSchedule: vi.fn(),
       updateAssignedUser: vi.fn(),
+      updateStatus: vi.fn(),
       listByDateRange: vi.fn(),
       listUnscheduled: vi.fn(),
     };
@@ -132,6 +134,7 @@ describe('CreateJobFromQuoteUseCase', () => {
         list: vi.fn(),
         count: vi.fn(),
         countByStatus: vi.fn(),
+        updateStatus: vi.fn(),
       },
       visitRepo: {
         create: vi.fn(),
@@ -139,6 +142,7 @@ describe('CreateJobFromQuoteUseCase', () => {
         listByJobId: vi.fn(),
         updateSchedule: vi.fn(),
         updateAssignedUser: vi.fn(),
+        updateStatus: vi.fn(),
         listByDateRange: vi.fn(),
         listUnscheduled: vi.fn(),
       },
