@@ -15,6 +15,9 @@ export interface AppConfig {
   COGNITO_USER_POOL_ID: string;
   COGNITO_CLIENT_ID: string;
   COGNITO_REGION: string;
+  S3_BUCKET: string;
+  S3_REGION: string;
+  S3_ENDPOINT: string;
 }
 
 function required(key: string): string {
@@ -55,6 +58,21 @@ export function loadConfig(): AppConfig {
     hmacSecret = optional('SECURE_LINK_HMAC_SECRET', DEV_HMAC_SECRET);
   }
 
+  // S3 vars: bucket required in production, defaults for dev/test
+  let s3Bucket: string;
+  if (nodeEnv === 'production') {
+    s3Bucket = process.env.S3_BUCKET ?? '';
+    if (!s3Bucket) {
+      throw new Error('S3_BUCKET must be set in production');
+    }
+  } else {
+    s3Bucket = optional('S3_BUCKET', 'seedling-uploads');
+  }
+  const s3Region = optional('S3_REGION', 'us-east-1');
+  const s3Endpoint = nodeEnv === 'production'
+    ? optional('S3_ENDPOINT', '')
+    : optional('S3_ENDPOINT', 'http://localhost:4566');
+
   // Cognito vars: required when AUTH_MODE=cognito, optional otherwise
   const cognitoUserPoolId = authMode === 'cognito' ? required('COGNITO_USER_POOL_ID') : optional('COGNITO_USER_POOL_ID', '');
   const cognitoClientId = authMode === 'cognito' ? required('COGNITO_CLIENT_ID') : optional('COGNITO_CLIENT_ID', '');
@@ -77,5 +95,8 @@ export function loadConfig(): AppConfig {
     COGNITO_USER_POOL_ID: cognitoUserPoolId,
     COGNITO_CLIENT_ID: cognitoClientId,
     COGNITO_REGION: cognitoRegion,
+    S3_BUCKET: s3Bucket,
+    S3_REGION: s3Region,
+    S3_ENDPOINT: s3Endpoint,
   };
 }

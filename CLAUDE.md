@@ -158,6 +158,10 @@
 | VisitWithContext client contact | LEFT JOIN clients for `clientPhone` and `clientEmail` | S-0015 | Avoids N+1 for tel:/mailto: links on Today cards |
 | Today page | `/today` inside AppShell, CalendarCheck icon between Dashboard and Services | S-0015 | Mobile-first; shows visits assigned to current user for today; all roles see it |
 | Visit updateStatus race guard | `updateStatus(tenantId, id, status, expectedStatuses[])` | S-0015 | WHERE `status IN (expectedStatuses)` prevents concurrent transitions; returns null if 0 rows |
+| Visit notes editing | Separate `PATCH /v1/visits/:id/notes` endpoint | S-0016 | Status guard: en_route/started/completed only; RBAC: owner/admin any, member own assigned |
+| Photo storage | S3 via presigned POST, LocalStack for local dev | S-0016 | `@aws-sdk/s3-presigned-post` with `content-length-range`; `FileStorage` port + `S3FileStorage` impl |
+| Photo entity lifecycle | `pending` → `ready` via atomic confirm | S-0016 | `visit_photos` table; `SELECT ... FOR UPDATE` serializes concurrent confirms; max 20 ready per visit |
+| Completion UX | Confirmation alert before completing | S-0016 | "Any notes or photos to add?" prompt with "Complete Anyway" / "Go Back" |
 
 ---
 
@@ -249,6 +253,11 @@
 | Visit routes (5 endpoints) | S-0015 | Added `PATCH /v1/visits/:id/status`; `jobRepo` added to `buildVisitRoutes` deps |
 | VisitWithContext LEFT JOIN clients | S-0015 | `listByDateRange` and `listUnscheduled` LEFT JOIN clients for `clientPhone` and `clientEmail` fields |
 | Job auto-derivation in use case | S-0015 | After visit status update: `started` + job `scheduled` → `in_progress`; all visits terminal: all cancelled → `cancelled`, >=1 completed → `completed`; non-terminal visits → no change |
+| UpdateVisitNotesUseCase (no UoW) | S-0016 | Direct repo + best-effort audit; status guard (en_route/started/completed); RBAC: owner/admin any, member own assigned |
+| Visit photo routes (4 endpoints) | S-0016 | `POST /v1/visits/:visitId/photos`, `POST .../confirm`, `GET /v1/visits/:visitId/photos`, `DELETE .../photos/:photoId`; separate route file `visit-photo-routes.ts` |
+| FileStorage port + S3FileStorage | S-0016 | Port: `application/ports/file-storage.ts`; impl: `infra/storage/s3-file-storage.ts`; presigned POST for upload, presigned GET for download, best-effort delete |
+| Photo pending/ready lifecycle | S-0016 | Create pending → upload to S3 → confirm (atomic quota check) → ready; stale pending cleanup (>15min) during create; soft pending cap 5, hard ready cap 20 |
+| LocalStack S3 for local dev | S-0016 | `docker-compose.yml` localstack service; `infra/localstack/init-s3.sh` creates bucket with CORS; `S3_ENDPOINT` config for forcePathStyle |
 
 ### Frontend
 
@@ -315,6 +324,10 @@
 | TodayPage with visit cards | S-0015 | `useQuery(['today-visits', userId, dateStr])` with `listVisits({ from, to, assignedUserId })`; `TodayVisitCard` with status badge, time window, duration, MapPin/Phone/Mail links; `useMutation` → `transitionVisitStatus` → invalidate `['today-visits']` + `['visits']` |
 | TodayPage status action buttons | S-0015 | Per-status: scheduled → En Route + Start, en_route → Start, started → Complete, completed → timestamp, cancelled → text; `data-testid="action-en-route"`, `"action-start"`, `"action-complete"`, `"completed-time"` |
 | JobDetailPage visit status actions | S-0015 | `VisitActions` component with status transition + cancel buttons; role-gated to owner/admin; cancel has confirmation toggle; invalidates `['job', id]`, `['visits']`, `['today-visits']` |
+| VisitNotesSection in TodayPage | S-0016 | Inline textarea for en_route/started; read-only display for completed; `useMutation` → `updateVisitNotes` with explicit save button |
+| PhotoUpload component | S-0016 | File input with `capture="environment"`; creates pending record → presigned POST to S3 → confirm; client-side 10MB + type validation; cleanup on failure |
+| PhotoGallery component | S-0016 | Grid thumbnails with hover delete button; inline confirmation; `canDelete` prop gates edit mode |
+| Completion confirmation | S-0016 | "Any notes or photos to add?" prompt before completing; "Complete Anyway" / "Go Back" buttons; state machine: idle → confirming → mutation |
 
 ### Testing
 
@@ -335,7 +348,6 @@
 | Item | Deferred to | Reason |
 |------|-------------|--------|
 | SMS worker (send from outbox) | S-0021 | `message_outbox` table exists; SMS records queued but not sent |
-| LocalStack in docker-compose | S-0007+ | Not needed until async/queue stories |
 | EventBridge bus + Scheduler | S-0022+ | Not needed until automation stories |
 | Stripe integration | S-0018 | |
 | CI/CD pipeline | Post-MVP | Context gap #6 |

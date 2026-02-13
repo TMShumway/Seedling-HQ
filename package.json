@@ -10,6 +10,12 @@
     "typecheck": "pnpm -r run typecheck",
     "test": "pnpm -r run test",
     "test:integration": "pnpm --filter @seedling/api run test:integration",
-    "test:e2e": "pnpm --filter @seedling/e2e run test"
+    "test:e2e": "pnpm --filter @seedling/e2e run test",
+    "services:up": "docker compose up -d",
+    "services:down": "docker compose down",
+    "services:logs": "docker compose logs -f",
+    "db:push": "pnpm --filter @seedling/api run db:push",
+    "db:seed": "pnpm --filter @seedling/api run db:seed",
+    "db:reset": "pnpm --filter @seedling/api run db:reset"
   }
 }

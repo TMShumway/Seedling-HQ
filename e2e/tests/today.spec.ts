@@ -90,8 +90,10 @@ test.describe('Today page', () => {
     await expect(card).toContainText('Started');
     await expect(card.getByTestId('action-complete')).toBeVisible();
 
-    // Step 3: Complete
+    // Step 3: Complete (now has confirmation step)
     await card.getByTestId('action-complete').click();
+    await expect(card.getByTestId('confirm-complete')).toBeVisible();
+    await card.getByTestId('complete-anyway').click();
     await expect(card).toContainText('Completed');
     await expect(card.getByTestId('completed-time')).toBeVisible();
 

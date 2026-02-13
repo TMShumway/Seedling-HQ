@@ -8,6 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { apiClient } from '@/lib/api-client';
 import type { VisitResponse } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth/auth-context';
+import { PhotoGallery } from '@/components/visits/PhotoGallery';
+import { PhotoUpload } from '@/components/visits/PhotoUpload';
 
 function JobStatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
@@ -55,11 +57,38 @@ function VisitStatusBadge({ status }: { status: string }) {
   );
 }
 
+function VisitPhotosSection({ visit, canManage }: { visit: VisitResponse; canManage: boolean }) {
+  const showPhotos = ['en_route', 'started', 'completed'].includes(visit.status);
+  const canEditPhotos = canManage && ['en_route', 'started'].includes(visit.status);
+
+  const photosQuery = useQuery({
+    queryKey: ['visit-photos', visit.id],
+    queryFn: () => apiClient.listVisitPhotos(visit.id),
+    enabled: showPhotos,
+  });
+
+  if (!showPhotos) return null;
+
+  return (
+    <div className="mt-2 space-y-2">
+      {photosQuery.data && (
+        <PhotoGallery
+          visitId={visit.id}
+          photos={photosQuery.data.data}
+          canDelete={canEditPhotos}
+        />
+      )}
+      {canEditPhotos && <PhotoUpload visitId={visit.id} />}
+    </div>
+  );
+}
+
 const NON_TERMINAL = ['scheduled', 'en_route', 'started'];
 
 function VisitActions({ visit, jobId, canManage }: { visit: VisitResponse; jobId: string; canManage: boolean }) {
   const queryClient = useQueryClient();
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [confirmingComplete, setConfirmingComplete] = useState(false);
 
   const mutation = useMutation({
     mutationFn: (newStatus: string) => apiClient.transitionVisitStatus(visit.id, newStatus),
@@ -68,6 +97,7 @@ function VisitActions({ visit, jobId, canManage }: { visit: VisitResponse; jobId
       queryClient.invalidateQueries({ queryKey: ['visits'] });
       queryClient.invalidateQueries({ queryKey: ['today-visits'] });
       setConfirmCancel(false);
+      setConfirmingComplete(false);
     },
   });
 
@@ -109,10 +139,10 @@ function VisitActions({ visit, jobId, canManage }: { visit: VisitResponse; jobId
             Start
           </Button>
         )}
-        {visit.status === 'started' && (
+        {visit.status === 'started' && !confirmingComplete && (
           <Button
             size="sm"
-            onClick={() => mutation.mutate('completed')}
+            onClick={() => setConfirmingComplete(true)}
             disabled={mutation.isPending}
             data-testid="action-complete"
           >
@@ -131,6 +161,32 @@ function VisitActions({ visit, jobId, canManage }: { visit: VisitResponse; jobId
           </Button>
         )}
       </div>
+      {confirmingComplete && (
+        <div className="flex flex-col gap-2 rounded border border-border bg-muted/50 p-2" data-testid="confirm-complete">
+          <p className="text-sm text-muted-foreground">Any notes or photos to add?</p>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={() => {
+                mutation.mutate('completed');
+                setConfirmingComplete(false);
+              }}
+              disabled={mutation.isPending}
+              data-testid="complete-anyway"
+            >
+              Complete Anyway
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConfirmingComplete(false)}
+              data-testid="cancel-complete"
+            >
+              Go Back
+            </Button>
+          </div>
+        </div>
+      )}
       {confirmCancel && (
         <div className="flex items-center gap-2 rounded border border-destructive/20 bg-destructive/5 p-2">
           <span className="text-sm text-destructive">Cancel this visit?</span>
@@ -368,8 +424,12 @@ export function JobDetailPage() {
                     </div>
                   )}
                   {visit.notes && (
-                    <p className="mt-1 text-sm text-muted-foreground">{visit.notes}</p>
+                    <div className="mt-2 space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground">Notes</p>
+                      <p className="whitespace-pre-wrap text-sm" data-testid="visit-notes-display">{visit.notes}</p>
+                    </div>
                   )}
+                  <VisitPhotosSection visit={visit} canManage={canManage} />
                   {visit.completedAt && (
                     <p className="mt-1 text-xs text-green-700">
                       Completed on {new Date(visit.completedAt).toLocaleDateString()}

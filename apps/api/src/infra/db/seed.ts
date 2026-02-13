@@ -554,6 +554,138 @@ async function seed() {
       set: { assignedUserId: DEMO_MEMBER_ID, scheduledStart: smithVisitStart, scheduledEnd: smithVisitEnd, estimatedDurationMinutes: 75, status: 'scheduled' },
     });
 
+  // Upsert dedicated E2E visit for notes + completion test (assigned to Demo Member, today at 3:30 PM)
+  const DEMO_NOTES_QUOTE_ID = '00000000-0000-0000-0000-000000000707';
+  const DEMO_NOTES_JOB_ID = '00000000-0000-0000-0000-000000000903';
+  const DEMO_NOTES_VISIT_ID = '00000000-0000-0000-0000-000000000953';
+  const notesQuoteLineItems = [
+    { serviceItemId: '00000000-0000-0000-0000-000000000300', description: 'Weekly Mowing', quantity: 1, unitPrice: 4500, total: 4500 },
+  ];
+  await db
+    .insert(quotes)
+    .values({
+      id: DEMO_NOTES_QUOTE_ID,
+      tenantId: DEMO_TENANT_ID,
+      requestId: null,
+      clientId: DEMO_CLIENT_IDS.bobWilson,
+      propertyId: '00000000-0000-0000-0000-000000000502',
+      title: 'Notes Test - Bob Wilson Mowing',
+      lineItems: notesQuoteLineItems,
+      subtotal: 4500,
+      tax: 0,
+      total: 4500,
+      status: 'scheduled',
+      sentAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      approvedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      scheduledAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    })
+    .onConflictDoUpdate({
+      target: quotes.id,
+      set: { title: 'Notes Test - Bob Wilson Mowing', lineItems: notesQuoteLineItems, subtotal: 4500, tax: 0, total: 4500, status: 'scheduled' },
+    });
+
+  await db
+    .insert(jobs)
+    .values({
+      id: DEMO_NOTES_JOB_ID,
+      tenantId: DEMO_TENANT_ID,
+      quoteId: DEMO_NOTES_QUOTE_ID,
+      clientId: DEMO_CLIENT_IDS.bobWilson,
+      propertyId: '00000000-0000-0000-0000-000000000502',
+      title: 'Notes Test - Bob Wilson Mowing',
+      status: 'scheduled',
+    })
+    .onConflictDoUpdate({
+      target: jobs.id,
+      set: { title: 'Notes Test - Bob Wilson Mowing', status: 'scheduled' },
+    });
+
+  const notesVisitStart = getTodayAt(15, 30);
+  const notesVisitEnd = new Date(notesVisitStart.getTime() + 45 * 60 * 1000);
+  await db
+    .insert(visits)
+    .values({
+      id: DEMO_NOTES_VISIT_ID,
+      tenantId: DEMO_TENANT_ID,
+      jobId: DEMO_NOTES_JOB_ID,
+      assignedUserId: DEMO_MEMBER_ID,
+      scheduledStart: notesVisitStart,
+      scheduledEnd: notesVisitEnd,
+      estimatedDurationMinutes: 45,
+      status: 'scheduled',
+      notes: null,
+    })
+    .onConflictDoUpdate({
+      target: visits.id,
+      set: { assignedUserId: DEMO_MEMBER_ID, scheduledStart: notesVisitStart, scheduledEnd: notesVisitEnd, estimatedDurationMinutes: 45, status: 'scheduled', notes: null },
+    });
+
+  // Upsert dedicated E2E visit for photo test (assigned to Demo Member, today at 4:30 PM)
+  const DEMO_PHOTO_QUOTE_ID = '00000000-0000-0000-0000-000000000708';
+  const DEMO_PHOTO_JOB_ID = '00000000-0000-0000-0000-000000000904';
+  const DEMO_PHOTO_VISIT_ID = '00000000-0000-0000-0000-000000000954';
+  const photoQuoteLineItems = [
+    { serviceItemId: '00000000-0000-0000-0000-000000000301', description: 'Edging & Trimming', quantity: 1, unitPrice: 2500, total: 2500 },
+  ];
+  await db
+    .insert(quotes)
+    .values({
+      id: DEMO_PHOTO_QUOTE_ID,
+      tenantId: DEMO_TENANT_ID,
+      requestId: null,
+      clientId: DEMO_CLIENT_IDS.janeJohnson,
+      propertyId: '00000000-0000-0000-0000-000000000501',
+      title: 'Photo Test - Jane Johnson Edging',
+      lineItems: photoQuoteLineItems,
+      subtotal: 2500,
+      tax: 0,
+      total: 2500,
+      status: 'scheduled',
+      sentAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      approvedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      scheduledAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    })
+    .onConflictDoUpdate({
+      target: quotes.id,
+      set: { title: 'Photo Test - Jane Johnson Edging', lineItems: photoQuoteLineItems, subtotal: 2500, tax: 0, total: 2500, status: 'scheduled' },
+    });
+
+  await db
+    .insert(jobs)
+    .values({
+      id: DEMO_PHOTO_JOB_ID,
+      tenantId: DEMO_TENANT_ID,
+      quoteId: DEMO_PHOTO_QUOTE_ID,
+      clientId: DEMO_CLIENT_IDS.janeJohnson,
+      propertyId: '00000000-0000-0000-0000-000000000501',
+      title: 'Photo Test - Jane Johnson Edging',
+      status: 'scheduled',
+    })
+    .onConflictDoUpdate({
+      target: jobs.id,
+      set: { title: 'Photo Test - Jane Johnson Edging', status: 'scheduled' },
+    });
+
+  const photoVisitStart = getTodayAt(16, 30);
+  const photoVisitEnd = new Date(photoVisitStart.getTime() + 25 * 60 * 1000);
+  await db
+    .insert(visits)
+    .values({
+      id: DEMO_PHOTO_VISIT_ID,
+      tenantId: DEMO_TENANT_ID,
+      jobId: DEMO_PHOTO_JOB_ID,
+      assignedUserId: DEMO_MEMBER_ID,
+      scheduledStart: photoVisitStart,
+      scheduledEnd: photoVisitEnd,
+      estimatedDurationMinutes: 25,
+      status: 'scheduled',
+      notes: null,
+    })
+    .onConflictDoUpdate({
+      target: visits.id,
+      set: { assignedUserId: DEMO_MEMBER_ID, scheduledStart: photoVisitStart, scheduledEnd: photoVisitEnd, estimatedDurationMinutes: 25, status: 'scheduled', notes: null },
+    });
+
   // Insert audit events (idempotent: check first)
   const existing = await db
     .select({ count: sql<number>`count(*)::int` })

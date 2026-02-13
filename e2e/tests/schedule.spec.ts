@@ -161,7 +161,7 @@ test.describe('Assign Technician', () => {
     await page.goto('/schedule');
     await expect(page.getByTestId('schedule-page')).toBeVisible({ timeout: 10000 });
 
-    const janeBlock = page.getByTestId('visit-block').filter({ hasText: 'Jane Johnson' }).first();
+    const janeBlock = page.getByTestId('visit-block').filter({ hasText: 'Tree Trimming' }).first();
 
     // Check current week first, then navigate forward up to 2 weeks.
     // On each week, wait briefly for visit data to load before deciding.
@@ -200,14 +200,14 @@ test.describe('Assign Technician', () => {
     // Wait for any visit block to load, then check Bob's block has no assignee.
     await expect(page.getByTestId('visit-block').first()).toBeVisible({ timeout: 10000 });
 
-    const bobBlock = page.getByTestId('visit-block').filter({ hasText: 'Bob Wilson' }).first();
+    const bobBlock = page.getByTestId('visit-block').filter({ hasText: 'Landscaping Work' }).first();
     const bobVisible = await bobBlock.isVisible().catch(() => false);
     if (bobVisible) {
-      // Bob's visit block should NOT have the assignee element (he's unassigned)
+      // Landscaping Work visit should NOT have the assignee element (he's unassigned)
       await expect(bobBlock.getByTestId('visit-block-assignee')).not.toBeVisible();
     } else {
       // Bob may still be unscheduled (if run in isolation) — check unscheduled panel
-      const unscheduledCard = page.getByTestId('unscheduled-card').first();
+      const unscheduledCard = page.getByTestId('unscheduled-card').filter({ hasText: 'Landscaping Work' });
       await expect(unscheduledCard).toBeVisible({ timeout: 10000 });
       const assignee = unscheduledCard.getByTestId('unscheduled-assignee');
       await expect(assignee).toHaveText('Unassigned');

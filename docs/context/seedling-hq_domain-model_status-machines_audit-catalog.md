@@ -9,7 +9,7 @@ _Last updated: 2026-02-12 (America/Chihuahua)_
 
 ## 1) Entity overview
 
-### 1.1 Implemented entities (S-0001 through S-0014, plus S-0026–S-0031)
+### 1.1 Implemented entities (S-0001 through S-0016, plus S-0026–S-0031)
 
 | Entity | Story | Tenant-scoped | Singleton | Soft delete |
 |--------|-------|---------------|-----------|-------------|
@@ -27,6 +27,7 @@ _Last updated: 2026-02-12 (America/Chihuahua)_
 | SecureLinkToken | S-0010 | Yes | No | No |
 | Job | S-0012 | Yes | No | No |
 | Visit | S-0012 | Yes | No | No |
+| VisitPhoto | S-0016 | Yes | No | No |
 
 ### 1.2 Planned entities (future stories)
 
@@ -425,7 +426,40 @@ Note: `scheduled → completed` is NOT allowed (must pass through `started`). `e
 
 **Duration calculation (S-0012):** Sum of `estimatedDurationMinutes` from quote line items' service items; defaults to 60 if sum is 0 or all items have null duration.
 **Embedded response:** Visits are returned as an array within `GET /v1/jobs/:id` and `GET /v1/jobs/by-quote/:quoteId`.
-**Flat visit routes (S-0013/S-0014/S-0015):** `GET /v1/visits` (date range), `GET /v1/visits/unscheduled`, `PATCH /v1/visits/:id/schedule`, `PATCH /v1/visits/:id/assign` (S-0014), `PATCH /v1/visits/:id/status` (S-0015). Calendar queries return `VisitWithContext` (visit + jobTitle, clientName, propertyAddress, assignedUserName, clientPhone, clientEmail via JOINs). Both list endpoints support `?assignedUserId=` filter for "My Visits" (S-0014).
+**Flat visit routes (S-0013/S-0014/S-0015/S-0016):** `GET /v1/visits` (date range), `GET /v1/visits/unscheduled`, `PATCH /v1/visits/:id/schedule`, `PATCH /v1/visits/:id/assign` (S-0014), `PATCH /v1/visits/:id/status` (S-0015), `PATCH /v1/visits/:id/notes` (S-0016). Calendar queries return `VisitWithContext` (visit + jobTitle, clientName, propertyAddress, assignedUserName, clientPhone, clientEmail via JOINs). Both list endpoints support `?assignedUserId=` filter for "My Visits" (S-0014).
+**Photo routes (S-0016):** `POST /v1/visits/:visitId/photos` (create pending + presigned POST), `POST /v1/visits/:visitId/photos/:photoId/confirm`, `GET /v1/visits/:visitId/photos` (list ready), `DELETE /v1/visits/:visitId/photos/:photoId`. Separate route file `visit-photo-routes.ts`.
+
+### VisitPhoto
+
+```typescript
+type VisitPhotoStatus = 'pending' | 'ready';
+
+interface VisitPhoto {
+  id: string;              // UUID
+  tenantId: string;        // FK → tenants.id
+  visitId: string;         // FK → visits.id
+  s3Key: string;           // Server-generated S3 object key
+  fileName: string;        // Original upload filename
+  contentType: string;     // MIME type (image/jpeg, image/png, image/heic, image/webp)
+  fileSize: number | null; // Bytes, set on confirm
+  status: VisitPhotoStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
+
+**Indexes:** `(tenant_id, visit_id, status)`, `(tenant_id, visit_id, created_at)`
+**Status machine:**
+```
+pending → ready
+```
+
+- `pending`: DB record created, presigned POST returned; client uploads to S3
+- `ready`: Upload confirmed; photo visible in gallery
+
+**Lifecycle:** Create pending → upload to S3 → confirm (atomic quota check via `SELECT ... FOR UPDATE` on visit row) → ready. Stale pending records (>15 min) cleaned up during create. Hard ready cap: 20 per visit. Soft pending cap: 5.
+**Allowed content types:** `image/jpeg`, `image/png`, `image/heic`, `image/webp`
+**Max file size:** 10 MB (enforced via presigned POST `content-length-range` condition)
 
 ---
 
@@ -524,6 +558,7 @@ Tenant
   ├── 1:*  Quote (S-0008)
   │         └── 1:1  Job (S-0012)
   │                   └── 1:*  Visit (S-0012)
+  │                              └── 1:*  VisitPhoto (S-0016)
   ├── 1:*  Invoice (S-0017)
   ├── 1:*  MessageOutbox (S-0007)
   ├── 1:*  SecureLinkToken (S-0010)
@@ -539,7 +574,7 @@ Tenant
 
 **Audit event metadata (S-0013):** `audit_events` table has a nullable JSONB `metadata` column for structured event context. Existing events have `metadata=null`. New events (`visit.time_set`, `visit.rescheduled`) use it to record timestamp details.
 
-### Implemented events (S-0001 through S-0013, plus S-0026–S-0031)
+### Implemented events (S-0001 through S-0016, plus S-0026–S-0031)
 
 | Event name | Subject type | Fires when | Story |
 |------------|-------------|------------|-------|
@@ -585,6 +620,10 @@ Tenant
 | `job.in_progress` | job | Job auto-derived to in_progress (first visit started); metadata: `{ previousStatus, triggerVisitId }` | S-0015 |
 | `job.completed` | job | Job auto-derived to completed (all visits terminal, >=1 completed); metadata: `{ previousStatus, triggerVisitId }` | S-0015 |
 | `job.cancelled` | job | Job auto-derived to cancelled (all visits cancelled); metadata: `{ previousStatus, triggerVisitId }` | S-0015 |
+| `visit.notes_updated` | visit | Visit notes edited | S-0016 |
+| `visit.photo_upload_started` | visit_photo | Photo upload initiated (pending record created) | S-0016 |
+| `visit.photo_added` | visit_photo | Photo confirmed and ready | S-0016 |
+| `visit.photo_removed` | visit_photo | Photo deleted | S-0016 |
 
 > **Note (S-0007):** New request notifications are tracked via `message_outbox` records (not audit events). The `message.sent` audit event is planned for S-0021 when the SMS worker is implemented.
 
@@ -678,14 +717,14 @@ All audit events share this structure:
 | S-0031 | Cognito user provisioning + team management | platform | E-0001 |
 | S-0012 | Create job + first visit from approved quote | scheduling | E-0005 |
 | S-0013 | Calendar view (week/day) + schedule/reschedule visits | scheduling | E-0005 |
+| S-0014 | Assign technician to visit | scheduling | E-0005 |
+| S-0015 | Tech "Today" view (mobile web) | field | E-0006 |
+| S-0016 | Job completion with notes + photos | field | E-0006 |
 
 ### Planned (MVP — Release R1)
 
 | Story | Title | Area | Epic | Priority |
 |-------|-------|------|------|----------|
-| S-0014 | Assign technician to visit | scheduling | E-0005 | P0 |
-| S-0015 | Tech "Today" view (mobile web) | field | E-0006 | P0 |
-| S-0016 | Job completion with notes + photos | field | E-0006 | P0 |
 | S-0017 | Generate invoice from completed visit | billing | E-0007 | P0 |
 | S-0018 | Customer pays invoice online (Stripe) | billing | E-0007 | P0 |
 | S-0019 | Basic AR dashboard | billing | E-0007 | P1 |

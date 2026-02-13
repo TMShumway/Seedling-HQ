@@ -40,7 +40,7 @@ _Last updated: 2026-02-11 (America/Chihuahua)_
 ### 2.2 Highest-risk surfaces
 - List/search endpoints (easy to forget tenant filter).
 - Secure link endpoints (quote/invoice/hub) if not tenant-bound.
-- File upload/download (S3 presigned URLs).
+- File upload/download (S3 presigned POST with `content-length-range` + content type conditions, S-0016).
 - Worker/SQS processing (idempotency; replay).
 
 ---
@@ -299,6 +299,37 @@ Rules:
 
 Recommended key format:
 - `tenants/<tenantId>/visits/<visitId>/photos/<uuid>.<ext>`
+
+### 9.1 Presigned POST implementation (S-0016)
+
+Visit photo uploads use **presigned POST policies** via `@aws-sdk/s3-presigned-post` (not presigned PUT) because presigned PUT cannot enforce file size limits server-side.
+
+**Server-side enforcement (presigned POST conditions):**
+- `content-length-range`: 1 byte to 10 MB (10,485,760 bytes)
+- `Content-Type`: must match one of `image/jpeg`, `image/png`, `image/heic`, `image/webp`
+- `key`: exact match to server-generated S3 key (no client control)
+- Policy expiration: 15 minutes
+
+**Client-side validation (defense in depth):**
+- File type check before upload (JPEG, PNG, HEIC, WebP)
+- File size check before upload (10 MB max)
+- These are convenience checks; the presigned POST conditions are the real enforcement
+
+**S3 key generation:**
+- Server generates keys using the pattern `tenants/{tenantId}/visits/{visitId}/photos/{uuid}.{ext}`
+- Extension derived from content type on the server, not from the client filename
+- UUID generated server-side (`crypto.randomUUID()`)
+
+**Photo lifecycle security:**
+- Photos start as `pending` (DB record only); client uploads to S3 via presigned POST
+- Confirm endpoint uses `SELECT ... FOR UPDATE` on the visit row to serialize concurrent confirms and enforce the hard cap (20 ready photos per visit)
+- Stale pending records (>15 min) are cleaned up during new photo creation (best-effort S3 delete)
+- Delete endpoint removes DB record and best-effort deletes S3 object
+
+**LocalStack for local dev:**
+- `docker-compose.yml` includes a `localstack` service for S3
+- `infra/localstack/init-s3.sh` creates the bucket with CORS configuration
+- `S3_ENDPOINT` config var enables `forcePathStyle: true` for LocalStack compatibility
 
 ---
 

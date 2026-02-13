@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MapPin, Phone, Mail, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { apiClient } from '@/lib/api-client';
 import type { VisitWithContextResponse } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth/auth-context';
+import { PhotoGallery } from '@/components/visits/PhotoGallery';
+import { PhotoUpload } from '@/components/visits/PhotoUpload';
 
 function formatTodayDate(): string {
   return new Date().toLocaleDateString('en-US', {
@@ -56,8 +58,67 @@ function VisitStatusBadge({ status }: { status: string }) {
   );
 }
 
+function VisitNotesSection({ visit }: { visit: VisitWithContextResponse }) {
+  const queryClient = useQueryClient();
+  const [notes, setNotes] = useState(visit.notes ?? '');
+  const isEditable = ['en_route', 'started'].includes(visit.status);
+
+  const notesMutation = useMutation({
+    mutationFn: (newNotes: string | null) => apiClient.updateVisitNotes(visit.id, newNotes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['today-visits'] });
+      queryClient.invalidateQueries({ queryKey: ['visits'] });
+      queryClient.invalidateQueries({ queryKey: ['job'] });
+    },
+  });
+
+  if (!['en_route', 'started', 'completed'].includes(visit.status)) return null;
+
+  if (visit.status === 'completed') {
+    if (!visit.notes) return null;
+    return (
+      <div className="space-y-1">
+        <p className="text-xs font-medium text-muted-foreground">Notes</p>
+        <p className="whitespace-pre-wrap text-sm" data-testid="visit-notes-display">{visit.notes}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-medium text-muted-foreground">Notes</p>
+      <textarea
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        rows={2}
+        placeholder="Add visit notes..."
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        disabled={!isEditable || notesMutation.isPending}
+        data-testid="visit-notes-input"
+      />
+      {isEditable && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => notesMutation.mutate(notes || null)}
+          disabled={notesMutation.isPending}
+          data-testid="visit-notes-save"
+        >
+          {notesMutation.isPending ? 'Saving...' : 'Save Notes'}
+        </Button>
+      )}
+      {notesMutation.isError && (
+        <p className="text-xs text-destructive">Failed to save notes</p>
+      )}
+    </div>
+  );
+}
+
 function TodayVisitCard({ visit }: { visit: VisitWithContextResponse }) {
   const queryClient = useQueryClient();
+  const showPhotos = ['en_route', 'started', 'completed'].includes(visit.status);
+  const canEditPhotos = ['en_route', 'started'].includes(visit.status);
+  const [confirmingComplete, setConfirmingComplete] = useState(false);
 
   const mutation = useMutation({
     mutationFn: (newStatus: string) => apiClient.transitionVisitStatus(visit.id, newStatus),
@@ -66,6 +127,12 @@ function TodayVisitCard({ visit }: { visit: VisitWithContextResponse }) {
       queryClient.invalidateQueries({ queryKey: ['visits'] });
       queryClient.invalidateQueries({ queryKey: ['job'] });
     },
+  });
+
+  const photosQuery = useQuery({
+    queryKey: ['visit-photos', visit.id],
+    queryFn: () => apiClient.listVisitPhotos(visit.id),
+    enabled: showPhotos,
   });
 
   const addressQuery = visit.propertyAddress
@@ -129,6 +196,23 @@ function TodayVisitCard({ visit }: { visit: VisitWithContextResponse }) {
           )}
         </div>
 
+        {/* Notes */}
+        <VisitNotesSection visit={visit} />
+
+        {/* Photos */}
+        {showPhotos && (
+          <div className="space-y-2">
+            {photosQuery.data && (
+              <PhotoGallery
+                visitId={visit.id}
+                photos={photosQuery.data.data}
+                canDelete={canEditPhotos}
+              />
+            )}
+            {canEditPhotos && <PhotoUpload visitId={visit.id} />}
+          </div>
+        )}
+
         {/* Status action buttons */}
         <div className="flex items-center gap-2">
           {visit.status === 'scheduled' && (
@@ -162,15 +246,41 @@ function TodayVisitCard({ visit }: { visit: VisitWithContextResponse }) {
               Start
             </Button>
           )}
-          {visit.status === 'started' && (
+          {visit.status === 'started' && !confirmingComplete && (
             <Button
               size="sm"
-              onClick={() => mutation.mutate('completed')}
+              onClick={() => setConfirmingComplete(true)}
               disabled={mutation.isPending}
               data-testid="action-complete"
             >
               Complete
             </Button>
+          )}
+          {visit.status === 'started' && confirmingComplete && (
+            <div className="flex flex-col gap-2" data-testid="confirm-complete">
+              <p className="text-sm text-muted-foreground">Any notes or photos to add?</p>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    mutation.mutate('completed');
+                    setConfirmingComplete(false);
+                  }}
+                  disabled={mutation.isPending}
+                  data-testid="complete-anyway"
+                >
+                  Complete Anyway
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setConfirmingComplete(false)}
+                  data-testid="cancel-complete"
+                >
+                  Go Back
+                </Button>
+              </div>
+            </div>
           )}
           {visit.status === 'completed' && visit.completedAt && (
             <span className="text-sm text-green-700" data-testid="completed-time">

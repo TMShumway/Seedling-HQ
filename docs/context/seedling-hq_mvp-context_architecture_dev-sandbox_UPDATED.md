@@ -71,7 +71,7 @@ _Last updated: 2026-02-11 (America/Chihuahua)_
 - **Contract-first**:
   - Fastify route schemas → OpenAPI JSON → generated TS client/types
 - **Data**: Postgres system-of-record (multi-tenant)
-- **Files**: S3 for uploads/attachments (presigned URL uploads)
+- **Files**: S3 for uploads/attachments (presigned POST uploads via `FileStorage` port + `S3FileStorage` impl, S-0016; LocalStack for local dev)
 - **Async + automation**:
   - SQS for background work
   - EventBridge bus for domain events (optional early, useful later)
@@ -196,7 +196,7 @@ External customers continue to use **loginless secure-link tokens** (see Section
 - API: `http://localhost:4000`
 - Swagger UI: `http://localhost:4000/docs`
 - Mailpit: `http://localhost:8025`
-- LocalStack: `http://localhost:4566`
+- LocalStack (S3): `http://localhost:4566` — S3 bucket `fsa-local-uploads` created by `infra/localstack/init-s3.sh`
 
 ### Definition of Done (for every story)
 - OpenAPI schemas added/updated
@@ -309,11 +309,11 @@ Suggested table (name is up to you, e.g., `secure_link_tokens`):
 **Epic 0005 — Scheduling (jobs + visits)**
 - S-0012 Approved quote creates Job + first Visit draft **— DONE**: Job/Visit entities, atomic creation in UoW from approved quote, idempotent (status pre-check + unique constraint), visit duration from line items, 5 job routes + embedded visits in detail
 - S-0013 Calendar view (schedule/reschedule) + customer notified **— DONE**: CSS Grid week/day calendar, `?week=` URL param navigation, unscheduled panel, ScheduleVisitModal, `PATCH /v1/visits/:id/schedule`, audit metadata JSONB (`visit.time_set` / `visit.rescheduled`), 3 visit routes
-- S-0014 Assign technician to visit + tech sees "My visits"
+- S-0014 Assign technician to visit + tech sees "My visits" **— DONE**: `PATCH /v1/visits/:id/assign`, role-gated owner/admin, My Visits filter, calendar assignee display
 
 **Epic 0006 — Field execution (mobile-web v1)**
-- S-0015 Tech “Today” view (mobile) + status actions
-- S-0016 Complete visit with notes + photo uploads (S3 presigned URLs)
+- S-0015 Tech "Today" view (mobile) + status actions **— DONE**: visit status transition endpoint, status machine (scheduled→en_route→started→completed/cancelled), Today page, job auto-derivation
+- S-0016 Complete visit with notes + photo uploads (S3 presigned URLs) **— DONE**: visit notes editing (PATCH endpoint), S3 photo upload/view/delete via presigned POST, `visit_photos` table with pending/ready lifecycle, LocalStack for local S3, completion confirmation UX
 
 **Epic 0007 — Invoicing + payments**
 - S-0017 Generate invoice from completed visit + send link **→ updated AC: tenant-bound + invoice-bound token, audit**
@@ -461,6 +461,11 @@ For `AUTH_MODE=local`:
 - (Planned) `SECURE_LINK_TOKEN_TTL_SECONDS=604800` (7 days default; not yet configurable — TTL hardcoded in use case)
 - (Planned) `SECURE_LINK_ROTATION_SALT=...` (versioned hash scheme — not yet implemented)
 
+### S3 file storage (S-0016)
+- `S3_BUCKET=fsa-local-uploads` (bucket name; LocalStack default for local dev)
+- `S3_REGION=us-east-1` (AWS region for S3 client)
+- `S3_ENDPOINT=http://localhost:4566` (LocalStack endpoint for local dev; omit in prod to use default AWS endpoint)
+
 ### SMS / queues / scheduler (MVP)
 - `SMS_PROVIDER=outbox` (default local)
 - `SMS_PROVIDER=aws` (dev sandbox / staging / prod)
@@ -494,7 +499,7 @@ Scheduler wiring:
   - `preventUserExistenceErrors: true`, `enableTokenRevocation: true`
   - `featurePlan: ESSENTIALS` (required for access token customization)
   - Pre-token-generation V2 Lambda trigger copies `custom:tenant_id` into access tokens (S-0029)
-- (Planned) S3 uploads bucket
+- (Planned) S3 uploads bucket (local dev uses LocalStack, S-0016)
 - (Planned) SQS: message jobs + DLQ, domain events + DLQ
 - (Planned) EventBridge bus
 - (Planned) Scheduler execution role with permission to `sqs:SendMessage` to message-jobs
