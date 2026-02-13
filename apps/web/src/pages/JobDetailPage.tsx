@@ -8,6 +8,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { apiClient } from '@/lib/api-client';
 import type { VisitResponse } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth/auth-context';
+import { PhotoGallery } from '@/components/visits/PhotoGallery';
+import { PhotoUpload } from '@/components/visits/PhotoUpload';
 
 function JobStatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
@@ -52,6 +54,32 @@ function VisitStatusBadge({ status }: { status: string }) {
     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[status] ?? 'bg-gray-100 text-gray-600'}`}>
       {labels[status] ?? status}
     </span>
+  );
+}
+
+function VisitPhotosSection({ visit, canManage }: { visit: VisitResponse; canManage: boolean }) {
+  const showPhotos = ['en_route', 'started', 'completed'].includes(visit.status);
+  const canEditPhotos = canManage && ['en_route', 'started'].includes(visit.status);
+
+  const photosQuery = useQuery({
+    queryKey: ['visit-photos', visit.id],
+    queryFn: () => apiClient.listVisitPhotos(visit.id),
+    enabled: showPhotos,
+  });
+
+  if (!showPhotos) return null;
+
+  return (
+    <div className="mt-2 space-y-2">
+      {photosQuery.data && (
+        <PhotoGallery
+          visitId={visit.id}
+          photos={photosQuery.data.data}
+          canDelete={canEditPhotos}
+        />
+      )}
+      {canEditPhotos && <PhotoUpload visitId={visit.id} />}
+    </div>
   );
 }
 
@@ -373,6 +401,7 @@ export function JobDetailPage() {
                       <p className="whitespace-pre-wrap text-sm" data-testid="visit-notes-display">{visit.notes}</p>
                     </div>
                   )}
+                  <VisitPhotosSection visit={visit} canManage={canManage} />
                   {visit.completedAt && (
                     <p className="mt-1 text-xs text-green-700">
                       Completed on {new Date(visit.completedAt).toLocaleDateString()}

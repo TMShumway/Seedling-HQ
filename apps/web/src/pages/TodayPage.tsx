@@ -7,6 +7,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { apiClient } from '@/lib/api-client';
 import type { VisitWithContextResponse } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth/auth-context';
+import { PhotoGallery } from '@/components/visits/PhotoGallery';
+import { PhotoUpload } from '@/components/visits/PhotoUpload';
 
 function formatTodayDate(): string {
   return new Date().toLocaleDateString('en-US', {
@@ -114,6 +116,8 @@ function VisitNotesSection({ visit }: { visit: VisitWithContextResponse }) {
 
 function TodayVisitCard({ visit }: { visit: VisitWithContextResponse }) {
   const queryClient = useQueryClient();
+  const showPhotos = ['en_route', 'started', 'completed'].includes(visit.status);
+  const canEditPhotos = ['en_route', 'started'].includes(visit.status);
 
   const mutation = useMutation({
     mutationFn: (newStatus: string) => apiClient.transitionVisitStatus(visit.id, newStatus),
@@ -122,6 +126,12 @@ function TodayVisitCard({ visit }: { visit: VisitWithContextResponse }) {
       queryClient.invalidateQueries({ queryKey: ['visits'] });
       queryClient.invalidateQueries({ queryKey: ['job'] });
     },
+  });
+
+  const photosQuery = useQuery({
+    queryKey: ['visit-photos', visit.id],
+    queryFn: () => apiClient.listVisitPhotos(visit.id),
+    enabled: showPhotos,
   });
 
   const addressQuery = visit.propertyAddress
@@ -187,6 +197,20 @@ function TodayVisitCard({ visit }: { visit: VisitWithContextResponse }) {
 
         {/* Notes */}
         <VisitNotesSection visit={visit} />
+
+        {/* Photos */}
+        {showPhotos && (
+          <div className="space-y-2">
+            {photosQuery.data && (
+              <PhotoGallery
+                visitId={visit.id}
+                photos={photosQuery.data.data}
+                canDelete={canEditPhotos}
+              />
+            )}
+            {canEditPhotos && <PhotoUpload visitId={visit.id} />}
+          </div>
+        )}
 
         {/* Status action buttons */}
         <div className="flex items-center gap-2">
