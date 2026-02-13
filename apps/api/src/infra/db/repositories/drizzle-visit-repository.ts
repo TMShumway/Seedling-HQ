@@ -1,4 +1,4 @@
-import { eq, and, isNull, gte, lt, asc, sql } from 'drizzle-orm';
+import { eq, and, isNull, gte, lt, asc, sql, inArray } from 'drizzle-orm';
 import type { VisitRepository, VisitWithContext, ListVisitsFilters } from '../../../application/ports/visit-repository.js';
 import type { Visit } from '../../../domain/entities/visit.js';
 import type { VisitStatus } from '../../../domain/types/visit-status.js';
@@ -105,6 +105,31 @@ export class DrizzleVisitRepository implements VisitRepository {
     return rows[0] ? toEntity(rows[0]) : null;
   }
 
+  async updateStatus(
+    tenantId: string,
+    id: string,
+    status: VisitStatus,
+    expectedStatuses: VisitStatus[],
+  ): Promise<Visit | null> {
+    const now = new Date();
+    const rows = await this.db
+      .update(visits)
+      .set({
+        status,
+        updatedAt: now,
+        ...(status === 'completed' ? { completedAt: now } : {}),
+      })
+      .where(
+        and(
+          eq(visits.tenantId, tenantId),
+          eq(visits.id, id),
+          inArray(visits.status, expectedStatuses),
+        ),
+      )
+      .returning();
+    return rows[0] ? toEntity(rows[0]) : null;
+  }
+
   async listByDateRange(
     tenantId: string,
     from: Date,
@@ -131,6 +156,8 @@ export class DrizzleVisitRepository implements VisitRepository {
         jobTitle: jobs.title,
         clientFirstName: clients.firstName,
         clientLastName: clients.lastName,
+        clientPhone: clients.phone,
+        clientEmail: clients.email,
         propertyAddressLine1: properties.addressLine1,
         assignedUserFullName: users.fullName,
       })
@@ -149,6 +176,8 @@ export class DrizzleVisitRepository implements VisitRepository {
       clientLastName: r.clientLastName,
       propertyAddressLine1: r.propertyAddressLine1,
       assignedUserName: r.assignedUserFullName ?? null,
+      clientPhone: r.clientPhone ?? null,
+      clientEmail: r.clientEmail ?? null,
     }));
   }
 
@@ -169,6 +198,8 @@ export class DrizzleVisitRepository implements VisitRepository {
         jobTitle: jobs.title,
         clientFirstName: clients.firstName,
         clientLastName: clients.lastName,
+        clientPhone: clients.phone,
+        clientEmail: clients.email,
         propertyAddressLine1: properties.addressLine1,
         assignedUserFullName: users.fullName,
       })
@@ -187,6 +218,8 @@ export class DrizzleVisitRepository implements VisitRepository {
       clientLastName: r.clientLastName,
       propertyAddressLine1: r.propertyAddressLine1,
       assignedUserName: r.assignedUserFullName ?? null,
+      clientPhone: r.clientPhone ?? null,
+      clientEmail: r.clientEmail ?? null,
     }));
   }
 }

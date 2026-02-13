@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from 'react-router';
 import {
   LayoutDashboard,
+  CalendarCheck,
   Wrench,
   FileText,
   Users,
@@ -17,6 +18,7 @@ import { useAuth } from '@/lib/auth';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard', active: true },
+  { label: 'Today', icon: CalendarCheck, href: '/today', active: true },
   { label: 'Services', icon: Wrench, href: '/services', active: true },
   { label: 'Requests', icon: FileText, href: '/requests', active: true },
   { label: 'Clients', icon: Users, href: '/clients', active: true },

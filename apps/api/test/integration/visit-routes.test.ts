@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import { buildTestApp, truncateAll, getPool, getDb } from './setup.js';
 import { resetRateLimitStore } from '../../src/adapters/http/middleware/rate-limit.js';
-import { quotes, users } from '../../src/infra/db/schema.js';
+import { quotes, users, visits, jobs } from '../../src/infra/db/schema.js';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { hashPassword } from '../../src/shared/password.js';
@@ -282,7 +282,7 @@ describe('GET /v1/visits', () => {
     expect(res.json().data).toHaveLength(0);
   });
 
-  it('includes context fields (jobTitle, clientName, propertyAddress)', async () => {
+  it('includes context fields (jobTitle, clientName, propertyAddress, clientPhone, clientEmail)', async () => {
     const { app } = await createTenantAndGetApp();
     const { visit } = await createJobWithVisit(app);
 
@@ -301,6 +301,8 @@ describe('GET /v1/visits', () => {
     expect(data.jobTitle).toBe('Test Visit Quote');
     expect(data.clientName).toBe('Jane Doe');
     expect(data.propertyAddress).toBe('456 Oak Ave');
+    expect(data.clientPhone).toBe('555-9876');
+    expect(data.clientEmail).toBe('jane@example.com');
   });
 
   it('returns 400 when from >= to', async () => {
@@ -747,5 +749,342 @@ describe('GET /v1/visits/unscheduled with assignedUserId filter', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.json().data).toHaveLength(0);
+  });
+});
+
+// --- Helper: schedule + assign a visit for status transition tests ---
+async function prepareScheduledVisit(app: ReturnType<typeof buildTestApp> extends Promise<infer T> ? T : never, userId: string) {
+  const { visit, job } = await createJobWithVisit(app);
+
+  // Schedule the visit
+  await app.inject({
+    method: 'PATCH',
+    url: `/v1/visits/${visit.id}/schedule`,
+    payload: { scheduledStart: '2026-02-15T09:00:00Z' },
+  });
+
+  // Assign to user
+  await app.inject({
+    method: 'PATCH',
+    url: `/v1/visits/${visit.id}/assign`,
+    payload: { assignedUserId: userId },
+  });
+
+  return { visit, job };
+}
+
+describe('PATCH /v1/visits/:id/status', () => {
+  beforeEach(async () => {
+    await truncateAll();
+    resetRateLimitStore();
+  });
+
+  it('transitions to en_route', async () => {
+    const { app, user } = await createTenantAndGetApp();
+    const { visit } = await prepareScheduledVisit(app, user.id);
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `/v1/visits/${visit.id}/status`,
+      payload: { status: 'en_route' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().visit.status).toBe('en_route');
+  });
+
+  it('transitions to started', async () => {
+    const { app, user } = await createTenantAndGetApp();
+    const { visit } = await prepareScheduledVisit(app, user.id);
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `/v1/visits/${visit.id}/status`,
+      payload: { status: 'started' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().visit.status).toBe('started');
+  });
+
+  it('transitions to completed with completedAt', async () => {
+    const { app, user } = await createTenantAndGetApp();
+    const { visit } = await prepareScheduledVisit(app, user.id);
+
+    // First go to started
+    await app.inject({
+      method: 'PATCH',
+      url: `/v1/visits/${visit.id}/status`,
+      payload: { status: 'started' },
+    });
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `/v1/visits/${visit.id}/status`,
+      payload: { status: 'completed' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.visit.status).toBe('completed');
+    expect(body.visit.completedAt).not.toBeNull();
+  });
+
+  it('transitions to cancelled', async () => {
+    const { app, user } = await createTenantAndGetApp();
+    const { visit } = await prepareScheduledVisit(app, user.id);
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `/v1/visits/${visit.id}/status`,
+      payload: { status: 'cancelled' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json().visit.status).toBe('cancelled');
+  });
+
+  it('returns 400 for invalid transition (scheduled → completed)', async () => {
+    const { app, user } = await createTenantAndGetApp();
+    const { visit } = await prepareScheduledVisit(app, user.id);
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `/v1/visits/${visit.id}/status`,
+      payload: { status: 'completed' },
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('returns 404 for non-existent visit', async () => {
+    const { app } = await createTenantAndGetApp();
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/v1/visits/00000000-0000-0000-0000-000000000999/status',
+      payload: { status: 'started' },
+    });
+
+    expect(res.statusCode).toBe(404);
+  });
+
+  it('returns 403 when member tries to transition unassigned visit', async () => {
+    const { app: ownerApp, tenant } = await createTenantAndGetApp();
+    const { visit } = await createJobWithVisit(ownerApp);
+    const member = await createMemberUser(tenant.id);
+
+    const memberApp = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenant.id,
+      DEV_AUTH_USER_ID: member.id,
+      DEV_AUTH_ROLE: 'member',
+    });
+
+    const res = await memberApp.inject({
+      method: 'PATCH',
+      url: `/v1/visits/${visit.id}/status`,
+      payload: { status: 'started' },
+    });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.json().error.code).toBe('FORBIDDEN');
+  });
+
+  it('returns 403 when member tries to cancel', async () => {
+    const { app: ownerApp, tenant } = await createTenantAndGetApp();
+    const member = await createMemberUser(tenant.id);
+    const { visit } = await createJobWithVisit(ownerApp);
+
+    // Assign to member
+    await ownerApp.inject({
+      method: 'PATCH',
+      url: `/v1/visits/${visit.id}/assign`,
+      payload: { assignedUserId: member.id },
+    });
+
+    const memberApp = await buildTestApp({
+      DEV_AUTH_TENANT_ID: tenant.id,
+      DEV_AUTH_USER_ID: member.id,
+      DEV_AUTH_ROLE: 'member',
+    });
+
+    const res = await memberApp.inject({
+      method: 'PATCH',
+      url: `/v1/visits/${visit.id}/status`,
+      payload: { status: 'cancelled' },
+    });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.json().error.code).toBe('FORBIDDEN');
+  });
+});
+
+describe('Job auto-derivation via status transitions', () => {
+  beforeEach(async () => {
+    await truncateAll();
+    resetRateLimitStore();
+  });
+
+  it('moves job to in_progress when visit started', async () => {
+    const { app, user } = await createTenantAndGetApp();
+    const { visit, job } = await prepareScheduledVisit(app, user.id);
+
+    await app.inject({
+      method: 'PATCH',
+      url: `/v1/visits/${visit.id}/status`,
+      payload: { status: 'started' },
+    });
+
+    // Check job status
+    const jobRes = await app.inject({
+      method: 'GET',
+      url: `/v1/jobs/${job.id}`,
+    });
+
+    expect(jobRes.json().status).toBe('in_progress');
+  });
+
+  it('moves job to completed when all visits completed', async () => {
+    const { app, user } = await createTenantAndGetApp();
+    const { visit, job } = await prepareScheduledVisit(app, user.id);
+
+    // started → completed
+    await app.inject({
+      method: 'PATCH',
+      url: `/v1/visits/${visit.id}/status`,
+      payload: { status: 'started' },
+    });
+    await app.inject({
+      method: 'PATCH',
+      url: `/v1/visits/${visit.id}/status`,
+      payload: { status: 'completed' },
+    });
+
+    const jobRes = await app.inject({
+      method: 'GET',
+      url: `/v1/jobs/${job.id}`,
+    });
+
+    expect(jobRes.json().status).toBe('completed');
+  });
+
+  it('does not change job when some visits still open', async () => {
+    const { app, user } = await createTenantAndGetApp();
+    const { job } = await prepareScheduledVisit(app, user.id);
+
+    // Create a second visit for the same job
+    const db = getDb();
+    const secondVisitId = randomUUID();
+    await db.insert(visits).values({
+      id: secondVisitId,
+      tenantId: job.tenantId,
+      jobId: job.id,
+      estimatedDurationMinutes: 60,
+      status: 'scheduled',
+      scheduledStart: new Date('2026-02-15T14:00:00Z'),
+      scheduledEnd: new Date('2026-02-15T15:00:00Z'),
+      assignedUserId: user.id,
+    });
+
+    // Complete the first visit (started → completed)
+    // First we need to find the original visit
+    const visitsRes = await app.inject({
+      method: 'GET',
+      url: `/v1/visits?from=2026-02-14T00:00:00Z&to=2026-02-16T00:00:00Z`,
+    });
+    const allVisits = visitsRes.json().data;
+    const firstVisit = allVisits.find((v: any) => v.id !== secondVisitId);
+
+    await app.inject({
+      method: 'PATCH',
+      url: `/v1/visits/${firstVisit.id}/status`,
+      payload: { status: 'started' },
+    });
+    await app.inject({
+      method: 'PATCH',
+      url: `/v1/visits/${firstVisit.id}/status`,
+      payload: { status: 'completed' },
+    });
+
+    // Job should still be in_progress (second visit is scheduled)
+    const jobRes = await app.inject({
+      method: 'GET',
+      url: `/v1/jobs/${job.id}`,
+    });
+
+    expect(jobRes.json().status).toBe('in_progress');
+  });
+
+  it('moves job to cancelled when all visits cancelled', async () => {
+    const { app, user } = await createTenantAndGetApp();
+    const { visit, job } = await prepareScheduledVisit(app, user.id);
+
+    await app.inject({
+      method: 'PATCH',
+      url: `/v1/visits/${visit.id}/status`,
+      payload: { status: 'cancelled' },
+    });
+
+    const jobRes = await app.inject({
+      method: 'GET',
+      url: `/v1/jobs/${job.id}`,
+    });
+
+    expect(jobRes.json().status).toBe('cancelled');
+  });
+
+  it('moves job to completed when mix of completed + cancelled (all terminal, ≥1 completed)', async () => {
+    const { app, user } = await createTenantAndGetApp();
+    const { job } = await prepareScheduledVisit(app, user.id);
+
+    // Create a second visit
+    const db = getDb();
+    const secondVisitId = randomUUID();
+    await db.insert(visits).values({
+      id: secondVisitId,
+      tenantId: job.tenantId,
+      jobId: job.id,
+      estimatedDurationMinutes: 60,
+      status: 'scheduled',
+      scheduledStart: new Date('2026-02-15T14:00:00Z'),
+      scheduledEnd: new Date('2026-02-15T15:00:00Z'),
+      assignedUserId: user.id,
+    });
+
+    // Find original visit
+    const visitsRes = await app.inject({
+      method: 'GET',
+      url: `/v1/visits?from=2026-02-14T00:00:00Z&to=2026-02-16T00:00:00Z`,
+    });
+    const allVisits = visitsRes.json().data;
+    const firstVisit = allVisits.find((v: any) => v.id !== secondVisitId);
+
+    // Complete first visit
+    await app.inject({
+      method: 'PATCH',
+      url: `/v1/visits/${firstVisit.id}/status`,
+      payload: { status: 'started' },
+    });
+    await app.inject({
+      method: 'PATCH',
+      url: `/v1/visits/${firstVisit.id}/status`,
+      payload: { status: 'completed' },
+    });
+
+    // Cancel second visit
+    await app.inject({
+      method: 'PATCH',
+      url: `/v1/visits/${secondVisitId}/status`,
+      payload: { status: 'cancelled' },
+    });
+
+    // Job should be completed (≥1 completed, rest cancelled)
+    const jobRes = await app.inject({
+      method: 'GET',
+      url: `/v1/jobs/${job.id}`,
+    });
+
+    expect(jobRes.json().status).toBe('completed');
   });
 });

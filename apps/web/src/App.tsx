@@ -23,6 +23,7 @@ import { PublicQuoteViewPage } from '@/pages/PublicQuoteViewPage';
 import { TeamPage } from '@/pages/TeamPage';
 import { JobsPage } from '@/pages/JobsPage';
 import { JobDetailPage } from '@/pages/JobDetailPage';
+import { TodayPage } from '@/pages/TodayPage';
 import { SchedulePage } from '@/pages/SchedulePage';
 
 const queryClient = new QueryClient({
@@ -44,6 +45,7 @@ export function App() {
           <Route path="/quote/:token" element={<PublicQuoteViewPage />} />
           <Route element={<AuthGuard><AppShell /></AuthGuard>}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/today" element={<TodayPage />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/services" element={<ServicesPage />} />
             <Route path="/clients" element={<ClientsPage />} />

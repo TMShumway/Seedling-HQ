@@ -39,6 +39,7 @@ describe('ScheduleVisitUseCase', () => {
       listByJobId: vi.fn(),
       updateSchedule: vi.fn(),
       updateAssignedUser: vi.fn(),
+      updateStatus: vi.fn(),
       listByDateRange: vi.fn(),
       listUnscheduled: vi.fn(),
     };

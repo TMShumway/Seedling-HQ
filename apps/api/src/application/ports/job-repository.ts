@@ -1,4 +1,5 @@
 import type { Job } from '../../domain/entities/job.js';
+import type { JobStatus } from '../../domain/types/job-status.js';
 import type { PaginatedResult } from './client-repository.js';
 
 export interface ListJobsFilters {
@@ -15,4 +16,5 @@ export interface JobRepository {
   list(tenantId: string, filters?: ListJobsFilters): Promise<PaginatedResult<Job>>;
   count(tenantId: string): Promise<number>;
   countByStatus(tenantId: string, status: string): Promise<number>;
+  updateStatus(tenantId: string, id: string, status: JobStatus): Promise<Job | null>;
 }
