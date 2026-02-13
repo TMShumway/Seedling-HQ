@@ -38,7 +38,9 @@ Examples (implemented):
 - `JwtVerifier` (S-0029 — `verify(token)` returns `{ tenantId, userId, role }`; implemented by `CognitoJwtVerifier`)
 - `SecureLinkTokenRepository` (S-0010 — `create`, `getByTokenHash`, `updateLastUsedAt`, `revokeBySubject`)
 - `JobRepository` (S-0012 — `create`, `getById`, `getByQuoteId`, `list`, `count`, `countByStatus`)
-- `VisitRepository` (S-0012/S-0013 — `create`, `getById`, `listByJobId`, `updateSchedule`, `listByDateRange`, `listUnscheduled`)
+- `VisitRepository` (S-0012/S-0013/S-0016 — `create`, `getById`, `listByJobId`, `updateSchedule`, `listByDateRange`, `listUnscheduled`, `updateNotes`)
+- `VisitPhotoRepository` (S-0016 — `create`, `getById`, `countByVisitIdAndStatus`, `listByVisitId`, `confirmPhoto`, `deletePhoto`, `deleteStalePhotos`)
+- `FileStorage` (S-0016 — port for S3 operations: `createPresignedPost`, `createPresignedGetUrl`, `deleteObject`; impl: `S3FileStorage` in `infra/storage/`)
 
 Examples (planned):
 - `InvoiceRepository`
@@ -181,6 +183,30 @@ Examples:
 Rules:
 - Never accept an arbitrary key from the client.
 - Server generates keys; presigned URL must be scoped to that key.
+
+### 8.1 Visit photos (S-0016)
+
+**Table: `visit_photos`**
+- `id` (UUID PK)
+- `tenant_id` (FK → tenants)
+- `visit_id` (FK → visits)
+- `s3_key` (server-generated, follows keying pattern above)
+- `file_name` (original upload filename)
+- `content_type` (MIME type: `image/jpeg`, `image/png`, `image/heic`, `image/webp`)
+- `file_size` (bytes, nullable — set on confirm)
+- `status` (`pending` | `ready`)
+- `created_at`, `updated_at`
+
+**Indexes:** `(tenant_id, visit_id, status)`, `(tenant_id, visit_id, created_at)`
+
+**S3 key format:** `tenants/{tenantId}/visits/{visitId}/photos/{uuid}.{ext}`
+
+**Pending/ready lifecycle:**
+1. **Create pending:** Server generates S3 key, creates `visit_photos` record with `status: 'pending'`, returns presigned POST policy for client to upload directly to S3.
+2. **Upload to S3:** Client uploads file using presigned POST (enforces `content-length-range` 1–10MB and content type).
+3. **Confirm:** Client calls confirm endpoint; server uses `SELECT ... FOR UPDATE` on the visit row to serialize concurrent confirms, checks hard quota (max 20 ready photos per visit), transitions photo to `status: 'ready'`.
+4. **Stale cleanup:** During create, photos older than 15 minutes with `status: 'pending'` are deleted (both DB record and S3 object, best-effort). Soft pending cap of 5 prevents abuse.
+5. **Delete:** Sets DB record status and best-effort deletes S3 object.
 
 ---
 
