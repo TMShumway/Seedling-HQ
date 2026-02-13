@@ -343,3 +343,26 @@ export const visits = pgTable(
     index('visits_tenant_assigned_idx').on(table.tenantId, table.assignedUserId),
   ],
 );
+
+export const visitPhotos = pgTable(
+  'visit_photos',
+  {
+    id: uuid('id').primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id),
+    visitId: uuid('visit_id')
+      .notNull()
+      .references(() => visits.id),
+    storageKey: varchar('storage_key', { length: 1000 }).notNull(),
+    fileName: varchar('file_name', { length: 500 }).notNull(),
+    contentType: varchar('content_type', { length: 100 }).notNull(),
+    sizeBytes: integer('size_bytes'),
+    status: varchar('status', { length: 20 }).notNull().default('pending'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('visit_photos_tenant_id_idx').on(table.tenantId),
+    index('visit_photos_tenant_visit_idx').on(table.tenantId, table.visitId),
+  ],
+);
