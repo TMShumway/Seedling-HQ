@@ -21,7 +21,7 @@ printf "  Stopping dev services...\n\n"
 stop_port "API server" 4000
 stop_port "Vite dev server" 5173
 
-docker compose down 2>/dev/null && printf "  ${GREEN}Stopped${NC}  ${DIM}Docker (Postgres, Mailpit)${NC}\n"
+docker compose down 2>/dev/null && printf "  ${GREEN}Stopped${NC}  ${DIM}Docker (Postgres, Mailpit, LocalStack)${NC}\n"
 
 echo ""
 printf "  All services stopped.\n\n"

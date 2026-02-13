@@ -20,7 +20,13 @@ export class S3FileStorage implements FileStorage {
     this.bucket = opts.bucket;
     this.client = new S3Client({
       region: opts.region,
-      ...(opts.endpoint ? { endpoint: opts.endpoint, forcePathStyle: true } : {}),
+      ...(opts.endpoint
+        ? {
+            endpoint: opts.endpoint,
+            forcePathStyle: true,
+            credentials: { accessKeyId: 'test', secretAccessKey: 'test' },
+          }
+        : {}),
     });
   }
 

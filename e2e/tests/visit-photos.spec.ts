@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
-import { resolve } from 'node:path';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Auth as Demo Member (who has visits assigned today)
 async function setDemoMemberAuth(page: import('@playwright/test').Page) {
@@ -32,8 +35,8 @@ test.describe('Visit photos', () => {
     await setDemoMemberAuth(page);
     await page.goto('/today');
 
-    // Find the Jane Johnson visit card (seeded as scheduled)
-    const card = page.getByTestId('today-visit-card').filter({ hasText: 'Jane Johnson' });
+    // Find the Photo Test visit card (seeded as scheduled, dedicated for this test)
+    const card = page.getByTestId('today-visit-card').filter({ hasText: 'Photo Test' });
     await expect(card).toBeVisible();
 
     // Transition to started (photos only available for en_route/started/completed)

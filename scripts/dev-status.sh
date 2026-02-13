@@ -47,8 +47,9 @@ printf "${DIM}  ─────────────────────�
 echo ""
 
 printf "${BOLD}  Docker${NC}\n"
-check_docker "Postgres"  "seedling-hq-postgres-1"
-check_docker "Mailpit"   "seedling-hq-mailpit-1"
+check_docker "Postgres"    "seedling-hq-postgres-1"
+check_docker "Mailpit"     "seedling-hq-mailpit-1"
+check_docker "LocalStack"  "seedling-hq-localstack-1"
 echo ""
 
 printf "${BOLD}  Services${NC}\n"
@@ -56,9 +57,11 @@ check "API"          "http://localhost:4000/health"
 check "Web (Vite)"   "http://localhost:5173"
 check "Swagger UI"   "http://localhost:4000/docs"
 check "Mailpit UI"   "http://localhost:8025"
+check "LocalStack"   "http://localhost:4566/_localstack/health"
 echo ""
 
-printf "${BOLD}  Database${NC}\n"
+printf "${BOLD}  Ports${NC}\n"
 check_port "Postgres (5432)" 5432
 check_port "SMTP (1025)"     1025
+check_port "S3 (4566)"       4566
 echo ""

@@ -45,7 +45,7 @@ export function PhotoGallery({ visitId, photos, canDelete = false }: PhotoGaller
             </a>
             {canDelete && confirmingId !== photo.id && (
               <button
-                className="absolute right-1 top-1 rounded-full bg-white/80 p-1 text-destructive opacity-0 shadow-sm transition-opacity group-hover:opacity-100"
+                className="absolute right-1 top-1 rounded-full bg-white/80 p-1 text-destructive shadow-sm transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
                 onClick={() => setConfirmingId(photo.id)}
                 data-testid="delete-photo-btn"
                 aria-label={`Delete ${photo.fileName}`}

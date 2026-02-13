@@ -86,6 +86,9 @@ export class CreateVisitPhotoUseCase {
     const ext = CONTENT_TYPE_EXT[input.contentType];
     const storageKey = `tenants/${input.tenantId}/visits/${input.visitId}/photos/${photoId}.${ext}`;
 
+    // Generate presigned POST first — if this fails, no orphaned DB row is created
+    const uploadPost = await this.fileStorage.generateUploadPost(storageKey, input.contentType, MAX_FILE_SIZE);
+
     const photo = await this.visitPhotoRepo.create({
       id: photoId,
       tenantId: input.tenantId,
@@ -96,8 +99,6 @@ export class CreateVisitPhotoUseCase {
       sizeBytes: null,
       status: 'pending',
     });
-
-    const uploadPost = await this.fileStorage.generateUploadPost(storageKey, input.contentType, MAX_FILE_SIZE);
 
     // Best-effort audit
     try {
