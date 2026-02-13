@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, User, MapPin, Calculator, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiClient } from '@/lib/api-client';
+import type { VisitResponse } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth/auth-context';
 
 function JobStatusBadge({ status }: { status: string }) {
@@ -53,11 +55,118 @@ function VisitStatusBadge({ status }: { status: string }) {
   );
 }
 
+const NON_TERMINAL = ['scheduled', 'en_route', 'started'];
+
+function VisitActions({ visit, jobId, canManage }: { visit: VisitResponse; jobId: string; canManage: boolean }) {
+  const queryClient = useQueryClient();
+  const [confirmCancel, setConfirmCancel] = useState(false);
+
+  const mutation = useMutation({
+    mutationFn: (newStatus: string) => apiClient.transitionVisitStatus(visit.id, newStatus),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['job', jobId] });
+      queryClient.invalidateQueries({ queryKey: ['visits'] });
+      queryClient.invalidateQueries({ queryKey: ['today-visits'] });
+      setConfirmCancel(false);
+    },
+  });
+
+  if (!canManage) return null;
+
+  const isNonTerminal = NON_TERMINAL.includes(visit.status);
+
+  return (
+    <div className="mt-2 space-y-2">
+      <div className="flex items-center gap-2">
+        {visit.status === 'scheduled' && (
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => mutation.mutate('en_route')}
+              disabled={mutation.isPending}
+              data-testid="action-en-route"
+            >
+              En Route
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => mutation.mutate('started')}
+              disabled={mutation.isPending}
+              data-testid="action-start"
+            >
+              Start
+            </Button>
+          </>
+        )}
+        {visit.status === 'en_route' && (
+          <Button
+            size="sm"
+            onClick={() => mutation.mutate('started')}
+            disabled={mutation.isPending}
+            data-testid="action-start"
+          >
+            Start
+          </Button>
+        )}
+        {visit.status === 'started' && (
+          <Button
+            size="sm"
+            onClick={() => mutation.mutate('completed')}
+            disabled={mutation.isPending}
+            data-testid="action-complete"
+          >
+            Complete
+          </Button>
+        )}
+        {isNonTerminal && !confirmCancel && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setConfirmCancel(true)}
+            disabled={mutation.isPending}
+            data-testid="cancel-visit-btn"
+          >
+            Cancel
+          </Button>
+        )}
+      </div>
+      {confirmCancel && (
+        <div className="flex items-center gap-2 rounded border border-destructive/20 bg-destructive/5 p-2">
+          <span className="text-sm text-destructive">Cancel this visit?</span>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => mutation.mutate('cancelled')}
+            disabled={mutation.isPending}
+            data-testid="confirm-cancel-visit"
+          >
+            Yes, cancel
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setConfirmCancel(false)}
+            disabled={mutation.isPending}
+          >
+            No
+          </Button>
+        </div>
+      )}
+      {mutation.isError && (
+        <p className="text-sm text-destructive">
+          {mutation.error instanceof Error ? mutation.error.message : 'Failed to update status'}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const canAssign = user?.role === 'owner' || user?.role === 'admin';
+  const canManage = user?.role === 'owner' || user?.role === 'admin';
 
   const jobQuery = useQuery({
     queryKey: ['job', id],
@@ -224,7 +333,7 @@ export function JobDetailPage() {
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground" data-testid="visit-assigned-to">
                     {assignLabel}
-                    {canAssign && (
+                    {canManage && (
                       <> — <Link to="/schedule" className="text-primary hover:underline text-xs">Assign</Link></>
                     )}
                   </p>
@@ -266,6 +375,7 @@ export function JobDetailPage() {
                       Completed on {new Date(visit.completedAt).toLocaleDateString()}
                     </p>
                   )}
+                  <VisitActions visit={visit} jobId={id!} canManage={canManage} />
                 </div>
               );
             })
