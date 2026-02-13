@@ -8,6 +8,7 @@ import type { AuditEventRepository } from '../../../application/ports/audit-even
 import { ScheduleVisitUseCase } from '../../../application/usecases/schedule-visit.js';
 import { AssignVisitUseCase } from '../../../application/usecases/assign-visit.js';
 import { TransitionVisitStatusUseCase } from '../../../application/usecases/transition-visit-status.js';
+import { UpdateVisitNotesUseCase } from '../../../application/usecases/update-visit-notes.js';
 import { ValidationError } from '../../../shared/errors.js';
 import { buildAuthMiddleware } from '../middleware/auth-middleware.js';
 import type { AppConfig } from '../../../shared/config.js';
@@ -81,6 +82,7 @@ export function buildVisitRoutes(deps: {
   const scheduleUseCase = new ScheduleVisitUseCase(deps.visitRepo, deps.auditRepo);
   const assignUseCase = new AssignVisitUseCase(deps.visitRepo, deps.userRepo, deps.auditRepo);
   const transitionUseCase = new TransitionVisitStatusUseCase(deps.visitRepo, deps.jobRepo, deps.auditRepo);
+  const updateNotesUseCase = new UpdateVisitNotesUseCase(deps.visitRepo, deps.auditRepo);
   const authMiddleware = buildAuthMiddleware({ config: deps.config, jwtVerifier: deps.jwtVerifier });
 
   return async function visitRoutes(app: FastifyInstance) {
@@ -205,6 +207,36 @@ export function buildVisitRoutes(deps: {
             callerRole: request.authContext.role as Role,
             visitId: request.params.id,
             newStatus: request.body.status,
+          },
+          request.correlationId,
+        );
+        return { visit: serializeVisit(result.visit) };
+      },
+    );
+
+    // PATCH /v1/visits/:id/notes
+    typedApp.patch(
+      '/v1/visits/:id/notes',
+      {
+        preHandler: authMiddleware,
+        schema: {
+          params: z.object({ id: z.string().uuid() }),
+          body: z.object({
+            notes: z.string().max(5000).nullable(),
+          }),
+          response: {
+            200: z.object({ visit: visitResponseSchema }),
+          },
+        },
+      },
+      async (request) => {
+        const result = await updateNotesUseCase.execute(
+          {
+            tenantId: request.authContext.tenant_id,
+            callerUserId: request.authContext.user_id,
+            callerRole: request.authContext.role,
+            visitId: request.params.id,
+            notes: request.body.notes,
           },
           request.correlationId,
         );

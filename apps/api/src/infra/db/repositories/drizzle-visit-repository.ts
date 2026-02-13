@@ -130,6 +130,23 @@ export class DrizzleVisitRepository implements VisitRepository {
     return rows[0] ? toEntity(rows[0]) : null;
   }
 
+  async updateNotes(tenantId: string, id: string, notes: string | null): Promise<Visit | null> {
+    const rows = await this.db
+      .update(visits)
+      .set({
+        notes,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(visits.tenantId, tenantId),
+          eq(visits.id, id),
+        ),
+      )
+      .returning();
+    return rows[0] ? toEntity(rows[0]) : null;
+  }
+
   async listByDateRange(
     tenantId: string,
     from: Date,
