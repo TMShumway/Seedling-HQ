@@ -26,14 +26,17 @@ Seedling HQ is under active development. Here's what's working today:
 | Team management | Done | Invite members, assign roles (owner/admin/member), reset passwords, change own password |
 | Jobs + visits | Done | Approved quotes create jobs with visits; job list with status filters |
 | Schedule calendar | Done | Week/day calendar view, schedule/reschedule visits via modal |
-| Technician assignment | Planned | Assign technicians to visits, tech "Today" page |
+| Technician assignment | Done | Assign technicians to visits, "My Visits" filter on schedule |
+| Today page | Done | Mobile-first daily view for technicians — visit status transitions, contact links |
+| Visit notes + photos | Done | Add notes and photos to visits; S3-backed photo upload with presigned POST |
+| Completion confirmation | Done | "Any notes or photos to add?" prompt before completing a visit |
 | Invoicing + payments | Planned | Invoice generation, Stripe payments via secure link |
 
 ## Prerequisites
 
 - **Node.js 24** (see `.nvmrc`)
 - **pnpm** — `corepack enable && corepack prepare pnpm@9.15.4 --activate`
-- **Docker** — for Postgres and Mailpit (local email capture)
+- **Docker** — for Postgres, Mailpit (local email capture), and LocalStack (local S3)
 
 ## Quick Start
 
@@ -59,6 +62,7 @@ Once running, open:
 | http://localhost:5173/login | Login page (hint: `owner@demo.local` / `password`) |
 | http://localhost:5173/signup | Create a new business account |
 | http://localhost:5173/dashboard | Dashboard (requires login) |
+| http://localhost:5173/today | Today page — daily visit list for technicians |
 | http://localhost:4000/docs | Swagger UI — browse and test API endpoints |
 | http://localhost:8025 | Mailpit — see captured emails (request notifications, quote sends) |
 
@@ -71,9 +75,10 @@ The seed data creates a ready-to-explore demo tenant. After `make deps` and `pnp
 3. **Clients** — 3 seeded clients (John Smith, Jane Johnson, Bob Wilson) each with a property
 4. **Requests** — 3 incoming requests from the public form, all with status "New"
 5. **Quotes** — 1 draft quote, 2 sent quotes, and 1 scheduled quote (with secure links you can follow)
-6. **Schedule** — week calendar showing scheduled visits; unscheduled visits panel for drag-free scheduling
-7. **Jobs** — 2 seeded jobs created from approved quotes, each with a visit
-8. **Team** — 3 seeded members (Demo Owner, Demo Admin, Demo Member) with role badges; try inviting a new member or resetting a password
+6. **Schedule** — week calendar showing scheduled visits; unscheduled visits panel for drag-free scheduling; assign technicians from the modal
+7. **Today** — daily view for the logged-in technician showing assigned visits with status actions, contact links, notes, and photos
+8. **Jobs** — seeded jobs created from approved quotes, each with visits; add notes and photos from the job detail page
+9. **Team** — 3 seeded members (Demo Owner, Demo Admin, Demo Member) with role badges; try inviting a new member or resetting a password
 
 To try the full flow yourself:
 1. Submit a request at http://localhost:5173/request/demo
@@ -84,8 +89,9 @@ To try the full flow yourself:
 6. Open the secure link in an incognito window to see the customer view
 7. Approve the quote — this creates a job with a visit
 8. Go to **Jobs** to see the new job and its visits
-9. Go to **Schedule** and click an unscheduled visit to set a date/time
+9. Go to **Schedule** and click an unscheduled visit to set a date/time and assign a technician
 10. The scheduled visit appears on the calendar — click it to reschedule
+11. Go to **Today** to see visits for the current day — start a visit, add notes and photos, then complete it
 
 ## Project Structure
 
@@ -96,6 +102,7 @@ Seedling-HQ/
   packages/shared/       Shared TypeScript types (AuthContext)
   e2e/                   Playwright E2E tests
   infra/cdk/             AWS CDK stacks (Cognito User Pool, dev sandbox)
+  infra/localstack/      LocalStack init scripts (S3 bucket creation)
   docs/context/          Architecture & design context packs (10 files)
   docs/stories/          Story implementation checklists
 ```
@@ -107,7 +114,7 @@ apps/api/src/
   domain/          Entities and value types (no dependencies)
   application/     Use cases, ports (repository interfaces), DTOs
   adapters/http/   Route handlers, middleware
-  infra/           Drizzle repositories, auth providers, email sender
+  infra/           Drizzle repositories, auth providers, email sender, S3 storage
   shared/          Errors, config, logging
 ```
 
@@ -136,6 +143,7 @@ Built with React 19, Vite, Tailwind CSS v4, and TanStack Query. Responsive layou
 | Testing | Vitest (unit + integration), Playwright (E2E), axe-core (a11y) |
 | Auth | AWS Cognito (User Pool + JWT validation), `AUTH_MODE=local` mock for dev |
 | Email | Nodemailer + Mailpit (local), SES (planned) |
+| Object Storage | AWS S3 + LocalStack (local), presigned POST uploads |
 | Infra | Docker Compose (local), AWS CDK (Cognito deployed) |
 
 ## Development
@@ -177,7 +185,7 @@ To restore a clean database (e.g. after E2E tests leave test data behind):
 pnpm --filter @seedling/api run db:reset && pnpm --filter @seedling/api run db:push && pnpm --filter @seedling/api run db:seed
 ```
 
-**Tables:** tenants, users, audit_events, business_settings, service_categories, service_items, clients, properties, requests, message_outbox, quotes, secure_link_tokens, jobs, visits
+**Tables:** tenants, users, audit_events, business_settings, service_categories, service_items, clients, properties, requests, message_outbox, quotes, secure_link_tokens, jobs, visits, visit_photos
 
 ### Running a Single Test
 
@@ -195,9 +203,9 @@ pnpm exec playwright test e2e/tests/quotes.spec.ts --project=desktop-chrome
 ### Test Coverage
 
 ```
-Unit:        293 tests (240 API + 53 web)
-Integration: 214 tests (requires Postgres)
-E2E:         154 tests (77 desktop-chrome + 77 mobile-chrome, 51 skipped non-desktop)
+Unit:        408 tests (332 API + 76 web)
+Integration: 260 tests (requires Postgres)
+E2E:         182 tests (117 passed + 65 skipped; requires Postgres, Mailpit, and LocalStack)
 ```
 
 ## Multi-Tenancy
@@ -330,9 +338,21 @@ Customers access quotes (and eventually invoices) via secure links like `http://
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/v1/visits` | Required | List visits by date range (`?from=`, `?to=`, max 8 days) |
-| GET | `/v1/visits/unscheduled` | Required | List unscheduled visits |
+| GET | `/v1/visits` | Required | List visits by date range (`?from=`, `?to=`, `?assignedUserId=`, max 8 days) |
+| GET | `/v1/visits/unscheduled` | Required | List unscheduled visits (`?assignedUserId=`) |
 | PATCH | `/v1/visits/:id/schedule` | Required | Schedule or reschedule a visit |
+| PATCH | `/v1/visits/:id/assign` | Required | Assign/unassign a technician (owner/admin only) |
+| PATCH | `/v1/visits/:id/status` | Required | Transition visit status (en_route/started/completed/cancelled) |
+| PATCH | `/v1/visits/:id/notes` | Required | Update visit notes (en_route/started/completed only) |
+
+### Visit Photos
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/v1/visits/:visitId/photos` | Required | Create photo record + get presigned S3 upload POST |
+| POST | `/v1/visits/:visitId/photos/:photoId/confirm` | Required | Confirm upload complete (pending → ready) |
+| GET | `/v1/visits/:visitId/photos` | Required | List ready photos with presigned download URLs |
+| DELETE | `/v1/visits/:visitId/photos/:photoId` | Required | Delete photo (DB record + S3 object) |
 
 ## Environment Variables
 
@@ -350,6 +370,9 @@ Copy `.env.example` to `.env` before starting. Key variables:
 | `COGNITO_USER_POOL_ID` | _(none)_ | Required when `AUTH_MODE=cognito` |
 | `COGNITO_CLIENT_ID` | _(none)_ | Required when `AUTH_MODE=cognito` |
 | `COGNITO_REGION` | _(none)_ | Required when `AUTH_MODE=cognito` |
+| `S3_BUCKET` | `seedling-uploads` | S3 bucket for photo uploads |
+| `S3_REGION` | `us-east-1` | S3 region |
+| `S3_ENDPOINT` | `http://localhost:4566` | LocalStack endpoint (empty string = real AWS) |
 
 ## AI Context
 
