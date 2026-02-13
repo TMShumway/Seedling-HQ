@@ -569,17 +569,25 @@ export const apiClient = {
   },
 
   // Visits (schedule)
-  listVisits: (params: { from: string; to: string; status?: string }) => {
+  listVisits: (params: { from: string; to: string; status?: string; assignedUserId?: string }) => {
     const qs = new URLSearchParams({ from: params.from, to: params.to });
     if (params.status) qs.set('status', params.status);
+    if (params.assignedUserId) qs.set('assignedUserId', params.assignedUserId);
     return request<{ data: VisitWithContextResponse[] }>('GET', `/v1/visits?${qs.toString()}`);
   },
 
-  listUnscheduledVisits: () =>
-    request<{ data: VisitWithContextResponse[] }>('GET', '/v1/visits/unscheduled'),
+  listUnscheduledVisits: (params?: { assignedUserId?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.assignedUserId) qs.set('assignedUserId', params.assignedUserId);
+    const q = qs.toString();
+    return request<{ data: VisitWithContextResponse[] }>('GET', `/v1/visits/unscheduled${q ? `?${q}` : ''}`);
+  },
 
   scheduleVisit: (id: string, body: { scheduledStart: string; scheduledEnd?: string }) =>
     request<{ visit: VisitResponse }>('PATCH', `/v1/visits/${id}/schedule`, body),
+
+  assignVisit: (id: string, body: { assignedUserId: string | null }) =>
+    request<{ visit: VisitResponse }>('PATCH', `/v1/visits/${id}/assign`, body),
 
   // Team
   listUsers: () =>
@@ -808,6 +816,7 @@ export interface VisitWithContextResponse extends VisitResponse {
   jobTitle: string;
   clientName: string;
   propertyAddress: string | null;
+  assignedUserName: string | null;
 }
 
 export { ApiClientError };

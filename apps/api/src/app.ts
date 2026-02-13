@@ -125,7 +125,7 @@ export async function createApp({ config, db, jwtVerifier: jwtVerifierOverride }
   await app.register(buildQuoteRoutes({ quoteRepo, auditRepo, uow, emailSender, outboxRepo, clientRepo, propertyRepo, config, jwtVerifier }));
   await app.register(buildExternalQuoteRoutes({ secureLinkTokenRepo, quoteRepo, clientRepo, tenantRepo, propertyRepo, auditRepo, userRepo, outboxRepo, emailSender, config }));
   await app.register(buildJobRoutes({ jobRepo, visitRepo, quoteRepo, serviceItemRepo, auditRepo, uow, config, jwtVerifier }));
-  await app.register(buildVisitRoutes({ visitRepo, auditRepo, config, jwtVerifier }));
+  await app.register(buildVisitRoutes({ visitRepo, userRepo, auditRepo, config, jwtVerifier }));
   await app.register(buildAuthRoutes({ userRepo, config }));
 
   return app;

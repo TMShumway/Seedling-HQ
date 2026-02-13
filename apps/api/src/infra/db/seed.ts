@@ -410,7 +410,7 @@ async function seed() {
       id: DEMO_VISIT_ID,
       tenantId: DEMO_TENANT_ID,
       jobId: DEMO_JOB_ID,
-      assignedUserId: null,
+      assignedUserId: DEMO_MEMBER_ID,
       scheduledStart: demoVisitStart,
       scheduledEnd: demoVisitEnd,
       estimatedDurationMinutes: 120,
@@ -419,7 +419,7 @@ async function seed() {
     })
     .onConflictDoUpdate({
       target: visits.id,
-      set: { scheduledStart: demoVisitStart, scheduledEnd: demoVisitEnd, estimatedDurationMinutes: 120, status: 'scheduled' },
+      set: { assignedUserId: DEMO_MEMBER_ID, scheduledStart: demoVisitStart, scheduledEnd: demoVisitEnd, estimatedDurationMinutes: 120, status: 'scheduled' },
     });
 
   // Upsert scheduled quote + job + unscheduled visit (for Bob Wilson — calendar unscheduled panel demo)

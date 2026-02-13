@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiClient } from '@/lib/api-client';
+import { useAuth } from '@/lib/auth/auth-context';
 
 function JobStatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
@@ -55,11 +56,20 @@ function VisitStatusBadge({ status }: { status: string }) {
 export function JobDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const canAssign = user?.role === 'owner' || user?.role === 'admin';
 
   const jobQuery = useQuery({
     queryKey: ['job', id],
     queryFn: () => apiClient.getJob(id!),
     enabled: !!id,
+  });
+
+  // Fetch users for assignment name resolution
+  const usersQuery = useQuery({
+    queryKey: ['users'],
+    queryFn: () => apiClient.listUsers(),
+    staleTime: 5 * 60 * 1000,
   });
 
   const job = jobQuery.data;
@@ -192,58 +202,73 @@ export function JobDetailPage() {
               No visits yet.
             </p>
           ) : (
-            visits.map((visit) => (
-              <div
-                key={visit.id}
-                className="rounded-lg border border-border p-3"
-                data-testid="visit-card"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <VisitStatusBadge status={visit.status} />
-                  <span className="text-sm text-muted-foreground">
-                    {visit.estimatedDurationMinutes} min
-                  </span>
-                </div>
-                {visit.scheduledStart && (() => {
-                  const d = new Date(visit.scheduledStart);
-                  const monday = new Date(d);
-                  const day = monday.getDay();
-                  monday.setDate(monday.getDate() - (day === 0 ? 6 : day - 1));
-                  const weekParam = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
-                  return (
-                    <p className="mt-1 text-sm">
-                      <Link to={`/schedule?week=${weekParam}`} className="text-primary hover:underline">
-                        {d.toLocaleString()}
-                        {visit.scheduledEnd && (
-                          <> — {new Date(visit.scheduledEnd).toLocaleString()}</>
-                        )}
-                      </Link>
-                    </p>
-                  );
-                })()}
-                {!visit.scheduledStart && (
-                  <div className="mt-1 flex items-center gap-2">
-                    <p className="text-sm text-muted-foreground">Not yet scheduled</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate('/schedule')}
-                      data-testid="schedule-visit-btn"
-                    >
-                      Schedule
-                    </Button>
+            visits.map((visit) => {
+              const assignedUser = visit.assignedUserId
+                ? usersQuery.data?.users.find((u) => u.id === visit.assignedUserId)
+                : null;
+              const assignLabel = visit.assignedUserId
+                ? (assignedUser ? `Assigned to: ${assignedUser.fullName}` : 'Assigned')
+                : 'Unassigned';
+
+              return (
+                <div
+                  key={visit.id}
+                  className="rounded-lg border border-border p-3"
+                  data-testid="visit-card"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <VisitStatusBadge status={visit.status} />
+                    <span className="text-sm text-muted-foreground">
+                      {visit.estimatedDurationMinutes} min
+                    </span>
                   </div>
-                )}
-                {visit.notes && (
-                  <p className="mt-1 text-sm text-muted-foreground">{visit.notes}</p>
-                )}
-                {visit.completedAt && (
-                  <p className="mt-1 text-xs text-green-700">
-                    Completed on {new Date(visit.completedAt).toLocaleDateString()}
+                  <p className="mt-1 text-sm text-muted-foreground" data-testid="visit-assigned-to">
+                    {assignLabel}
+                    {canAssign && (
+                      <> — <Link to="/schedule" className="text-primary hover:underline text-xs">Assign</Link></>
+                    )}
                   </p>
-                )}
-              </div>
-            ))
+                  {visit.scheduledStart && (() => {
+                    const d = new Date(visit.scheduledStart);
+                    const monday = new Date(d);
+                    const day = monday.getDay();
+                    monday.setDate(monday.getDate() - (day === 0 ? 6 : day - 1));
+                    const weekParam = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+                    return (
+                      <p className="mt-1 text-sm">
+                        <Link to={`/schedule?week=${weekParam}`} className="text-primary hover:underline">
+                          {d.toLocaleString()}
+                          {visit.scheduledEnd && (
+                            <> — {new Date(visit.scheduledEnd).toLocaleString()}</>
+                          )}
+                        </Link>
+                      </p>
+                    );
+                  })()}
+                  {!visit.scheduledStart && (
+                    <div className="mt-1 flex items-center gap-2">
+                      <p className="text-sm text-muted-foreground">Not yet scheduled</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate('/schedule')}
+                        data-testid="schedule-visit-btn"
+                      >
+                        Schedule
+                      </Button>
+                    </div>
+                  )}
+                  {visit.notes && (
+                    <p className="mt-1 text-sm text-muted-foreground">{visit.notes}</p>
+                  )}
+                  {visit.completedAt && (
+                    <p className="mt-1 text-xs text-green-700">
+                      Completed on {new Date(visit.completedAt).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+              );
+            })
           )}
         </CardContent>
       </Card>
