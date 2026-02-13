@@ -2,10 +2,12 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import type { VisitRepository, VisitWithContext } from '../../../application/ports/visit-repository.js';
+import type { JobRepository } from '../../../application/ports/job-repository.js';
 import type { UserRepository } from '../../../application/ports/user-repository.js';
 import type { AuditEventRepository } from '../../../application/ports/audit-event-repository.js';
 import { ScheduleVisitUseCase } from '../../../application/usecases/schedule-visit.js';
 import { AssignVisitUseCase } from '../../../application/usecases/assign-visit.js';
+import { TransitionVisitStatusUseCase } from '../../../application/usecases/transition-visit-status.js';
 import { ValidationError } from '../../../shared/errors.js';
 import { buildAuthMiddleware } from '../middleware/auth-middleware.js';
 import type { AppConfig } from '../../../shared/config.js';
@@ -33,6 +35,8 @@ const visitWithContextResponseSchema = visitResponseSchema.extend({
   clientName: z.string(),
   propertyAddress: z.string().nullable(),
   assignedUserName: z.string().nullable(),
+  clientPhone: z.string().nullable(),
+  clientEmail: z.string().nullable(),
 });
 
 function serializeVisit(v: Visit) {
@@ -59,6 +63,8 @@ function serializeVisitWithContext(v: VisitWithContext) {
     clientName: `${v.clientFirstName} ${v.clientLastName}`,
     propertyAddress: v.propertyAddressLine1,
     assignedUserName: v.assignedUserName,
+    clientPhone: v.clientPhone,
+    clientEmail: v.clientEmail,
   };
 }
 
@@ -66,6 +72,7 @@ const MAX_RANGE_MS = 8 * 24 * 60 * 60 * 1000; // 8 days
 
 export function buildVisitRoutes(deps: {
   visitRepo: VisitRepository;
+  jobRepo: JobRepository;
   userRepo: UserRepository;
   auditRepo: AuditEventRepository;
   config: AppConfig;
@@ -73,6 +80,7 @@ export function buildVisitRoutes(deps: {
 }) {
   const scheduleUseCase = new ScheduleVisitUseCase(deps.visitRepo, deps.auditRepo);
   const assignUseCase = new AssignVisitUseCase(deps.visitRepo, deps.userRepo, deps.auditRepo);
+  const transitionUseCase = new TransitionVisitStatusUseCase(deps.visitRepo, deps.jobRepo, deps.auditRepo);
   const authMiddleware = buildAuthMiddleware({ config: deps.config, jwtVerifier: deps.jwtVerifier });
 
   return async function visitRoutes(app: FastifyInstance) {
@@ -167,6 +175,36 @@ export function buildVisitRoutes(deps: {
             callerRole: request.authContext.role as Role,
             visitId: request.params.id,
             assignedUserId: request.body.assignedUserId,
+          },
+          request.correlationId,
+        );
+        return { visit: serializeVisit(result.visit) };
+      },
+    );
+
+    // PATCH /v1/visits/:id/status
+    typedApp.patch(
+      '/v1/visits/:id/status',
+      {
+        preHandler: authMiddleware,
+        schema: {
+          params: z.object({ id: z.string().uuid() }),
+          body: z.object({
+            status: z.enum(['en_route', 'started', 'completed', 'cancelled']),
+          }),
+          response: {
+            200: z.object({ visit: visitResponseSchema }),
+          },
+        },
+      },
+      async (request) => {
+        const result = await transitionUseCase.execute(
+          {
+            tenantId: request.authContext.tenant_id,
+            callerUserId: request.authContext.user_id,
+            callerRole: request.authContext.role as Role,
+            visitId: request.params.id,
+            newStatus: request.body.status,
           },
           request.correlationId,
         );
