@@ -28,6 +28,7 @@ import { buildExternalQuoteRoutes } from './adapters/http/routes/external-quote-
 import { buildAuthRoutes } from './adapters/http/routes/auth-routes.js';
 import { buildJobRoutes } from './adapters/http/routes/job-routes.js';
 import { buildVisitRoutes } from './adapters/http/routes/visit-routes.js';
+import { buildVisitPhotoRoutes } from './adapters/http/routes/visit-photo-routes.js';
 import { DrizzleSecureLinkTokenRepository } from './infra/db/repositories/drizzle-secure-link-token-repository.js';
 import type { ExternalAuthContext } from './adapters/http/middleware/external-token-middleware.js';
 import { DrizzleTenantRepository } from './infra/db/repositories/drizzle-tenant-repository.js';
@@ -47,14 +48,18 @@ import { DrizzleUnitOfWork } from './infra/db/drizzle-unit-of-work.js';
 import { NodemailerEmailSender } from './infra/email/nodemailer-email-sender.js';
 import { AwsCognitoProvisioner } from './infra/auth/aws-cognito-provisioner.js';
 import type { CognitoProvisioner } from './application/ports/cognito-provisioner.js';
+import type { FileStorage } from './application/ports/file-storage.js';
+import { S3FileStorage } from './infra/storage/s3-file-storage.js';
+import { DrizzleVisitPhotoRepository } from './infra/db/repositories/drizzle-visit-photo-repository.js';
 
 export interface CreateAppOptions {
   config: AppConfig;
   db: Database;
   jwtVerifier?: JwtVerifier;
+  fileStorage?: FileStorage;
 }
 
-export async function createApp({ config, db, jwtVerifier: jwtVerifierOverride }: CreateAppOptions) {
+export async function createApp({ config, db, jwtVerifier: jwtVerifierOverride, fileStorage: fileStorageOverride }: CreateAppOptions) {
   // Fail fast: create Cognito JWT verifier at startup when AUTH_MODE=cognito
   let jwtVerifier: JwtVerifier | undefined = jwtVerifierOverride;
   if (config.AUTH_MODE === 'cognito' && !jwtVerifier) {
@@ -103,6 +108,14 @@ export async function createApp({ config, db, jwtVerifier: jwtVerifierOverride }
   const uow = new DrizzleUnitOfWork(db);
   const emailSender = new NodemailerEmailSender(config.SMTP_HOST, config.SMTP_PORT);
 
+  // File storage (S3 / LocalStack)
+  const fileStorage = fileStorageOverride ?? new S3FileStorage({
+    bucket: config.S3_BUCKET,
+    region: config.S3_REGION,
+    ...(config.S3_ENDPOINT ? { endpoint: config.S3_ENDPOINT } : {}),
+  });
+  const visitPhotoRepo = new DrizzleVisitPhotoRepository(db);
+
   // Cognito provisioner (only created when AUTH_MODE=cognito)
   let cognitoProvisioner: CognitoProvisioner | undefined;
   if (config.AUTH_MODE === 'cognito') {
@@ -126,6 +139,7 @@ export async function createApp({ config, db, jwtVerifier: jwtVerifierOverride }
   await app.register(buildExternalQuoteRoutes({ secureLinkTokenRepo, quoteRepo, clientRepo, tenantRepo, propertyRepo, auditRepo, userRepo, outboxRepo, emailSender, config }));
   await app.register(buildJobRoutes({ jobRepo, visitRepo, quoteRepo, serviceItemRepo, auditRepo, uow, config, jwtVerifier }));
   await app.register(buildVisitRoutes({ visitRepo, jobRepo, userRepo, auditRepo, config, jwtVerifier }));
+  await app.register(buildVisitPhotoRoutes({ visitPhotoRepo, visitRepo, fileStorage, auditRepo, config, jwtVerifier }));
   await app.register(buildAuthRoutes({ userRepo, config }));
 
   return app;
