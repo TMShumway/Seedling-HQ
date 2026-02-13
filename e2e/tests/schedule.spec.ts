@@ -146,6 +146,134 @@ test.describe('Schedule Page', () => {
   });
 });
 
+test.describe('Assign Technician', () => {
+  // Helper: find Jane Johnson's visit block, navigating weeks if needed
+  // (prior Schedule Page tests may reschedule her to a different week)
+  async function findJaneJohnsonBlock(page: import('@playwright/test').Page) {
+    await page.goto('/schedule');
+    await expect(page.getByTestId('schedule-page')).toBeVisible({ timeout: 10000 });
+
+    const visitBlock = page.getByTestId('visit-block').filter({ hasText: 'Jane Johnson' }).first();
+    const visible = await visitBlock.isVisible().catch(() => false);
+    if (!visible) {
+      // Reschedule test may have moved her to 2026-02-16 — navigate next week
+      await page.getByTestId('next-week').click();
+      await expect(visitBlock).toBeVisible({ timeout: 10000 });
+    }
+    return visitBlock;
+  }
+
+  test('shows assigned technician name on calendar visit block', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-chrome', 'Calendar visit block only on desktop');
+
+    const visitBlock = await findJaneJohnsonBlock(page);
+
+    // Should show assignee name
+    const assignee = visitBlock.getByTestId('visit-block-assignee');
+    await expect(assignee).toBeVisible();
+    await expect(assignee).toHaveText('Demo Member');
+  });
+
+  test('shows unassigned indicator on visit without assignee', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-chrome', 'Depends on seed data');
+
+    await page.goto('/schedule');
+    await expect(page.getByTestId('schedule-page')).toBeVisible({ timeout: 10000 });
+
+    // After prior Schedule Page tests, Bob Wilson's visit is scheduled (Feb 15).
+    // Wait for any visit block to load, then check Bob's block has no assignee.
+    await expect(page.getByTestId('visit-block').first()).toBeVisible({ timeout: 10000 });
+
+    const bobBlock = page.getByTestId('visit-block').filter({ hasText: 'Bob Wilson' }).first();
+    const bobVisible = await bobBlock.isVisible().catch(() => false);
+    if (bobVisible) {
+      // Bob's visit block should NOT have the assignee element (he's unassigned)
+      await expect(bobBlock.getByTestId('visit-block-assignee')).not.toBeVisible();
+    } else {
+      // Bob may still be unscheduled (if run in isolation) — check unscheduled panel
+      const unscheduledCard = page.getByTestId('unscheduled-card').first();
+      await expect(unscheduledCard).toBeVisible({ timeout: 10000 });
+      const assignee = unscheduledCard.getByTestId('unscheduled-assignee');
+      await expect(assignee).toHaveText('Unassigned');
+    }
+  });
+
+  test('schedule modal shows tech picker dropdown for owner', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-chrome', 'Modal dropdown on desktop');
+
+    await page.goto('/schedule');
+    await expect(page.getByTestId('schedule-page')).toBeVisible({ timeout: 10000 });
+
+    // Click a visit block to open modal
+    const visitBlock = page.getByTestId('visit-block').first();
+    await expect(visitBlock).toBeVisible({ timeout: 10000 });
+    await visitBlock.click();
+
+    // Modal should show assign dropdown
+    await expect(page.getByTestId('schedule-modal')).toBeVisible();
+    await expect(page.getByTestId('assign-user-select')).toBeVisible();
+
+    // Should have "Unassigned" option and at least one user
+    const select = page.getByTestId('assign-user-select');
+    const options = select.locator('option');
+    const count = await options.count();
+    expect(count).toBeGreaterThanOrEqual(2); // "Unassigned" + at least one user
+  });
+
+  test('assigns technician via schedule modal', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-chrome', 'Stateful test on desktop');
+
+    const visitBlock = await findJaneJohnsonBlock(page);
+    await visitBlock.click();
+
+    // Modal open, pick Demo Owner from dropdown
+    await expect(page.getByTestId('schedule-modal')).toBeVisible();
+    const select = page.getByTestId('assign-user-select');
+    await select.selectOption({ label: 'Demo Owner (owner)' });
+
+    // Save
+    await page.getByTestId('schedule-submit').click();
+    await expect(page.getByTestId('schedule-modal')).not.toBeVisible({ timeout: 10000 });
+
+    // Refresh and verify assignment changed
+    await page.reload();
+    await expect(page.getByTestId('schedule-page')).toBeVisible({ timeout: 10000 });
+
+    // Jane may be on current or next week — check both
+    const updatedBlock = page.getByTestId('visit-block').filter({ hasText: 'Jane Johnson' }).first();
+    const visible = await updatedBlock.isVisible().catch(() => false);
+    if (!visible) {
+      await page.getByTestId('next-week').click();
+    }
+    await expect(updatedBlock).toBeVisible({ timeout: 10000 });
+    const assignee = updatedBlock.getByTestId('visit-block-assignee');
+    await expect(assignee).toHaveText('Demo Owner');
+  });
+
+  test('My Visits toggle filters calendar', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-chrome', 'Toggle on desktop');
+
+    await page.goto('/schedule');
+    await expect(page.getByTestId('schedule-page')).toBeVisible({ timeout: 10000 });
+
+    // Toggle "My Visits"
+    const toggle = page.getByTestId('my-visits-toggle');
+    await expect(toggle).toBeVisible();
+    await expect(toggle).toHaveText('All Visits');
+
+    await toggle.click();
+    await expect(toggle).toHaveText('My Visits');
+
+    // URL should have ?mine=true
+    expect(page.url()).toContain('mine=true');
+
+    // Toggle back to All Visits
+    await toggle.click();
+    await expect(toggle).toHaveText('All Visits');
+    expect(page.url()).not.toContain('mine=true');
+  });
+});
+
 test.describe('Schedule Accessibility', () => {
   test('schedule page has no critical a11y violations', async ({ page }) => {
     await page.goto('/schedule');

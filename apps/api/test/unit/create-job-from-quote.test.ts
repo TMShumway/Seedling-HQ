@@ -93,6 +93,7 @@ describe('CreateJobFromQuoteUseCase', () => {
       getById: vi.fn(),
       listByJobId: vi.fn(),
       updateSchedule: vi.fn(),
+      updateAssignedUser: vi.fn(),
       listByDateRange: vi.fn(),
       listUnscheduled: vi.fn(),
     };
@@ -137,6 +138,7 @@ describe('CreateJobFromQuoteUseCase', () => {
         getById: vi.fn(),
         listByJobId: vi.fn(),
         updateSchedule: vi.fn(),
+        updateAssignedUser: vi.fn(),
         listByDateRange: vi.fn(),
         listUnscheduled: vi.fn(),
       },

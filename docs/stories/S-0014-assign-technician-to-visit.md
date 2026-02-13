@@ -32,85 +32,115 @@ Third story in Epic 0005 (Scheduling). Makes the existing `assignedUserId` colum
 **Goal:** Create AssignVisitUseCase.
 **Files:** `apps/api/src/application/dto/assign-visit-dto.ts`, `apps/api/src/application/usecases/assign-visit.ts`
 
-- [ ] **Task 2.1:** Create DTOs
-- [ ] **Task 2.2:** Implement AssignVisitUseCase
+- [x] **Task 2.1:** Create DTOs
+- [x] **Task 2.2:** Implement AssignVisitUseCase
 
 ## Phase 3: Visit Routes + Wiring
 **Goal:** Add PATCH /v1/visits/:id/assign, extend GET endpoints with assignedUserId filter.
 **Files:** `apps/api/src/adapters/http/routes/visit-routes.ts`, `apps/api/src/app.ts`
 
-- [ ] **Task 3.1:** Add userRepo to buildVisitRoutes
-- [ ] **Task 3.2:** Add assignedUserName to visitWithContextResponseSchema
-- [ ] **Task 3.3:** Add assignedUserId query param to GET /v1/visits
-- [ ] **Task 3.4:** Add assignedUserId query param to GET /v1/visits/unscheduled
-- [ ] **Task 3.5:** Add PATCH /v1/visits/:id/assign endpoint
-- [ ] **Task 3.6:** Check GET /v1/jobs/:id embedded visits
-- [ ] **Task 3.7:** Verify all visit response schemas are consistent
+- [x] **Task 3.1:** Add userRepo to buildVisitRoutes
+- [x] **Task 3.2:** Add assignedUserName to visitWithContextResponseSchema
+- [x] **Task 3.3:** Add assignedUserId query param to GET /v1/visits
+- [x] **Task 3.4:** Add assignedUserId query param to GET /v1/visits/unscheduled
+- [x] **Task 3.5:** Add PATCH /v1/visits/:id/assign endpoint
+- [x] **Task 3.6:** Check GET /v1/jobs/:id embedded visits — no change needed (uses plain Visit, not VisitWithContext)
+- [x] **Task 3.7:** Verify all visit response schemas are consistent
 
 ## Phase 4: Seed Data Updates
 **Goal:** Assign demo technician to first visit.
 **Files:** `apps/api/src/infra/db/seed.ts`
 
-- [ ] **Task 4.1:** Assign DEMO_MEMBER_ID to Jane Johnson's visit
+- [x] **Task 4.1:** Assign DEMO_MEMBER_ID to Jane Johnson's visit
 
 ## Phase 5: Frontend API Client Extensions
 **Goal:** Add types and methods for assign endpoint.
 **Files:** `apps/web/src/lib/api-client.ts`
 
-- [ ] **Task 5.1:** Add assignedUserName to VisitWithContextResponse
-- [ ] **Task 5.2:** Add assignedUserId param to listVisits and listUnscheduledVisits
-- [ ] **Task 5.3:** Add assignVisit method
-- [ ] **Task 5.4:** Verify listUsers return type
+- [x] **Task 5.1:** Add assignedUserName to VisitWithContextResponse
+- [x] **Task 5.2:** Add assignedUserId param to listVisits and listUnscheduledVisits
+- [x] **Task 5.3:** Add assignVisit method
+- [x] **Task 5.4:** Verify listUsers return type — confirmed already has needed fields
 
 ## Phase 6: Frontend — Tech Picker in ScheduleVisitModal
 **Goal:** Add technician assignment dropdown.
 **Files:** `apps/web/src/components/schedule/ScheduleVisitModal.tsx`
 
-- [ ] **Task 6.1:** Fetch team members list
-- [ ] **Task 6.2:** Add select dropdown
-- [ ] **Task 6.3:** Role-gate the dropdown
-- [ ] **Task 6.4:** Wire assignment into modal submit
-- [ ] **Task 6.5:** Support assign-only for already-scheduled visits
+- [x] **Task 6.1:** Fetch team members list with useQuery
+- [x] **Task 6.2:** Add `<select>` dropdown for technician assignment
+- [x] **Task 6.3:** Role-gate dropdown (hidden for members)
+- [x] **Task 6.4:** Wire assignment into modal submit with partial success handling
+- [x] **Task 6.5:** Support assign-only for already-scheduled visits (detect time change vs assignment change)
 
 ## Phase 7: Frontend — Calendar Display + "My Visits" + JobDetail
 **Goal:** Show assignedUserName on calendar, add toggle, update JobDetailPage.
 **Files:** `apps/web/src/pages/SchedulePage.tsx`, `apps/web/src/pages/JobDetailPage.tsx`
 
-- [ ] **Task 7.1:** Display assignedUserName on VisitBlock
-- [ ] **Task 7.2:** Display assignedUserName on unscheduled cards
-- [ ] **Task 7.3:** Add "My Visits" toggle
-- [ ] **Task 7.4:** Combine mine with week query param
-- [ ] **Task 7.5:** Update JobDetailPage visits
-- [ ] **Task 7.6:** Add navigate-to-schedule action
-- [ ] **Task 7.7:** Empty state for "My Visits"
+- [x] **Task 7.1:** Display assignedUserName on VisitBlock (with data-testid)
+- [x] **Task 7.2:** Display assignedUserName on unscheduled cards ("Unassigned" fallback)
+- [x] **Task 7.3:** Add "My Visits" toggle button with URL param `?mine=true`
+- [x] **Task 7.4:** Combine mine with week query param in navigation
+- [x] **Task 7.5:** Update JobDetailPage visits to show "Assigned to: Name" or "Unassigned" via cached users list
+- [x] **Task 7.6:** Add "Assign" link for owner/admin on visit cards → navigates to /schedule
+- [x] **Task 7.7:** Empty state for "My Visits" when no visits assigned
 
 ## Phase 8: Tests
 **Goal:** Unit, integration, E2E coverage.
 **Files:** `apps/api/test/unit/assign-visit.test.ts`, `apps/api/test/integration/visit-routes.test.ts`, `e2e/tests/schedule.spec.ts`
 
-- [ ] **Task 8.1:** Unit tests for AssignVisitUseCase
-- [ ] **Task 8.2:** Integration tests for assign + filter routes
-- [ ] **Task 8.3:** Update existing test mocks
-- [ ] **Task 8.4:** E2E tests
+- [x] **Task 8.1:** Unit tests for AssignVisitUseCase (12 tests — assign, reassign, unassign, no-op, admin allowed, member forbidden, visit not found, user not found, inactive user, updateAssignedUser returns null, audit failure doesn't propagate, no status guard)
+- [x] **Task 8.2:** Integration tests for assign + filter routes (14 tests — PATCH assign, reassign, unassign, member 403, not-found visit, not-found user, inactive user, tenant isolation; GET with assignedUserId filter, no match returns empty, includes assignedUserName, null when unassigned; unscheduled filter, no match)
+- [x] **Task 8.3:** Updated mocks in schedule-visit.test.ts and create-job-from-quote.test.ts (added updateAssignedUser to visitRepo mocks)
+- [x] **Task 8.4:** E2E tests (5 tests — assignee name on calendar block, unassigned text on cards, tech picker dropdown visible, assign via modal, My Visits toggle)
 
 ## Phase 9: Documentation
 **Goal:** Story file, CLAUDE.md, domain model doc.
 
-- [ ] **Task 9.1:** Create story file
-- [ ] **Task 9.2:** Update CLAUDE.md
-- [ ] **Task 9.3:** Update domain model doc
+- [ ] **Task 9.1:** Update story file status to Complete
+- [ ] **Task 9.2:** Update CLAUDE.md with new decisions + patterns
+- [ ] **Task 9.3:** Update domain model doc with audit events
 
 ## Resume context
 ### Last completed
-- Phase 1 complete: schema index, port interface, Drizzle implementation all updated
+- Phase 1-7: All backend + frontend implementation complete
+  - `apps/api/src/infra/db/schema.ts` — new `visits_tenant_assigned_idx` index
+  - `apps/api/src/application/ports/visit-repository.ts` — extended with `updateAssignedUser`, `assignedUserName`, `ListVisitsFilters.assignedUserId`, `listUnscheduled` filters param
+  - `apps/api/src/infra/db/repositories/drizzle-visit-repository.ts` — implemented updateAssignedUser, LEFT JOIN users, assignedUserId filter
+  - `apps/api/src/application/dto/assign-visit-dto.ts` — new DTOs
+  - `apps/api/src/application/usecases/assign-visit.ts` — new use case
+  - `apps/api/src/adapters/http/routes/visit-routes.ts` — PATCH assign endpoint, assignedUserId query params, assignedUserName in response
+  - `apps/api/src/app.ts` — pass userRepo to buildVisitRoutes
+  - `apps/api/src/infra/db/seed.ts` — assign DEMO_MEMBER_ID to Jane Johnson's visit
+  - `apps/web/src/lib/api-client.ts` — assignedUserName, assignedUserId filter, assignVisit method
+  - `apps/web/src/components/schedule/ScheduleVisitModal.tsx` — tech picker, role-gated, dual mutation
+  - `apps/web/src/pages/SchedulePage.tsx` — assignee display, My Visits toggle, empty states
+  - `apps/web/src/pages/JobDetailPage.tsx` — assignment display, Assign link
+- Phase 8: Tests written and passing
+  - `apps/api/test/unit/assign-visit.test.ts` — 12 new unit tests, all pass (252 total)
+  - `apps/api/test/integration/visit-routes.test.ts` — 14 new integration tests, all pass (228 total)
+  - `apps/api/test/unit/schedule-visit.test.ts` — updated mock
+  - `apps/api/test/unit/create-job-from-quote.test.ts` — updated mocks (2 locations)
+  - `e2e/tests/schedule.spec.ts` — 5 new E2E tests written (not yet run)
+  - `apps/web` unit tests — all 53 pass
+
 ### In progress
-- Starting Phase 2
+- Phase 8 commit pending — need to commit test files, then run E2E tests
 ### Next up
-- Create DTOs (assign-visit-dto.ts) and AssignVisitUseCase
+- Phase 9: Documentation updates (CLAUDE.md, domain model doc)
 ### Blockers / open questions
 - None
 
 ## Test summary
-- **Unit**: 0 new
-- **Integration**: 0 new
-- **E2E**: 0 new
+- **Unit**: 252 total (12 new) — all passing
+- **Integration**: 228 total (14 new) — all passing
+- **E2E**: 5 new tests written in schedule.spec.ts — not yet run
+- **Web**: 53 total — all passing
+
+## Commits (on `story/S-0014-assign-technician-to-visit`)
+1. `b14bc0f` S-0014 phase 1: DB schema + repository extensions
+2. `0db915c` S-0014 phase 2: AssignVisitUseCase and DTO
+3. `fcfa1fe` S-0014 phase 3: Wire assign endpoint and filter params
+4. `2e391fb` S-0014 phase 4: Assign demo member to seeded visit
+5. `139fd95` S-0014 phase 5: Frontend API client extensions
+6. `463798b` S-0014 phase 6: Tech picker in ScheduleVisitModal
+7. `1bbf745` S-0014 phase 7: Display assignee names and My Visits filter
