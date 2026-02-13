@@ -592,6 +592,22 @@ export const apiClient = {
   transitionVisitStatus: (id: string, status: string) =>
     request<{ visit: VisitResponse }>('PATCH', `/v1/visits/${id}/status`, { status }),
 
+  updateVisitNotes: (visitId: string, notes: string | null) =>
+    request<{ visit: VisitResponse }>('PATCH', `/v1/visits/${visitId}/notes`, { notes }),
+
+  // Visit Photos
+  createVisitPhoto: (visitId: string, fileName: string, contentType: string) =>
+    request<{ photo: VisitPhotoResponse; uploadPost: PresignedPostResponse }>('POST', `/v1/visits/${visitId}/photos`, { fileName, contentType }),
+
+  confirmVisitPhoto: (visitId: string, photoId: string) =>
+    request<{ photo: VisitPhotoResponse }>('POST', `/v1/visits/${visitId}/photos/${photoId}/confirm`),
+
+  listVisitPhotos: (visitId: string) =>
+    request<{ data: VisitPhotoWithUrlResponse[] }>('GET', `/v1/visits/${visitId}/photos`),
+
+  deleteVisitPhoto: (visitId: string, photoId: string) =>
+    request<void>('DELETE', `/v1/visits/${visitId}/photos/${photoId}`),
+
   // Team
   listUsers: () =>
     request<{ users: UserResponse[] }>('GET', '/v1/users'),
@@ -822,6 +838,27 @@ export interface VisitWithContextResponse extends VisitResponse {
   assignedUserName: string | null;
   clientPhone: string | null;
   clientEmail: string | null;
+}
+
+export interface VisitPhotoResponse {
+  id: string;
+  tenantId: string;
+  visitId: string;
+  storageKey: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number | null;
+  status: string;
+  createdAt: string;
+}
+
+export interface VisitPhotoWithUrlResponse extends VisitPhotoResponse {
+  downloadUrl: string;
+}
+
+export interface PresignedPostResponse {
+  url: string;
+  fields: Record<string, string>;
 }
 
 export { ApiClientError };

@@ -368,7 +368,10 @@ export function JobDetailPage() {
                     </div>
                   )}
                   {visit.notes && (
-                    <p className="mt-1 text-sm text-muted-foreground">{visit.notes}</p>
+                    <div className="mt-2 space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground">Notes</p>
+                      <p className="whitespace-pre-wrap text-sm" data-testid="visit-notes-display">{visit.notes}</p>
+                    </div>
                   )}
                   {visit.completedAt && (
                     <p className="mt-1 text-xs text-green-700">

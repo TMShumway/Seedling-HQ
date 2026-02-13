@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MapPin, Phone, Mail, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -53,6 +53,62 @@ function VisitStatusBadge({ status }: { status: string }) {
     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[status] ?? 'bg-gray-100 text-gray-600'}`}>
       {STATUS_LABELS[status] ?? status}
     </span>
+  );
+}
+
+function VisitNotesSection({ visit }: { visit: VisitWithContextResponse }) {
+  const queryClient = useQueryClient();
+  const [notes, setNotes] = useState(visit.notes ?? '');
+  const isEditable = ['en_route', 'started'].includes(visit.status);
+
+  const notesMutation = useMutation({
+    mutationFn: (newNotes: string | null) => apiClient.updateVisitNotes(visit.id, newNotes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['today-visits'] });
+      queryClient.invalidateQueries({ queryKey: ['visits'] });
+      queryClient.invalidateQueries({ queryKey: ['job'] });
+    },
+  });
+
+  if (!['en_route', 'started', 'completed'].includes(visit.status)) return null;
+
+  if (visit.status === 'completed') {
+    if (!visit.notes) return null;
+    return (
+      <div className="space-y-1">
+        <p className="text-xs font-medium text-muted-foreground">Notes</p>
+        <p className="whitespace-pre-wrap text-sm" data-testid="visit-notes-display">{visit.notes}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-medium text-muted-foreground">Notes</p>
+      <textarea
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        rows={2}
+        placeholder="Add visit notes..."
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        disabled={!isEditable || notesMutation.isPending}
+        data-testid="visit-notes-input"
+      />
+      {isEditable && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => notesMutation.mutate(notes || null)}
+          disabled={notesMutation.isPending}
+          data-testid="visit-notes-save"
+        >
+          {notesMutation.isPending ? 'Saving...' : 'Save Notes'}
+        </Button>
+      )}
+      {notesMutation.isError && (
+        <p className="text-xs text-destructive">Failed to save notes</p>
+      )}
+    </div>
   );
 }
 
@@ -128,6 +184,9 @@ function TodayVisitCard({ visit }: { visit: VisitWithContextResponse }) {
             </a>
           )}
         </div>
+
+        {/* Notes */}
+        <VisitNotesSection visit={visit} />
 
         {/* Status action buttons */}
         <div className="flex items-center gap-2">
