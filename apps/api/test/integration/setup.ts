@@ -41,12 +41,15 @@ export function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     COGNITO_USER_POOL_ID: '',
     COGNITO_CLIENT_ID: '',
     COGNITO_REGION: '',
+    S3_BUCKET: 'test-bucket',
+    S3_REGION: 'us-east-1',
+    S3_ENDPOINT: 'http://localhost:4566',
     ...overrides,
   };
 }
 
-export async function buildTestApp(configOverrides: Partial<AppConfig> = {}, opts?: { jwtVerifier?: JwtVerifier }) {
+export async function buildTestApp(configOverrides: Partial<AppConfig> = {}, opts?: { jwtVerifier?: JwtVerifier; fileStorage?: import('../../src/application/ports/file-storage.js').FileStorage }) {
   const config = makeConfig(configOverrides);
-  const app = await createApp({ config, db, jwtVerifier: opts?.jwtVerifier });
+  const app = await createApp({ config, db, jwtVerifier: opts?.jwtVerifier, fileStorage: opts?.fileStorage });
   return app;
 }

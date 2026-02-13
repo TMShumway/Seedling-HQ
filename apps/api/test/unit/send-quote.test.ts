@@ -55,6 +55,9 @@ function makeConfig(): AppConfig {
     COGNITO_USER_POOL_ID: '',
     COGNITO_CLIENT_ID: '',
     COGNITO_REGION: '',
+    S3_BUCKET: 'test-bucket',
+    S3_REGION: 'us-east-1',
+    S3_ENDPOINT: 'http://localhost:4566',
   };
 }
 
