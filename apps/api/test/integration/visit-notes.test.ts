@@ -75,9 +75,6 @@ describe('PATCH /v1/visits/:id/notes', () => {
 
   it('rejects notes on scheduled visit', async () => {
     const db = getDb();
-    // Reset visit to scheduled
-    await db.update(visits).set({ status: 'scheduled' }).where(undefined as any);
-
     const scheduledVisitId = randomUUID();
     await db.insert(visits).values({
       id: scheduledVisitId,
