@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Full cold start: Docker up → wait for health → DB push + seed → start dev servers
+# Full cold start: Docker up → wait for health → CDK deploy → DB push + seed → start dev servers
 set -euo pipefail
 
 GREEN='\033[0;32m'
@@ -17,11 +17,11 @@ printf "${DIM}  ─────────────────────�
 echo ""
 
 # Step 1: Docker services
-printf "${BOLD}  [1/4]${NC} Starting Docker services...\n"
+printf "${BOLD}  [1/5]${NC} Starting Docker services...\n"
 docker compose up -d
 
 # Step 2: Wait for health checks
-printf "${BOLD}  [2/4]${NC} Waiting for services to be healthy...\n"
+printf "${BOLD}  [2/5]${NC} Waiting for services to be healthy...\n"
 
 printf "  ${DIM}Postgres...${NC}"
 until docker compose exec -T postgres pg_isready -U fsa > /dev/null 2>&1; do sleep 1; done
@@ -49,14 +49,18 @@ else
   printf "\r  ${RED}Mailpit not ready${NC} (emails won't be captured)\n"
 fi
 
-# Step 3: Database
-printf "${BOLD}  [3/4]${NC} Pushing schema and seeding data...\n"
+# Step 3: Deploy CDK stack to LocalStack
+printf "${BOLD}  [3/5]${NC} Deploying CDK stack to LocalStack...\n"
+bash scripts/localstack-deploy.sh
+
+# Step 4: Database
+printf "${BOLD}  [4/5]${NC} Pushing schema and seeding data...\n"
 pnpm --filter @seedling/api run db:push 2>&1 | sed 's/^/  /'
 pnpm --filter @seedling/api run db:seed-demo 2>&1 | sed 's/^/  /'
 
-# Step 4: Dev servers
+# Step 5: Dev servers
 echo ""
-printf "${BOLD}  [4/4]${NC} Starting dev servers...\n"
+printf "${BOLD}  [5/5]${NC} Starting dev servers...\n"
 printf "  ${DIM}API:     http://localhost:4000${NC}\n"
 printf "  ${DIM}Web:     http://localhost:5173${NC}\n"
 printf "  ${DIM}Swagger: http://localhost:4000/docs${NC}\n"
