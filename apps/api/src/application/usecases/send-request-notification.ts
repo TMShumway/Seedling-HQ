@@ -96,23 +96,30 @@ export class SendRequestNotificationUseCase {
         destination: smsDestination,
         subject: null,
         body: `New request from ${request.clientName}: ${request.description.substring(0, 100)}`,
-        status: 'queued',
+        status: smsDestination ? 'queued' : 'failed',
         provider: null,
         providerMessageId: null,
-        lastErrorCode: null,
-        lastErrorMessage: null,
+        lastErrorCode: smsDestination ? null : 'NO_DESTINATION',
+        lastErrorMessage: smsDestination ? null : 'Business phone not configured',
         correlationId,
         scheduledFor: null,
       });
 
       // Publish to queue only if destination is known
       if (smsDestination && this.messageQueuePublisher) {
-        await this.messageQueuePublisher.publish({
-          jobType: 'sms.send',
-          outboxId: smsOutboxId,
-          tenantId,
-          correlationId,
-        });
+        try {
+          await this.messageQueuePublisher.publish({
+            jobType: 'sms.send',
+            outboxId: smsOutboxId,
+            tenantId,
+            correlationId,
+          });
+        } catch {
+          await this.outboxRepo.updateStatus(smsOutboxId, 'failed', {
+            lastErrorCode: 'QUEUE_PUBLISH_FAILED',
+            lastErrorMessage: 'Failed to publish SMS job to queue',
+          });
+        }
       }
     } catch {
       // Never throw — notification is best-effort

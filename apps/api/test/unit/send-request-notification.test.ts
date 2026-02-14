@@ -304,7 +304,7 @@ describe('SendRequestNotificationUseCase', () => {
     }));
   });
 
-  it('when phone is null, creates SMS outbox with destination=null but does NOT publish', async () => {
+  it('when phone is null, creates SMS outbox as failed/NO_DESTINATION and does NOT publish', async () => {
     settingsRepo = makeSettingsRepo(null);
     useCase = new SendRequestNotificationUseCase(userRepo, outboxRepo, emailSender, config, settingsRepo, queuePublisher);
 
@@ -312,7 +312,27 @@ describe('SendRequestNotificationUseCase', () => {
 
     const smsRecord = outboxRepo.created.find((r) => r.channel === 'sms');
     expect(smsRecord!.destination).toBeNull();
+    expect(smsRecord!.status).toBe('failed');
+    expect(smsRecord!.lastErrorCode).toBe('NO_DESTINATION');
 
     expect(queuePublisher.publish).not.toHaveBeenCalled();
+  });
+
+  it('marks SMS outbox failed when queue publish throws', async () => {
+    queuePublisher = {
+      publish: vi.fn(async () => { throw new Error('SQS timeout'); }),
+    };
+    useCase = new SendRequestNotificationUseCase(userRepo, outboxRepo, emailSender, config, settingsRepo, queuePublisher);
+
+    await useCase.execute('tenant-1', 'Demo Business', REQUEST, correlationId);
+
+    const smsRecord = outboxRepo.created.find((r) => r.channel === 'sms');
+    expect(outboxRepo.updateStatus).toHaveBeenCalledWith(
+      smsRecord!.id,
+      'failed',
+      expect.objectContaining({
+        lastErrorCode: 'QUEUE_PUBLISH_FAILED',
+      }),
+    );
   });
 });
