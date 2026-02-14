@@ -23,7 +23,7 @@ printf "  ${DIM}Pushing schema...${NC}\n"
 pnpm --filter @seedling/api run db:push 2>&1 | sed 's/^/  /'
 
 printf "  ${DIM}Seeding demo data...${NC}\n"
-pnpm --filter @seedling/api run db:seed 2>&1 | sed 's/^/  /'
+pnpm --filter @seedling/api run db:seed-demo 2>&1 | sed 's/^/  /'
 
 echo ""
 printf "  ${GREEN}Database reset complete.${NC}\n"

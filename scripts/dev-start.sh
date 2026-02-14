@@ -52,7 +52,7 @@ fi
 # Step 3: Database
 printf "${BOLD}  [3/4]${NC} Pushing schema and seeding data...\n"
 pnpm --filter @seedling/api run db:push 2>&1 | sed 's/^/  /'
-pnpm --filter @seedling/api run db:seed 2>&1 | sed 's/^/  /'
+pnpm --filter @seedling/api run db:seed-demo 2>&1 | sed 's/^/  /'
 
 # Step 4: Dev servers
 echo ""

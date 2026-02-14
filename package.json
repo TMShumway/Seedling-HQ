@@ -15,7 +15,8 @@
     "services:down": "docker compose down",
     "services:logs": "docker compose logs -f",
     "db:push": "pnpm --filter @seedling/api run db:push",
-    "db:seed": "pnpm --filter @seedling/api run db:seed",
+    "db:seed-test": "pnpm --filter @seedling/api run db:seed-test",
+    "db:seed-demo": "pnpm --filter @seedling/api run db:seed-demo",
     "db:reset": "pnpm --filter @seedling/api run db:reset"
   }
 }

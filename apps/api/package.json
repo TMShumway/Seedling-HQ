@@ -13,7 +13,7 @@
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "tsx --env-file=../../.env src/infra/db/seed.ts",
+    "db:seed-test": "tsx --env-file=../../.env src/infra/db/seed-test.ts",
     "db:seed-demo": "tsx --env-file=../../.env src/infra/db/seed-demo.ts",
     "db:reset": "tsx --env-file=../../.env src/infra/db/reset.ts",
     "gen": "tsx --env-file=../../.env src/gen-openapi.ts"
