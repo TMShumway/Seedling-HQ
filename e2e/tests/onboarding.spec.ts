@@ -76,6 +76,19 @@ test.describe('Settings Edit', () => {
   });
 });
 
+test.describe('Settings — Phone Hint', () => {
+  test('shows SMS notification hint below phone input', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop-chrome', 'Stateful settings test runs only on desktop-chrome');
+
+    await page.goto('/settings');
+    await expect(page.getByTestId('settings-form')).toBeVisible({ timeout: 10000 });
+
+    await expect(
+      page.getByText('This number will be used for SMS notifications sent to you'),
+    ).toBeVisible();
+  });
+});
+
 test.describe('Onboarding — Already Configured', () => {
   test('shows already configured message when settings exist', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop-chrome', 'Stateful already-configured test runs only on desktop-chrome');

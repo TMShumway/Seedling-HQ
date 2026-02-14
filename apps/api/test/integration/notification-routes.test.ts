@@ -78,7 +78,9 @@ describe('Notification integration: POST /v1/public/requests/:tenantSlug', () =>
 
     const smsRecord = records.find((r) => r.channel === 'sms');
     expect(smsRecord).toBeDefined();
-    expect(smsRecord!.status).toBe('queued');
+    // No business settings phone configured → SMS outbox created as failed/NO_DESTINATION
+    expect(smsRecord!.status).toBe('failed');
+    expect(smsRecord!.lastErrorCode).toBe('NO_DESTINATION');
     expect(smsRecord!.type).toBe('request_notification');
   });
 

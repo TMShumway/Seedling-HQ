@@ -102,6 +102,7 @@ export class SendQuoteUseCase {
             recipientId: client.id,
             recipientType: 'client',
             channel: 'email',
+            destination: client.email,
             subject,
             body: html,
             status: 'queued',

@@ -3,6 +3,8 @@ import { SendRequestNotificationUseCase } from '../../src/application/usecases/s
 import type { UserRepository } from '../../src/application/ports/user-repository.js';
 import type { MessageOutboxRepository } from '../../src/application/ports/message-outbox-repository.js';
 import type { EmailSender } from '../../src/application/ports/email-sender.js';
+import type { BusinessSettingsRepository } from '../../src/application/ports/business-settings-repository.js';
+import type { MessageQueuePublisher } from '../../src/application/ports/message-queue-publisher.js';
 import type { AppConfig } from '../../src/shared/config.js';
 import type { Request } from '../../src/domain/entities/request.js';
 import type { MessageOutbox } from '../../src/domain/entities/message-outbox.js';
@@ -54,6 +56,13 @@ function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     S3_BUCKET: 'test-bucket',
     S3_REGION: 'us-east-1',
     S3_ENDPOINT: 'http://localhost:4566',
+    SMS_PROVIDER: 'stub' as const,
+    SMS_REGION: 'us-east-1',
+    SMS_ORIGINATION_IDENTITY: '',
+    SQS_REGION: 'us-east-1',
+    SQS_ENDPOINT: '',
+    SQS_MESSAGE_QUEUE_URL: '',
+    WORKER_MODE: 'off' as const,
     ...overrides,
   };
 }
@@ -78,6 +87,7 @@ function makeOutboxRepo(): MessageOutboxRepository & { created: MessageOutbox[] 
   const created: MessageOutbox[] = [];
   return {
     created,
+    getById: vi.fn(async () => null),
     create: vi.fn(async (o) => {
       const record = { ...o, attemptCount: 0, createdAt: new Date(), sentAt: null } as MessageOutbox;
       created.push(record);
@@ -94,12 +104,43 @@ function makeEmailSender(overrides: Partial<EmailSender> = {}): EmailSender {
   };
 }
 
+function makeSettingsRepo(phone: string | null = '+15559999999'): BusinessSettingsRepository {
+  return {
+    getByTenantId: vi.fn(async () => ({
+      id: 'settings-1',
+      tenantId: 'tenant-1',
+      phone,
+      addressLine1: null,
+      addressLine2: null,
+      city: null,
+      state: null,
+      zip: null,
+      timezone: null,
+      businessHours: null,
+      serviceArea: null,
+      defaultDurationMinutes: null,
+      description: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })),
+    upsert: vi.fn(),
+  };
+}
+
+function makeQueuePublisher(): MessageQueuePublisher {
+  return {
+    publish: vi.fn(async () => {}),
+  };
+}
+
 const correlationId = 'corr-test';
 
 describe('SendRequestNotificationUseCase', () => {
   let userRepo: UserRepository;
   let outboxRepo: ReturnType<typeof makeOutboxRepo>;
   let emailSender: EmailSender;
+  let settingsRepo: BusinessSettingsRepository;
+  let queuePublisher: MessageQueuePublisher;
   let config: AppConfig;
   let useCase: SendRequestNotificationUseCase;
 
@@ -107,8 +148,10 @@ describe('SendRequestNotificationUseCase', () => {
     userRepo = makeUserRepo();
     outboxRepo = makeOutboxRepo();
     emailSender = makeEmailSender();
+    settingsRepo = makeSettingsRepo();
+    queuePublisher = makeQueuePublisher();
     config = makeConfig();
-    useCase = new SendRequestNotificationUseCase(userRepo, outboxRepo, emailSender, config);
+    useCase = new SendRequestNotificationUseCase(userRepo, outboxRepo, emailSender, config, settingsRepo, queuePublisher);
   });
 
   it('creates email outbox record, sends email, and updates to sent', async () => {
@@ -156,7 +199,7 @@ describe('SendRequestNotificationUseCase', () => {
         throw new Error('SMTP connection refused');
       }),
     });
-    useCase = new SendRequestNotificationUseCase(userRepo, outboxRepo, emailSender, config);
+    useCase = new SendRequestNotificationUseCase(userRepo, outboxRepo, emailSender, config, settingsRepo, queuePublisher);
 
     // Should NOT throw
     await useCase.execute('tenant-1', 'Demo Business', REQUEST, correlationId);
@@ -173,7 +216,7 @@ describe('SendRequestNotificationUseCase', () => {
 
   it('returns immediately when NOTIFICATION_ENABLED is false', async () => {
     config = makeConfig({ NOTIFICATION_ENABLED: false });
-    useCase = new SendRequestNotificationUseCase(userRepo, outboxRepo, emailSender, config);
+    useCase = new SendRequestNotificationUseCase(userRepo, outboxRepo, emailSender, config, settingsRepo, queuePublisher);
 
     await useCase.execute('tenant-1', 'Demo Business', REQUEST, correlationId);
 
@@ -186,7 +229,7 @@ describe('SendRequestNotificationUseCase', () => {
     userRepo = makeUserRepo({
       getOwnerByTenantId: vi.fn(async () => null),
     });
-    useCase = new SendRequestNotificationUseCase(userRepo, outboxRepo, emailSender, config);
+    useCase = new SendRequestNotificationUseCase(userRepo, outboxRepo, emailSender, config, settingsRepo, queuePublisher);
 
     await useCase.execute('tenant-1', 'Demo Business', REQUEST, correlationId);
 
@@ -232,9 +275,64 @@ describe('SendRequestNotificationUseCase', () => {
       throw new Error('DB connection lost');
     });
     outboxRepo.created = [];
-    useCase = new SendRequestNotificationUseCase(userRepo, outboxRepo, emailSender, config);
+    useCase = new SendRequestNotificationUseCase(userRepo, outboxRepo, emailSender, config, settingsRepo, queuePublisher);
 
     // Should NOT throw
     await useCase.execute('tenant-1', 'Demo Business', REQUEST, correlationId);
+  });
+
+  // ── Destination + Queue Publishing tests ───────────────────────
+
+  it('populates destination on email outbox = owner.email', async () => {
+    await useCase.execute('tenant-1', 'Demo Business', REQUEST, correlationId);
+
+    const emailRecord = outboxRepo.created.find((r) => r.channel === 'email');
+    expect(emailRecord!.destination).toBe('owner@example.com');
+  });
+
+  it('resolves SMS destination from BusinessSettings.phone and publishes sms.send job', async () => {
+    await useCase.execute('tenant-1', 'Demo Business', REQUEST, correlationId);
+
+    const smsRecord = outboxRepo.created.find((r) => r.channel === 'sms');
+    expect(smsRecord!.destination).toBe('+15559999999');
+
+    expect(queuePublisher.publish).toHaveBeenCalledWith(expect.objectContaining({
+      jobType: 'sms.send',
+      outboxId: smsRecord!.id,
+      tenantId: 'tenant-1',
+      correlationId,
+    }));
+  });
+
+  it('when phone is null, creates SMS outbox as failed/NO_DESTINATION and does NOT publish', async () => {
+    settingsRepo = makeSettingsRepo(null);
+    useCase = new SendRequestNotificationUseCase(userRepo, outboxRepo, emailSender, config, settingsRepo, queuePublisher);
+
+    await useCase.execute('tenant-1', 'Demo Business', REQUEST, correlationId);
+
+    const smsRecord = outboxRepo.created.find((r) => r.channel === 'sms');
+    expect(smsRecord!.destination).toBeNull();
+    expect(smsRecord!.status).toBe('failed');
+    expect(smsRecord!.lastErrorCode).toBe('NO_DESTINATION');
+
+    expect(queuePublisher.publish).not.toHaveBeenCalled();
+  });
+
+  it('marks SMS outbox failed when queue publish throws', async () => {
+    queuePublisher = {
+      publish: vi.fn(async () => { throw new Error('SQS timeout'); }),
+    };
+    useCase = new SendRequestNotificationUseCase(userRepo, outboxRepo, emailSender, config, settingsRepo, queuePublisher);
+
+    await useCase.execute('tenant-1', 'Demo Business', REQUEST, correlationId);
+
+    const smsRecord = outboxRepo.created.find((r) => r.channel === 'sms');
+    expect(outboxRepo.updateStatus).toHaveBeenCalledWith(
+      smsRecord!.id,
+      'failed',
+      expect.objectContaining({
+        lastErrorCode: 'QUEUE_PUBLISH_FAILED',
+      }),
+    );
   });
 });

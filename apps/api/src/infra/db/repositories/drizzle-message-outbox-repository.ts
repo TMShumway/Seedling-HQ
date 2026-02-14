@@ -12,6 +12,7 @@ function toEntity(row: typeof messageOutbox.$inferSelect): MessageOutbox {
     recipientId: row.recipientId,
     recipientType: row.recipientType,
     channel: row.channel as MessageChannel,
+    destination: row.destination,
     subject: row.subject,
     body: row.body,
     status: row.status as MessageOutboxStatus,
@@ -30,6 +31,15 @@ function toEntity(row: typeof messageOutbox.$inferSelect): MessageOutbox {
 export class DrizzleMessageOutboxRepository implements MessageOutboxRepository {
   constructor(private db: Database) {}
 
+  async getById(id: string): Promise<MessageOutbox | null> {
+    const rows = await this.db
+      .select()
+      .from(messageOutbox)
+      .where(eq(messageOutbox.id, id))
+      .limit(1);
+    return rows.length > 0 ? toEntity(rows[0]) : null;
+  }
+
   async create(
     outbox: Omit<MessageOutbox, 'createdAt' | 'sentAt' | 'attemptCount'>,
   ): Promise<MessageOutbox> {
@@ -42,6 +52,7 @@ export class DrizzleMessageOutboxRepository implements MessageOutboxRepository {
         recipientId: outbox.recipientId,
         recipientType: outbox.recipientType,
         channel: outbox.channel,
+        destination: outbox.destination,
         subject: outbox.subject,
         body: outbox.body,
         status: outbox.status,

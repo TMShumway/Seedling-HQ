@@ -25,6 +25,13 @@ function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     S3_BUCKET: 'test-bucket',
     S3_REGION: 'us-east-1',
     S3_ENDPOINT: 'http://localhost:4566',
+    SMS_PROVIDER: 'stub' as const,
+    SMS_REGION: 'us-east-1',
+    SMS_ORIGINATION_IDENTITY: '',
+    SQS_REGION: 'us-east-1',
+    SQS_ENDPOINT: '',
+    SQS_MESSAGE_QUEUE_URL: '',
+    WORKER_MODE: 'off' as const,
     ...overrides,
   };
 }

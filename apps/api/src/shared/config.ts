@@ -18,6 +18,13 @@ export interface AppConfig {
   S3_BUCKET: string;
   S3_REGION: string;
   S3_ENDPOINT: string;
+  SMS_PROVIDER: 'stub' | 'aws';
+  SMS_REGION: string;
+  SMS_ORIGINATION_IDENTITY: string;
+  SQS_REGION: string;
+  SQS_ENDPOINT: string;
+  SQS_MESSAGE_QUEUE_URL: string;
+  WORKER_MODE: 'off' | 'inline';
 }
 
 function required(key: string): string {
@@ -78,6 +85,16 @@ export function loadConfig(): AppConfig {
   const cognitoClientId = authMode === 'cognito' ? required('COGNITO_CLIENT_ID') : optional('COGNITO_CLIENT_ID', '');
   const cognitoRegion = authMode === 'cognito' ? required('COGNITO_REGION') : optional('COGNITO_REGION', '');
 
+  // SMS / SQS / Worker
+  const smsProvider = optional('SMS_PROVIDER', 'stub');
+  if (smsProvider !== 'stub' && smsProvider !== 'aws') {
+    throw new Error(`Invalid SMS_PROVIDER '${smsProvider}'. Must be one of: stub, aws`);
+  }
+  const workerMode = optional('WORKER_MODE', 'off');
+  if (workerMode !== 'off' && workerMode !== 'inline') {
+    throw new Error(`Invalid WORKER_MODE '${workerMode}'. Must be one of: off, inline`);
+  }
+
   return {
     DATABASE_URL: required('DATABASE_URL'),
     API_PORT: parseInt(optional('API_PORT', '4000'), 10),
@@ -98,5 +115,14 @@ export function loadConfig(): AppConfig {
     S3_BUCKET: s3Bucket,
     S3_REGION: s3Region,
     S3_ENDPOINT: s3Endpoint,
+    SMS_PROVIDER: smsProvider as 'stub' | 'aws',
+    SMS_REGION: optional('SMS_REGION', 'us-east-1'),
+    SMS_ORIGINATION_IDENTITY: optional('SMS_ORIGINATION_IDENTITY', ''),
+    SQS_REGION: optional('SQS_REGION', 'us-east-1'),
+    SQS_ENDPOINT: nodeEnv === 'production'
+      ? optional('SQS_ENDPOINT', '')
+      : optional('SQS_ENDPOINT', 'http://localhost:4566'),
+    SQS_MESSAGE_QUEUE_URL: optional('SQS_MESSAGE_QUEUE_URL', ''),
+    WORKER_MODE: workerMode as 'off' | 'inline',
   };
 }

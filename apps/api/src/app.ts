@@ -49,8 +49,14 @@ import { NodemailerEmailSender } from './infra/email/nodemailer-email-sender.js'
 import { AwsCognitoProvisioner } from './infra/auth/aws-cognito-provisioner.js';
 import type { CognitoProvisioner } from './application/ports/cognito-provisioner.js';
 import type { FileStorage } from './application/ports/file-storage.js';
+import type { MessageQueuePublisher } from './application/ports/message-queue-publisher.js';
 import { S3FileStorage } from './infra/storage/s3-file-storage.js';
 import { DrizzleVisitPhotoRepository } from './infra/db/repositories/drizzle-visit-photo-repository.js';
+import { DrizzleSmsRecipientPrefsRepository } from './infra/db/repositories/drizzle-sms-recipient-prefs-repository.js';
+import { StubSmsSender } from './infra/sms/stub-sms-sender.js';
+import { AwsSmsSender } from './infra/sms/aws-sms-sender.js';
+import { SqsMessageQueuePublisher } from './infra/queue/sqs-message-queue-publisher.js';
+import { NoopMessageQueuePublisher } from './infra/queue/noop-message-queue-publisher.js';
 
 export interface CreateAppOptions {
   config: AppConfig;
@@ -106,7 +112,14 @@ export async function createApp({ config, db, jwtVerifier: jwtVerifierOverride, 
   const jobRepo = new DrizzleJobRepository(db);
   const visitRepo = new DrizzleVisitRepository(db);
   const uow = new DrizzleUnitOfWork(db);
+  const smsRecipientPrefsRepo = new DrizzleSmsRecipientPrefsRepository(db);
   const emailSender = new NodemailerEmailSender(config.SMTP_HOST, config.SMTP_PORT);
+  const smsSender = config.SMS_PROVIDER === 'aws'
+    ? new AwsSmsSender(config.SMS_REGION)
+    : new StubSmsSender();
+  const messageQueuePublisher: MessageQueuePublisher = config.SQS_MESSAGE_QUEUE_URL
+    ? new SqsMessageQueuePublisher(config.SQS_MESSAGE_QUEUE_URL, config.SQS_REGION, config.SQS_ENDPOINT || undefined)
+    : new NoopMessageQueuePublisher();
 
   // File storage (S3 / LocalStack)
   const fileStorage = fileStorageOverride ?? new S3FileStorage({
@@ -134,7 +147,7 @@ export async function createApp({ config, db, jwtVerifier: jwtVerifierOverride, 
   await app.register(buildServiceItemRoutes({ serviceItemRepo, categoryRepo, auditRepo, config, jwtVerifier }));
   await app.register(buildClientRoutes({ clientRepo, propertyRepo, auditRepo, config, jwtVerifier }));
   await app.register(buildPropertyRoutes({ propertyRepo, clientRepo, auditRepo, config, jwtVerifier }));
-  await app.register(buildRequestRoutes({ requestRepo, tenantRepo, auditRepo, userRepo, outboxRepo, emailSender, clientRepo, uow, config, jwtVerifier }));
+  await app.register(buildRequestRoutes({ requestRepo, tenantRepo, auditRepo, userRepo, outboxRepo, emailSender, clientRepo, uow, config, jwtVerifier, settingsRepo, messageQueuePublisher }));
   await app.register(buildQuoteRoutes({ quoteRepo, auditRepo, uow, emailSender, outboxRepo, clientRepo, propertyRepo, config, jwtVerifier }));
   await app.register(buildExternalQuoteRoutes({ secureLinkTokenRepo, quoteRepo, clientRepo, tenantRepo, propertyRepo, auditRepo, userRepo, outboxRepo, emailSender, config }));
   await app.register(buildJobRoutes({ jobRepo, visitRepo, quoteRepo, serviceItemRepo, auditRepo, uow, config, jwtVerifier }));

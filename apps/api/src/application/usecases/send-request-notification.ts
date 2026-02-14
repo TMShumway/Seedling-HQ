@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 import type { UserRepository } from '../ports/user-repository.js';
 import type { MessageOutboxRepository } from '../ports/message-outbox-repository.js';
 import type { EmailSender } from '../ports/email-sender.js';
+import type { BusinessSettingsRepository } from '../ports/business-settings-repository.js';
+import type { MessageQueuePublisher } from '../ports/message-queue-publisher.js';
 import type { AppConfig } from '../../shared/config.js';
 import type { Request } from '../../domain/entities/request.js';
 import { buildRequestNotificationEmail } from '../dto/notification-dto.js';
@@ -12,6 +14,8 @@ export class SendRequestNotificationUseCase {
     private outboxRepo: MessageOutboxRepository,
     private emailSender: EmailSender,
     private config: AppConfig,
+    private settingsRepo?: BusinessSettingsRepository,
+    private messageQueuePublisher?: MessageQueuePublisher,
   ) {}
 
   async execute(
@@ -41,6 +45,7 @@ export class SendRequestNotificationUseCase {
         recipientId: owner.id,
         recipientType: 'user',
         channel: 'email',
+        destination: owner.email,
         subject,
         body: html,
         status: 'queued',
@@ -72,24 +77,50 @@ export class SendRequestNotificationUseCase {
         });
       }
 
-      // Create SMS outbox record (queued only — actual sending deferred to S-0021)
+      // Resolve SMS destination from business settings
+      let smsDestination: string | null = null;
+      if (this.settingsRepo) {
+        const settings = await this.settingsRepo.getByTenantId(tenantId);
+        smsDestination = settings?.phone ?? null;
+      }
+
+      // Create SMS outbox record and publish to queue for worker processing
+      const smsOutboxId = randomUUID();
       await this.outboxRepo.create({
-        id: randomUUID(),
+        id: smsOutboxId,
         tenantId,
         type: 'request_notification',
         recipientId: owner.id,
         recipientType: 'user',
         channel: 'sms',
+        destination: smsDestination,
         subject: null,
         body: `New request from ${request.clientName}: ${request.description.substring(0, 100)}`,
-        status: 'queued',
+        status: smsDestination ? 'queued' : 'failed',
         provider: null,
         providerMessageId: null,
-        lastErrorCode: null,
-        lastErrorMessage: null,
+        lastErrorCode: smsDestination ? null : 'NO_DESTINATION',
+        lastErrorMessage: smsDestination ? null : 'Business phone not configured',
         correlationId,
         scheduledFor: null,
       });
+
+      // Publish to queue only if destination is known
+      if (smsDestination && this.messageQueuePublisher) {
+        try {
+          await this.messageQueuePublisher.publish({
+            jobType: 'sms.send',
+            outboxId: smsOutboxId,
+            tenantId,
+            correlationId,
+          });
+        } catch {
+          await this.outboxRepo.updateStatus(smsOutboxId, 'failed', {
+            lastErrorCode: 'QUEUE_PUBLISH_FAILED',
+            lastErrorMessage: 'Failed to publish SMS job to queue',
+          });
+        }
+      }
     } catch {
       // Never throw — notification is best-effort
     }
