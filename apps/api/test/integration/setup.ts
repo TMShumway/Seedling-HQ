@@ -20,7 +20,7 @@ export function getPool() {
 }
 
 export async function truncateAll() {
-  await db.execute(sql`TRUNCATE visit_photos, visits, jobs, secure_link_tokens, quotes, message_outbox, requests, properties, clients, service_items, service_categories, business_settings, audit_events, users, tenants CASCADE`);
+  await db.execute(sql`TRUNCATE visit_photos, visits, jobs, secure_link_tokens, quotes, message_outbox, sms_recipient_prefs, requests, properties, clients, service_items, service_categories, business_settings, audit_events, users, tenants CASCADE`);
 }
 
 export function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {
@@ -44,6 +44,11 @@ export function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     S3_BUCKET: 'test-bucket',
     S3_REGION: 'us-east-1',
     S3_ENDPOINT: 'http://localhost:4566',
+    SMS_PROVIDER: 'stub' as const,
+    SMS_ORIGINATION_IDENTITY: '',
+    SQS_ENDPOINT: '',
+    SQS_MESSAGE_QUEUE_URL: '',
+    WORKER_MODE: 'off' as const,
     ...overrides,
   };
 }

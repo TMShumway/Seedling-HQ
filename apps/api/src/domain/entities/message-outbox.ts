@@ -8,6 +8,7 @@ export interface MessageOutbox {
   recipientId: string | null;
   recipientType: string | null;
   channel: MessageChannel;
+  destination: string | null;
   subject: string | null;
   body: string;
   status: MessageOutboxStatus;

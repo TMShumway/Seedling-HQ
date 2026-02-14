@@ -36,6 +36,9 @@ export function BusinessInfoFields({ values, onChange }: BusinessInfoFieldsProps
           onChange={(e) => update('phone', e.target.value)}
           placeholder="(555) 123-4567"
         />
+        <p className="text-xs text-muted-foreground">
+          This number will be used for SMS notifications sent to you
+        </p>
       </div>
 
       <div className="space-y-2">

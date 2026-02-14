@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as sqs from 'aws-cdk-lib/aws-sqs';
 import type { Construct } from 'constructs';
 
 export interface DevSandboxStackProps extends cdk.StackProps {
@@ -132,6 +133,27 @@ exports.handler = async (event) => {
     });
 
     // -------------------------------------------------------------------
+    // SQS Message Queue (FIFO) + Dead Letter Queue
+    // -------------------------------------------------------------------
+    const messageDlq = new sqs.Queue(this, 'MessageDLQ', {
+      queueName: `${prefix}-messages-dlq.fifo`,
+      fifo: true,
+      retentionPeriod: cdk.Duration.days(14),
+    });
+
+    const messageQueue = new sqs.Queue(this, 'MessageQueue', {
+      queueName: `${prefix}-messages.fifo`,
+      fifo: true,
+      contentBasedDeduplication: false,
+      visibilityTimeout: cdk.Duration.seconds(60),
+      retentionPeriod: cdk.Duration.days(4),
+      deadLetterQueue: {
+        queue: messageDlq,
+        maxReceiveCount: 3,
+      },
+    });
+
+    // -------------------------------------------------------------------
     // Stack Outputs (paste into .env.dev after deploy)
     // -------------------------------------------------------------------
     new cdk.CfnOutput(this, 'UserPoolId', {
@@ -159,6 +181,21 @@ exports.handler = async (event) => {
     new cdk.CfnOutput(this, 'AllowedCorsOrigin', {
       value: allowedOrigin,
       description: 'Allowed CORS origin for the App Client',
+    });
+
+    new cdk.CfnOutput(this, 'MessageQueueUrl', {
+      value: messageQueue.queueUrl,
+      description: 'SQS Message Queue URL (FIFO)',
+    });
+
+    new cdk.CfnOutput(this, 'MessageQueueArn', {
+      value: messageQueue.queueArn,
+      description: 'SQS Message Queue ARN',
+    });
+
+    new cdk.CfnOutput(this, 'MessageDlqUrl', {
+      value: messageDlq.queueUrl,
+      description: 'SQS Dead Letter Queue URL (FIFO)',
     });
   }
 }

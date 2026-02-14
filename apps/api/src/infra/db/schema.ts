@@ -186,6 +186,7 @@ export const messageOutbox = pgTable(
     recipientId: uuid('recipient_id'),
     recipientType: varchar('recipient_type', { length: 50 }),
     channel: varchar('channel', { length: 20 }).notNull(),
+    destination: varchar('destination', { length: 255 }),
     subject: varchar('subject', { length: 500 }),
     body: text('body').notNull(),
     status: varchar('status', { length: 20 }).notNull().default('queued'),
@@ -202,6 +203,25 @@ export const messageOutbox = pgTable(
   (table) => [
     index('message_outbox_tenant_created_idx').on(table.tenantId, table.createdAt),
     index('message_outbox_status_created_idx').on(table.status, table.createdAt),
+  ],
+);
+
+export const smsRecipientPrefs = pgTable(
+  'sms_recipient_prefs',
+  {
+    id: uuid('id').primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id),
+    phone: varchar('phone', { length: 50 }).notNull(),
+    optedOut: boolean('opted_out').notNull().default(false),
+    optedOutAt: timestamp('opted_out_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique('sms_recipient_prefs_tenant_phone_unique').on(table.tenantId, table.phone),
+    index('sms_recipient_prefs_tenant_id_idx').on(table.tenantId),
   ],
 );
 

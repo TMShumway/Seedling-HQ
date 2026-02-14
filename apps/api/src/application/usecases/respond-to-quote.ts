@@ -138,6 +138,7 @@ export class RespondToQuoteUseCase {
         recipientId: owner.id,
         recipientType: 'user',
         channel: 'email',
+        destination: owner.email,
         subject,
         body: html,
         status: 'queued',

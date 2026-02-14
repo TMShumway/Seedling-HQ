@@ -94,6 +94,13 @@
 | FileStorage port + S3FileStorage | S-0016 | Port: `application/ports/file-storage.ts`; impl: `infra/storage/s3-file-storage.ts`; presigned POST for upload, presigned GET for download, best-effort delete |
 | Photo pending/ready lifecycle | S-0016 | Create pending → upload to S3 → confirm (atomic quota check) → ready; stale pending cleanup (>15min) during create; soft pending cap 5, hard ready cap 20 |
 | LocalStack S3 for local dev | S-0016 | `docker-compose.yml` localstack service; `infra/localstack/init-s3.sh` creates bucket with CORS; `S3_ENDPOINT` config for forcePathStyle |
+| SmsSender port + stub/aws impls | S-0021 | `SmsSender` port; `StubSmsSender` logs redacted phone (last 4 only); `AwsSmsSender` uses Pinpoint SMS Voice V2 |
+| SQS FIFO queue publisher | S-0021 | `SqsMessageQueuePublisher` with `MessageGroupId=tenantId`, `MessageDeduplicationId=outboxId-jobType`; `NoopMessageQueuePublisher` when no queue URL configured |
+| Inline SQS poller | S-0021 | `InlineSqsPoller` long-polls (WaitTimeSeconds=10, MaxMessages=5); calls `worker.processJob()`; deletes on success; backs off 5s on polling error; started from `index.ts` when `WORKER_MODE=inline` |
+| MessageJobWorker idempotency | S-0021 | 10-step flow: load → tenant check → idempotency (already sent) → crash recovery (providerMessageId set) → max attempts → channel routing → destination resolve → opt-out check → send → audit |
+| Destination fallback resolution | S-0021 | Worker resolves destination: user recipient → `BusinessSettings.phone`, client recipient → `Client.phone`/`Client.email`; `NO_DESTINATION` if unresolvable |
+| SMS opt-out check | S-0021 | `sms_recipient_prefs` table with `opted_out` flag; checked before every SMS send; `RECIPIENT_OPTED_OUT` error code on opt-out |
+| Outbox destination field | S-0021 | `destination` column on `message_outbox`; populated at create time when known (email=owner.email, sms=settings.phone); `null` for deferred resolution by worker |
 
 ## Frontend
 

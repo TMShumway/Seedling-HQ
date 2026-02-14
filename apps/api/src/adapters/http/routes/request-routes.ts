@@ -9,6 +9,8 @@ import type { UserRepository } from '../../../application/ports/user-repository.
 import type { MessageOutboxRepository } from '../../../application/ports/message-outbox-repository.js';
 import type { ClientRepository } from '../../../application/ports/client-repository.js';
 import type { EmailSender } from '../../../application/ports/email-sender.js';
+import type { BusinessSettingsRepository } from '../../../application/ports/business-settings-repository.js';
+import type { MessageQueuePublisher } from '../../../application/ports/message-queue-publisher.js';
 import type { UnitOfWork } from '../../../application/ports/unit-of-work.js';
 import type { Client } from '../../../domain/entities/client.js';
 import type { Property } from '../../../domain/entities/property.js';
@@ -210,9 +212,11 @@ export function buildRequestRoutes(deps: {
   uow: UnitOfWork;
   config: AppConfig;
   jwtVerifier?: JwtVerifier;
+  settingsRepo: BusinessSettingsRepository;
+  messageQueuePublisher: MessageQueuePublisher;
 }) {
   const createUseCase = new CreatePublicRequestUseCase(deps.tenantRepo, deps.requestRepo, deps.auditRepo);
-  const notificationUseCase = new SendRequestNotificationUseCase(deps.userRepo, deps.outboxRepo, deps.emailSender, deps.config);
+  const notificationUseCase = new SendRequestNotificationUseCase(deps.userRepo, deps.outboxRepo, deps.emailSender, deps.config, deps.settingsRepo, deps.messageQueuePublisher);
   const convertUseCase = new ConvertRequestUseCase(deps.requestRepo, deps.clientRepo, deps.uow);
   const authMiddleware = buildAuthMiddleware({ config: deps.config, jwtVerifier: deps.jwtVerifier });
   const rateLimiter = buildRateLimiter({ windowMs: 60_000, maxRequests: 5 });
