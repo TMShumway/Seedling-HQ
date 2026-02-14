@@ -196,7 +196,7 @@ External customers continue to use **loginless secure-link tokens** (see Section
 - API: `http://localhost:4000`
 - Swagger UI: `http://localhost:4000/docs`
 - Mailpit: `http://localhost:8025`
-- LocalStack (S3): `http://localhost:4566` — S3 bucket `fsa-local-uploads` created by `infra/localstack/init-s3.sh`
+- LocalStack (S3/SQS): `http://localhost:4566` — S3 bucket + SQS queues created by `scripts/localstack-deploy.sh` (deploys CDK stack with `skipCognito=true`); resource names/URLs written to `.env.localstack`
 
 ### Definition of Done (for every story)
 - OpenAPI schemas added/updated

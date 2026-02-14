@@ -327,9 +327,10 @@ Visit photo uploads use **presigned POST policies** via `@aws-sdk/s3-presigned-p
 - Delete endpoint removes DB record and best-effort deletes S3 object
 
 **LocalStack for local dev:**
-- `docker-compose.yml` includes a `localstack` service for S3
-- `infra/localstack/init-s3.sh` creates the bucket with CORS configuration
+- `docker-compose.yml` includes a `localstack` service for S3, SQS, and CDK support services (sts, cloudformation, ssm, iam)
+- `scripts/localstack-deploy.sh` deploys the CDK stack (with `skipCognito=true`) to LocalStack, creating the S3 bucket with CORS and SQS queues; resource names/URLs are written to `.env.localstack`
 - `S3_ENDPOINT` config var enables `forcePathStyle: true` for LocalStack compatibility
+- `.env.localstack` contains only resource identifiers (bucket names, queue URLs) — no credentials, tokens, or secrets are persisted
 
 ---
 

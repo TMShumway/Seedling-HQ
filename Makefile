@@ -14,5 +14,8 @@ deps-reset:
 	$(MAKE) deps
 
 deps: deps-up
+	@echo "Waiting for LocalStack..."
+	@for i in $$(seq 1 30); do curl -sf http://localhost:4566/_localstack/health > /dev/null 2>&1 && break; sleep 1; done
+	bash scripts/localstack-deploy.sh
 	pnpm --filter @seedling/api run db:push
 	pnpm --filter @seedling/api run db:seed-demo

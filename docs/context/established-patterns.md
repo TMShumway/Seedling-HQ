@@ -93,7 +93,7 @@
 | Visit photo routes (4 endpoints) | S-0016 | `POST /v1/visits/:visitId/photos`, `POST .../confirm`, `GET /v1/visits/:visitId/photos`, `DELETE .../photos/:photoId`; separate route file `visit-photo-routes.ts` |
 | FileStorage port + S3FileStorage | S-0016 | Port: `application/ports/file-storage.ts`; impl: `infra/storage/s3-file-storage.ts`; presigned POST for upload, presigned GET for download, best-effort delete |
 | Photo pending/ready lifecycle | S-0016 | Create pending → upload to S3 → confirm (atomic quota check) → ready; stale pending cleanup (>15min) during create; soft pending cap 5, hard ready cap 20 |
-| LocalStack S3 for local dev | S-0016 | `docker-compose.yml` localstack service; `infra/localstack/init-s3.sh` creates bucket with CORS; `S3_ENDPOINT` config for forcePathStyle |
+| LocalStack via CDK deploy | S-0016 | `docker-compose.yml` localstack service (s3,sqs,sts,cloudformation,ssm,iam); `scripts/localstack-deploy.sh` deploys CDK stack with `skipCognito=true` → writes `.env.localstack` with bucket name + queue URL; `S3_ENDPOINT` config for forcePathStyle |
 | SmsSender port + stub/aws impls | S-0021 | `SmsSender` port; `StubSmsSender` logs redacted phone (last 4 only); `AwsSmsSender` uses Pinpoint SMS Voice V2 |
 | SQS FIFO queue publisher | S-0021 | `SqsMessageQueuePublisher` with `MessageGroupId=tenantId`, `MessageDeduplicationId=outboxId-jobType`; `NoopMessageQueuePublisher` when no queue URL configured |
 | Inline SQS poller | S-0021 | `InlineSqsPoller` long-polls (WaitTimeSeconds=10, MaxMessages=5); calls `worker.processJob()`; deletes on success; backs off 5s on polling error; started from `index.ts` when `WORKER_MODE=inline` |

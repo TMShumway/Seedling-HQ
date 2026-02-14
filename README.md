@@ -104,8 +104,7 @@ Seedling-HQ/
   packages/shared/       Shared TypeScript types (AuthContext)
   e2e/                   Playwright E2E tests
   infra/cdk/             AWS CDK stacks (standalone workspace — see note below)
-  infra/localstack/      LocalStack init scripts (S3 bucket + CORS)
-  scripts/               Dev helper scripts (status, stop, mailpit clear)
+  scripts/               Dev helper scripts (status, stop, localstack deploy, etc.)
   docs/context/          Architecture & design context packs (10 files)
   docs/stories/          Story implementation plans and checklists
 ```
@@ -160,7 +159,8 @@ Built with React 19, Vite 6, Tailwind CSS v4, and TanStack Query. Responsive lay
 | Auth | AWS Cognito (production), `AUTH_MODE=local` with scrypt password hashing (dev) |
 | Email | Nodemailer + Mailpit (local), SES (planned) |
 | Object Storage | AWS S3 + LocalStack (local), presigned POST for uploads |
-| Infra | Docker Compose (local), AWS CDK (Cognito deployed) |
+| Message Queue | AWS SQS FIFO + LocalStack (local), outbox-based publishing |
+| Infra | Docker Compose (local), AWS CDK (S3 + SQS + Cognito); same CDK stack deploys to both AWS and LocalStack |
 
 ## Development
 
@@ -196,12 +196,13 @@ Built with React 19, Vite 6, Tailwind CSS v4, and TanStack Query. Responsive lay
 
 | Script | Description |
 |--------|-------------|
-| `bash scripts/dev-start.sh` | Full cold start: Docker up, wait for health, push schema, seed, start dev servers |
+| `bash scripts/dev-start.sh` | Full cold start: Docker up, wait for health, CDK deploy to LocalStack, push schema, seed, start dev servers |
 | `bash scripts/dev-stop.sh` | Gracefully stop API, Vite, and Docker services |
 | `bash scripts/dev-status.sh` | Colorized dashboard showing status of all services and ports |
 | `bash scripts/dev-reset-db.sh` | Reset DB to clean state without stopping servers |
 | `bash scripts/dev-open.sh` | Open login, Swagger, and Mailpit in browser |
 | `bash scripts/dev-logs.sh` | Tail Docker logs (all services, or pass `postgres`/`localstack`/`mailpit`) |
+| `bash scripts/localstack-deploy.sh` | Deploy CDK stack to LocalStack (bootstrap + deploy + write `.env.localstack`) |
 | `bash scripts/s3-ls.sh` | List LocalStack S3 bucket contents (optional prefix filter) |
 | `bash scripts/test-all.sh` | Run unit + integration + E2E in sequence (pass `--continue` to skip early exit) |
 | `bash scripts/mailpit-clear.sh` | Clear all emails from Mailpit inbox |
@@ -214,7 +215,7 @@ Three services run via Docker Compose:
 |---------|-------|---------|
 | **Postgres 17** | 5432 | Database (user: `fsa`, password: `fsa`, db: `fsa`) |
 | **Mailpit** | 1025 (SMTP), 8025 (Web UI) | Local email capture for notifications |
-| **LocalStack** | 4566 | Local S3 for photo uploads (auto-creates `seedling-uploads` bucket) |
+| **LocalStack** | 4566 | Local S3 + SQS (CDK stack deployed via `scripts/localstack-deploy.sh`) |
 
 All three have health checks configured. Postgres data persists in a Docker volume (`pgdata`).
 
@@ -447,9 +448,9 @@ Copy `.env.example` to `.env` before starting. Key variables:
 | `SMTP_HOST` / `SMTP_PORT` | `localhost` / `1025` | Mailpit SMTP (local email capture) |
 | `APP_BASE_URL` | `http://localhost:5173` | Base URL for secure quote links |
 | `SECURE_LINK_HMAC_SECRET` | `dev-secret-...` | HMAC secret for token hashing (**change in production**) |
-| `S3_BUCKET` | `seedling-uploads` | S3 bucket for photo uploads |
+| `S3_BUCKET` | _(auto-generated)_ | S3 bucket for photo uploads (set in `.env.localstack` by CDK deploy) |
 | `S3_REGION` | `us-east-1` | S3 region |
-| `S3_ENDPOINT` | `http://localhost:4566` | LocalStack endpoint (empty = real AWS) |
+| `S3_ENDPOINT` | _(auto-generated)_ | LocalStack endpoint (set in `.env.localstack`; empty = real AWS) |
 | `COGNITO_USER_POOL_ID` | _(none)_ | Required when `AUTH_MODE=cognito` |
 | `COGNITO_CLIENT_ID` | _(none)_ | Required when `AUTH_MODE=cognito` |
 | `COGNITO_REGION` | _(none)_ | Required when `AUTH_MODE=cognito` |
