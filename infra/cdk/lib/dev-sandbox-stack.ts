@@ -19,7 +19,10 @@ export class DevSandboxStack extends cdk.Stack {
     super(scope, id, props);
 
     const { env_name, owner, allowedOrigin = 'http://localhost:5173' } = props;
-    const prefix = `fsa-${env_name}-${owner}`;
+    // Sanitize context values for S3 naming constraints (lowercase, alphanumeric + hyphens)
+    const safeName = (v: string) => v.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    const prefix = `fsa-${safeName(env_name)}-${safeName(owner)}`;
+    const isLocal = env_name === 'local';
     const skipCognito = this.node.tryGetContext('skipCognito') === 'true';
 
     // Tags applied to all resources in the stack
@@ -40,12 +43,19 @@ export class DevSandboxStack extends cdk.Stack {
             s3.HttpMethods.GET,
             s3.HttpMethods.DELETE,
           ],
-          allowedOrigins: ['*'],
+          allowedOrigins: isLocal ? ['*'] : [allowedOrigin],
           allowedHeaders: ['*'],
           exposedHeaders: ['ETag'],
         },
       ],
+      // Security hardening
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      enforceSSL: true,
+      // Local: DESTROY only (autoDeleteObjects creates a Lambda that breaks LocalStack)
+      // AWS dev sandbox: DESTROY + autoDeleteObjects for frictionless teardown
       removalPolicy: cdk.RemovalPolicy.DESTROY,
+      ...(!isLocal && { autoDeleteObjects: true }),
     });
 
     // -------------------------------------------------------------------

@@ -41,13 +41,16 @@ Built as a multi-tenant SaaS with two access models:
 git clone <repo-url> && cd Seedling-HQ
 pnpm i
 
-# 2. Set up environment
+# 2. Install CDK dependencies (standalone workspace — not in pnpm workspaces)
+cd infra/cdk && pnpm install --ignore-workspace && cd ../..
+
+# 3. Set up environment
 cp .env.example .env
 
-# 3. Start Docker services, push DB schema, seed demo data
+# 4. Start Docker services, deploy CDK stack to LocalStack, push DB schema, seed demo data
 make deps
 
-# 4. Start the app (API on :4000, Web on :5173)
+# 5. Start the app (API on :4000, Web on :5173)
 pnpm dev
 ```
 
