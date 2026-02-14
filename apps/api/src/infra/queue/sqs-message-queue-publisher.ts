@@ -8,10 +8,17 @@ export class SqsMessageQueuePublisher implements MessageQueuePublisher {
 
   constructor(
     private queueUrl: string,
+    region: string,
     endpoint?: string,
   ) {
     this.client = new SQSClient({
-      ...(endpoint ? { endpoint } : {}),
+      region,
+      ...(endpoint
+        ? {
+            endpoint,
+            credentials: { accessKeyId: 'test', secretAccessKey: 'test' },
+          }
+        : {}),
     });
   }
 

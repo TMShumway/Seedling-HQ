@@ -37,7 +37,9 @@ function makeConfig(): AppConfig {
     S3_REGION: 'us-east-1',
     S3_ENDPOINT: 'http://localhost:4566',
     SMS_PROVIDER: 'stub' as const,
+    SMS_REGION: 'us-east-1',
     SMS_ORIGINATION_IDENTITY: '',
+    SQS_REGION: 'us-east-1',
     SQS_ENDPOINT: '',
     SQS_MESSAGE_QUEUE_URL: '',
     WORKER_MODE: 'off' as const,
@@ -293,6 +295,23 @@ describe('MessageJobWorker', () => {
     expect(outboxRepo.updateStatus).toHaveBeenCalledWith(OUTBOX_ID, 'queued', expect.objectContaining({
       lastErrorCode: 'SEND_FAILED',
       lastErrorMessage: 'Network timeout',
+    }));
+  });
+
+  // ── SMS Failure on Last Attempt → Terminal (no rethrow) ────────
+
+  it('SMS failure on last attempt → marks failed terminal, does NOT rethrow', async () => {
+    (outboxRepo.getById as ReturnType<typeof vi.fn>).mockResolvedValue(
+      makeSmsOutbox({ attemptCount: 2 }),
+    );
+    (smsSender.send as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Carrier rejected'));
+
+    // Should NOT throw — terminal failure is handled internally
+    await worker.processJob(makePayload());
+
+    expect(outboxRepo.updateStatus).toHaveBeenCalledWith(OUTBOX_ID, 'failed', expect.objectContaining({
+      lastErrorCode: 'MAX_ATTEMPTS_EXCEEDED',
+      lastErrorMessage: 'Carrier rejected',
     }));
   });
 

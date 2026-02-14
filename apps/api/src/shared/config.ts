@@ -19,7 +19,9 @@ export interface AppConfig {
   S3_REGION: string;
   S3_ENDPOINT: string;
   SMS_PROVIDER: 'stub' | 'aws';
+  SMS_REGION: string;
   SMS_ORIGINATION_IDENTITY: string;
+  SQS_REGION: string;
   SQS_ENDPOINT: string;
   SQS_MESSAGE_QUEUE_URL: string;
   WORKER_MODE: 'off' | 'inline';
@@ -114,7 +116,9 @@ export function loadConfig(): AppConfig {
     S3_REGION: s3Region,
     S3_ENDPOINT: s3Endpoint,
     SMS_PROVIDER: smsProvider as 'stub' | 'aws',
+    SMS_REGION: optional('SMS_REGION', 'us-east-1'),
     SMS_ORIGINATION_IDENTITY: optional('SMS_ORIGINATION_IDENTITY', ''),
+    SQS_REGION: optional('SQS_REGION', 'us-east-1'),
     SQS_ENDPOINT: nodeEnv === 'production'
       ? optional('SQS_ENDPOINT', '')
       : optional('SQS_ENDPOINT', 'http://localhost:4566'),

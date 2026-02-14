@@ -14,10 +14,17 @@ export class InlineSqsPoller {
   constructor(
     private queueUrl: string,
     private worker: MessageJobWorker,
+    region: string,
     endpoint?: string,
   ) {
     this.client = new SQSClient({
-      ...(endpoint ? { endpoint } : {}),
+      region,
+      ...(endpoint
+        ? {
+            endpoint,
+            credentials: { accessKeyId: 'test', secretAccessKey: 'test' },
+          }
+        : {}),
     });
   }
 

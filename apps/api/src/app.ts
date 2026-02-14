@@ -115,10 +115,10 @@ export async function createApp({ config, db, jwtVerifier: jwtVerifierOverride, 
   const smsRecipientPrefsRepo = new DrizzleSmsRecipientPrefsRepository(db);
   const emailSender = new NodemailerEmailSender(config.SMTP_HOST, config.SMTP_PORT);
   const smsSender = config.SMS_PROVIDER === 'aws'
-    ? new AwsSmsSender(config.S3_REGION)
+    ? new AwsSmsSender(config.SMS_REGION)
     : new StubSmsSender();
   const messageQueuePublisher: MessageQueuePublisher = config.SQS_MESSAGE_QUEUE_URL
-    ? new SqsMessageQueuePublisher(config.SQS_MESSAGE_QUEUE_URL, config.SQS_ENDPOINT || undefined)
+    ? new SqsMessageQueuePublisher(config.SQS_MESSAGE_QUEUE_URL, config.SQS_REGION, config.SQS_ENDPOINT || undefined)
     : new NoopMessageQueuePublisher();
 
   // File storage (S3 / LocalStack)

@@ -114,11 +114,21 @@ export class MessageJobWorker {
       });
       await this.recordAudit(outbox, 'message.sent');
     } catch (err) {
-      await outboxRepo.updateStatus(outbox.id, 'queued', {
-        lastErrorCode: 'SEND_FAILED',
-        lastErrorMessage: err instanceof Error ? err.message : String(err),
-      });
-      throw err;
+      const nextAttempt = outbox.attemptCount + 1;
+      if (nextAttempt >= MAX_ATTEMPTS) {
+        // Terminal: this was the last allowed attempt
+        await outboxRepo.updateStatus(outbox.id, 'failed', {
+          lastErrorCode: 'MAX_ATTEMPTS_EXCEEDED',
+          lastErrorMessage: err instanceof Error ? err.message : String(err),
+        });
+      } else {
+        // Transient: mark error but keep queued for SQS redelivery
+        await outboxRepo.updateStatus(outbox.id, 'queued', {
+          lastErrorCode: 'SEND_FAILED',
+          lastErrorMessage: err instanceof Error ? err.message : String(err),
+        });
+        throw err;
+      }
     }
   }
 
@@ -148,11 +158,19 @@ export class MessageJobWorker {
       });
       await this.recordAudit(outbox, 'message.sent');
     } catch (err) {
-      await outboxRepo.updateStatus(outbox.id, 'queued', {
-        lastErrorCode: 'SEND_FAILED',
-        lastErrorMessage: err instanceof Error ? err.message : String(err),
-      });
-      throw err;
+      const nextAttempt = outbox.attemptCount + 1;
+      if (nextAttempt >= MAX_ATTEMPTS) {
+        await outboxRepo.updateStatus(outbox.id, 'failed', {
+          lastErrorCode: 'MAX_ATTEMPTS_EXCEEDED',
+          lastErrorMessage: err instanceof Error ? err.message : String(err),
+        });
+      } else {
+        await outboxRepo.updateStatus(outbox.id, 'queued', {
+          lastErrorCode: 'SEND_FAILED',
+          lastErrorMessage: err instanceof Error ? err.message : String(err),
+        });
+        throw err;
+      }
     }
   }
 

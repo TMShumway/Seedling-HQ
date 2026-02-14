@@ -27,7 +27,7 @@ async function main() {
     const worker = new MessageJobWorker({
       outboxRepo: new DrizzleMessageOutboxRepository(db),
       smsSender: config.SMS_PROVIDER === 'aws'
-        ? new AwsSmsSender(config.S3_REGION)
+        ? new AwsSmsSender(config.SMS_REGION)
         : new StubSmsSender(),
       emailSender: new NodemailerEmailSender(config.SMTP_HOST, config.SMTP_PORT),
       smsPrefsRepo: new DrizzleSmsRecipientPrefsRepository(db),
@@ -40,6 +40,7 @@ async function main() {
     poller = new InlineSqsPoller(
       config.SQS_MESSAGE_QUEUE_URL,
       worker,
+      config.SQS_REGION,
       config.SQS_ENDPOINT || undefined,
     );
     poller.start();
