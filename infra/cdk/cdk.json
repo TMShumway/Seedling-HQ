@@ -78,6 +78,7 @@
     "@aws-cdk/core:cfnIncludeRejectComplexResourceUpdateCreatePolicyIntrinsics": true,
     "@aws-cdk/core:enableAdditionalMetadataCollection": true,
     "@aws-cdk/core:explicitStackTags": true,
-    "@aws-cdk/core:aspectPrioritiesMutating": true
+    "@aws-cdk/core:aspectPrioritiesMutating": true,
+    "@aws-cdk/core:target-partitions": ["aws"]
   }
 }

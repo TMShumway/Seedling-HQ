@@ -190,7 +190,7 @@ Built with React 19, Vite 6, Tailwind CSS v4, and TanStack Query. Responsive lay
 
 | Target | Description |
 |--------|-------------|
-| `make deps` | Full setup: Docker up → wait for Postgres → push schema → seed data |
+| `make deps` | Full setup: Docker up → wait for Postgres + LocalStack → CDK deploy → push schema → seed data |
 | `make deps-up` | Start Docker services only |
 | `make deps-down` | Stop Docker services |
 | `make deps-reset` | Wipe volumes and re-setup from scratch |

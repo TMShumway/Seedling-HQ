@@ -26,8 +26,8 @@ STACK_NAME="fsa-local-local"
 # If your network blocks external DNS, override with:
 #   export AWS_ENDPOINT_URL=http://localhost:4566
 #   export AWS_ENDPOINT_URL_S3=http://localhost:4566
-export AWS_ENDPOINT_URL=http://localhost.localstack.cloud:4566
-export AWS_ENDPOINT_URL_S3=http://s3.localhost.localstack.cloud:4566
+export AWS_ENDPOINT_URL="${AWS_ENDPOINT_URL:-http://localhost.localstack.cloud:4566}"
+export AWS_ENDPOINT_URL_S3="${AWS_ENDPOINT_URL_S3:-http://s3.localhost.localstack.cloud:4566}"
 
 # ── Dummy credentials (never persisted, not validated by LocalStack) ──
 export AWS_ACCESS_KEY_ID=test

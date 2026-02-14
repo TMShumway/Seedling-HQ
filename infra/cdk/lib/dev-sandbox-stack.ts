@@ -54,6 +54,7 @@ export class DevSandboxStack extends cdk.Stack {
       enforceSSL: true,
       // Local: DESTROY only (autoDeleteObjects creates a Lambda that breaks LocalStack)
       // AWS dev sandbox: DESTROY + autoDeleteObjects for frictionless teardown
+      // Note: This stack is for dev sandboxes only. A production stack would use RETAIN.
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       ...(!isLocal && { autoDeleteObjects: true }),
     });
