@@ -87,7 +87,21 @@ export function buildTenantRoutes(deps: {
     // GET /v1/tenants/me — authenticated
     typedApp.get(
       '/v1/tenants/me',
-      { preHandler: authMiddleware },
+      {
+        preHandler: authMiddleware,
+        schema: {
+          response: {
+            200: z.object({
+              id: z.string(),
+              slug: z.string(),
+              name: z.string(),
+              status: z.string(),
+              createdAt: z.string(),
+              updatedAt: z.string(),
+            }),
+          },
+        },
+      },
       async (request) => {
         const tenant = await deps.tenantRepo.getById(request.authContext.tenant_id);
         if (!tenant) {

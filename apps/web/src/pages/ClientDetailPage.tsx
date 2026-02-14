@@ -9,7 +9,8 @@ import { ClientForm } from '@/components/clients/ClientForm';
 import { PropertyForm } from '@/components/clients/PropertyForm';
 import { PropertyRow } from '@/components/clients/PropertyRow';
 import { TimelineSection } from '@/components/clients/TimelineSection';
-import { apiClient, type UpdateClientRequest, type CreatePropertyRequest, type UpdatePropertyRequest } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
+import type { UpdateClientRequest, CreatePropertyRequest, UpdatePropertyRequest } from '@/lib/api-types';
 import { formatClientName } from '@/lib/format';
 
 type Tab = 'info' | 'properties' | 'activity';

@@ -5,7 +5,8 @@ import { FileText, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { apiClient, type RequestResponse } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
+import type { RequestResponse } from '@/lib/api-types';
 
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {

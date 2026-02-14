@@ -1,7 +1,7 @@
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import type { BusinessHoursResponse, DaySchedule } from '@/lib/api-client';
+import type { BusinessHoursResponse, DaySchedule } from '@/lib/api-types';
 
 const DAYS: { key: keyof BusinessHoursResponse; label: string }[] = [
   { key: 'monday', label: 'Mon' },

@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useAuth, isLocalMode, isCognitoMode } from '@/lib/auth';
 import { ApiClientError } from '@/lib/api-client';
-import type { LoginAccount } from '@/lib/api-client';
+import type { LoginAccount } from '@/lib/api-types';
 
 type Step = 'login' | 'accounts' | 'new-password' | 'forgot-confirm';
 

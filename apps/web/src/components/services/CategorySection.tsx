@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ServiceItemRow } from './ServiceItemRow';
 import { ServiceItemForm } from './ServiceItemForm';
 import { CategoryForm } from './CategoryForm';
-import type { ServiceCategoryResponse, ServiceItemResponse } from '@/lib/api-client';
+import type { ServiceCategoryResponse, ServiceItemResponse } from '@/lib/api-types';
 
 interface CategorySectionProps {
   category: ServiceCategoryResponse;

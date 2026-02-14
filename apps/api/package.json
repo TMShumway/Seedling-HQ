@@ -38,6 +38,7 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@apidevtools/swagger-parser": "^12.1.0",
     "@types/node": "^22.0.0",
     "@types/nodemailer": "^7.0.9",
     "@types/pg": "^8.11.0",

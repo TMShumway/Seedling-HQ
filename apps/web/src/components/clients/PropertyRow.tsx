@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { MapPin, Pencil, Trash2 } from 'lucide-react';
 import { formatAddress } from '@/lib/format';
-import type { PropertyResponse, UpdatePropertyRequest } from '@/lib/api-client';
+import type { PropertyResponse, UpdatePropertyRequest } from '@/lib/api-types';
 import { PropertyForm } from './PropertyForm';
 
 interface PropertyRowProps {

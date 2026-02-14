@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { apiClient, type UpdateQuoteRequest, type SendQuoteResponse, type CreateJobResponse } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
+import type { UpdateQuoteRequest, SendQuoteResponse, CreateJobResponse } from '@/lib/api-types';
 import { formatPrice, centsToDollars, dollarsToCents } from '@/lib/format';
 import { LineItemRow, type LineItemData } from '@/components/quotes/LineItemRow';
 import { ServiceItemPicker } from '@/components/quotes/ServiceItemPicker';
@@ -83,7 +84,7 @@ export function QuoteDetailPage() {
       setTitle(quote.title);
       setLineItems(
         quote.lineItems.map((li) => ({
-          serviceItemId: li.serviceItemId,
+          serviceItemId: li.serviceItemId ?? null,
           description: li.description,
           quantity: li.quantity,
           unitPrice: li.unitPrice,

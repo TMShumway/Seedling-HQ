@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { apiClient } from '@/lib/api-client';
-import type { VisitPhotoWithUrlResponse } from '@/lib/api-client';
+import type { VisitPhotoWithUrlResponse } from '@/lib/api-types';
 
 interface PhotoGalleryProps {
   visitId: string;

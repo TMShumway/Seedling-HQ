@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { apiClient } from '@/lib/api-client';
-import type { VisitWithContextResponse } from '@/lib/api-client';
+import type { VisitWithContextResponse } from '@/lib/api-types';
 import { useAuth } from '@/lib/auth/auth-context';
 import { ScheduleVisitModal } from '@/components/schedule/ScheduleVisitModal';
 

@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { CreateClientRequest, UpdateClientRequest, ClientResponse } from '@/lib/api-client';
+import type { CreateClientRequest, UpdateClientRequest, ClientResponse } from '@/lib/api-types';
 
 interface ClientFormProps {
   client?: ClientResponse;

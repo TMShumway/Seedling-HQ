@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import type { CreatePropertyRequest, UpdatePropertyRequest, PropertyResponse } from '@/lib/api-client';
+import type { CreatePropertyRequest, UpdatePropertyRequest, PropertyResponse } from '@/lib/api-types';
 
 const US_STATES = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA',

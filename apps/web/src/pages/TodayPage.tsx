@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiClient } from '@/lib/api-client';
-import type { VisitWithContextResponse } from '@/lib/api-client';
+import type { VisitWithContextResponse } from '@/lib/api-types';
 import { useAuth } from '@/lib/auth/auth-context';
 import { PhotoGallery } from '@/components/visits/PhotoGallery';
 import { PhotoUpload } from '@/components/visits/PhotoUpload';

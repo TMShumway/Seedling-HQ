@@ -5,6 +5,7 @@ import swaggerUi from '@fastify/swagger-ui';
 import {
   serializerCompiler,
   validatorCompiler,
+  jsonSchemaTransform,
 } from 'fastify-type-provider-zod';
 import type { AppConfig } from './shared/config.js';
 import type { Database } from './infra/db/client.js';
@@ -88,6 +89,7 @@ export async function createApp({ config, db, jwtVerifier: jwtVerifierOverride, 
         description: 'Seedling-HQ MVP API',
       },
     },
+    transform: jsonSchemaTransform,
   });
   await app.register(swaggerUi, { routePrefix: '/docs' });
 

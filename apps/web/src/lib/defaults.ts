@@ -1,4 +1,4 @@
-import type { BusinessHoursResponse } from './api-client';
+import type { BusinessHoursResponse } from './api-types';
 
 export const DEFAULT_BUSINESS_HOURS: BusinessHoursResponse = {
   monday: { open: '08:00', close: '17:00', closed: false },
