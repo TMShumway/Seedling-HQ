@@ -65,20 +65,10 @@ export function loadConfig(): AppConfig {
     hmacSecret = optional('SECURE_LINK_HMAC_SECRET', DEV_HMAC_SECRET);
   }
 
-  // S3 vars: bucket required in production, defaults for dev/test
-  let s3Bucket: string;
-  if (nodeEnv === 'production') {
-    s3Bucket = process.env.S3_BUCKET ?? '';
-    if (!s3Bucket) {
-      throw new Error('S3_BUCKET must be set in production');
-    }
-  } else {
-    s3Bucket = optional('S3_BUCKET', 'seedling-uploads');
-  }
+  // S3 vars: bucket always required (set by .env.localstack in dev, env vars in prod)
+  const s3Bucket = required('S3_BUCKET');
   const s3Region = optional('S3_REGION', 'us-east-1');
-  const s3Endpoint = nodeEnv === 'production'
-    ? optional('S3_ENDPOINT', '')
-    : optional('S3_ENDPOINT', 'http://localhost:4566');
+  const s3Endpoint = optional('S3_ENDPOINT', '');
 
   // Cognito vars: required when AUTH_MODE=cognito, optional otherwise
   const cognitoUserPoolId = authMode === 'cognito' ? required('COGNITO_USER_POOL_ID') : optional('COGNITO_USER_POOL_ID', '');

@@ -114,3 +114,5 @@
 | Photo storage | S3 via presigned POST, LocalStack for local dev | S-0016 | `@aws-sdk/s3-presigned-post` with `content-length-range`; `FileStorage` port + `S3FileStorage` impl |
 | Photo entity lifecycle | `pending` → `ready` via atomic confirm | S-0016 | `visit_photos` table; `SELECT ... FOR UPDATE` serializes concurrent confirms; max 20 ready per visit |
 | Completion UX | Confirmation alert before completing | S-0016 | "Any notes or photos to add?" prompt with "Complete Anyway" / "Go Back" |
+| CDK + LocalStack parity | Same CDK stack deploys to both AWS and LocalStack | DevEx | `scripts/localstack-deploy.sh` uses native `cdk deploy` + `AWS_ENDPOINT_URL` override (not `cdklocal` — broken with CDK >= 2.177); `skipCognito=true` context flag skips Cognito for LocalStack; `.env.localstack` auto-generated with resource names/URLs |
+| S3_BUCKET always required | No hardcoded default; set via `.env.localstack` in dev | DevEx | Eliminates drift between CDK-deployed bucket name and config default; `.env.localstack` is loaded as second `--env-file` by API dev script |

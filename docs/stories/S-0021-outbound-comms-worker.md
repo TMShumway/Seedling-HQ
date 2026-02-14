@@ -48,7 +48,7 @@ SMS outbox records (created by S-0007's `SendRequestNotificationUseCase`) sat in
 - `apps/api/src/infra/db/repositories/drizzle-sms-recipient-prefs-repository.ts`
 - `apps/api/test/unit/message-job-worker.test.ts`
 - `apps/api/test/integration/worker.test.ts`
-- `infra/localstack/init-sqs.sh`
+- _(SQS queues are now provisioned by CDK stack via `scripts/localstack-deploy.sh`)_
 
 ### Modified Files
 - `apps/api/src/infra/db/schema.ts` — destination column + sms_recipient_prefs table
@@ -63,7 +63,7 @@ SMS outbox records (created by S-0007's `SendRequestNotificationUseCase`) sat in
 - `apps/api/src/application/usecases/send-quote.ts` — destination field
 - `apps/api/src/application/usecases/respond-to-quote.ts` — destination field
 - `apps/api/package.json` — @aws-sdk/client-sqs, @aws-sdk/client-pinpoint-sms-voice-v2
-- `docker-compose.yml` — SERVICES: s3,sqs + init-sqs.sh mount
+- `docker-compose.yml` — SERVICES: s3,sqs,sts,cloudformation,ssm,iam (CDK deploy requires these services)
 - `.env.example` — SMS/SQS/Worker vars
 - `infra/cdk/lib/dev-sandbox-stack.ts` — SQS queue + DLQ
 - `apps/web/src/components/business-settings/BusinessInfoFields.tsx` — phone hint

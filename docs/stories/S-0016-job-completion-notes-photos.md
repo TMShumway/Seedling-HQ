@@ -15,7 +15,7 @@ Technicians need to document their work during visits — adding notes (observat
 
 ## Phase 1: Branch + LocalStack Infrastructure
 **Goal:** Set up the story branch and LocalStack S3 for local development.
-**Files touched:** `docker-compose.yml`, `infra/localstack/init-s3.sh`, `apps/api/src/shared/config.ts`, `.env.example`
+**Files touched:** `docker-compose.yml`, `apps/api/src/shared/config.ts`, `.env.example` _(Note: S3 bucket is now provisioned by CDK stack via `scripts/localstack-deploy.sh`)_
 
 - [x] **Task 1.1: Create story branch**
 - [x] **Task 1.2: Add LocalStack to docker-compose**

@@ -196,7 +196,7 @@ External customers continue to use **loginless secure-link tokens** (see Section
 - API: `http://localhost:4000`
 - Swagger UI: `http://localhost:4000/docs`
 - Mailpit: `http://localhost:8025`
-- LocalStack (S3): `http://localhost:4566` — S3 bucket `fsa-local-uploads` created by `infra/localstack/init-s3.sh`
+- LocalStack (S3/SQS): `http://localhost:4566` — S3 bucket + SQS queues created by `scripts/localstack-deploy.sh` (deploys CDK stack with `skipCognito=true`); resource names/URLs written to `.env.localstack`
 
 ### Definition of Done (for every story)
 - OpenAPI schemas added/updated
@@ -462,9 +462,9 @@ For `AUTH_MODE=local`:
 - (Planned) `SECURE_LINK_ROTATION_SALT=...` (versioned hash scheme — not yet implemented)
 
 ### S3 file storage (S-0016)
-- `S3_BUCKET=fsa-local-uploads` (bucket name; LocalStack default for local dev)
+- `S3_BUCKET` (required; bucket name — auto-generated in `.env.localstack` by `scripts/localstack-deploy.sh` for local dev; set via env var in prod)
 - `S3_REGION=us-east-1` (AWS region for S3 client)
-- `S3_ENDPOINT=http://localhost:4566` (LocalStack endpoint for local dev; omit in prod to use default AWS endpoint)
+- `S3_ENDPOINT=http://localhost:4566` (LocalStack endpoint — auto-generated in `.env.localstack`; empty in prod to use default AWS endpoint)
 
 ### SMS / queues / scheduler (MVP)
 - `SMS_PROVIDER=outbox` (default local)
@@ -532,10 +532,11 @@ COGNITO_USER_POOL_ID=us-east-1_AbCdEfGhI
 COGNITO_CLIENT_ID=1a2b3c4d5e6f7g8h9i0j
 COGNITO_REGION=us-east-1
 
+# CDK-provisioned (deployed by `cdk deploy -c env=dev -c owner=tim`)
+S3_BUCKET=fsa-dev-tim-uploads
+S3_ENDPOINT=                              # empty for real AWS
+SQS_MESSAGE_QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789012/fsa-dev-tim-messages.fifo
 # Planned (not yet provisioned by CDK)
-# S3_UPLOADS_BUCKET=fsa-dev-tim-uploads-123456789012
-# SQS_MESSAGE_QUEUE_URL=https://sqs.us-east-1.amazonaws.com/123456789012/fsa-dev-tim-message-jobs
-# SQS_MESSAGE_QUEUE_ARN=arn:aws:sqs:us-east-1:123456789012:fsa-dev-tim-message-jobs
 # SCHEDULER_ROLE_ARN=arn:aws:iam::123456789012:role/fsa-dev-tim-scheduler-role
 # DOMAIN_EVENTS_QUEUE_URL=...
 # DOMAIN_EVENTS_QUEUE_ARN=...

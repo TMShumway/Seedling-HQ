@@ -7,6 +7,7 @@ describe('loadConfig', () => {
   beforeEach(() => {
     // Set minimum required env vars
     process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
+    process.env.S3_BUCKET = 'test-uploads';
   });
 
   afterEach(() => {
@@ -112,34 +113,23 @@ describe('loadConfig', () => {
   });
 
   // S3 config
-  it('uses default S3 values in development', () => {
-    process.env.NODE_ENV = 'development';
+  it('throws when S3_BUCKET is missing', () => {
     delete process.env.S3_BUCKET;
-    delete process.env.S3_REGION;
+
+    expect(() => loadConfig()).toThrow('S3_BUCKET');
+  });
+
+  it('reads S3_BUCKET from env', () => {
+    process.env.S3_BUCKET = 'my-bucket';
+
+    const config = loadConfig();
+    expect(config.S3_BUCKET).toBe('my-bucket');
+  });
+
+  it('defaults S3_ENDPOINT to empty string', () => {
     delete process.env.S3_ENDPOINT;
 
     const config = loadConfig();
-    expect(config.S3_BUCKET).toBe('seedling-uploads');
-    expect(config.S3_REGION).toBe('us-east-1');
-    expect(config.S3_ENDPOINT).toBe('http://localhost:4566');
-  });
-
-  it('throws when S3_BUCKET is missing in production', () => {
-    process.env.NODE_ENV = 'production';
-    process.env.SECURE_LINK_HMAC_SECRET = 'my-production-secret-at-least-32-chars';
-    delete process.env.S3_BUCKET;
-
-    expect(() => loadConfig()).toThrow('S3_BUCKET must be set in production');
-  });
-
-  it('defaults S3_ENDPOINT to empty string in production', () => {
-    process.env.NODE_ENV = 'production';
-    process.env.SECURE_LINK_HMAC_SECRET = 'my-production-secret-at-least-32-chars';
-    process.env.S3_BUCKET = 'prod-bucket';
-    delete process.env.S3_ENDPOINT;
-
-    const config = loadConfig();
-    expect(config.S3_BUCKET).toBe('prod-bucket');
     expect(config.S3_ENDPOINT).toBe('');
   });
 });

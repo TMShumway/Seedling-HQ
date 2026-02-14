@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --env-file=../../.env src/index.ts",
+    "dev": "tsx watch --env-file=../../.env --env-file=../../.env.localstack src/index.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit -p tsconfig.test.json",
     "test": "vitest run",
@@ -16,7 +16,7 @@
     "db:seed-test": "tsx --env-file=../../.env src/infra/db/seed-test.ts",
     "db:seed-demo": "tsx --env-file=../../.env src/infra/db/seed-demo.ts",
     "db:reset": "tsx --env-file=../../.env src/infra/db/reset.ts",
-    "gen": "tsx --env-file=../../.env src/gen-openapi.ts"
+    "gen": "tsx --env-file=../../.env --env-file=../../.env.localstack src/gen-openapi.ts"
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.988.0",

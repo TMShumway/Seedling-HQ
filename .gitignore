@@ -8,6 +8,7 @@ dist/
 # Environment files
 .env
 .env.local
+.env.localstack
 .env.dev
 .env.production
 
