@@ -76,6 +76,9 @@ export function buildExternalQuoteRoutes(deps: {
               clientName: z.string(),
               propertyAddress: z.string().nullable(),
             }),
+            403: z.object({
+              error: z.object({ code: z.string(), message: z.string() }),
+            }),
           },
         },
       },

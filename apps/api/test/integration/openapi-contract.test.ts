@@ -20,7 +20,7 @@ describe('OpenAPI contract', () => {
   it('generates a valid OpenAPI 3.0 spec', async () => {
     const spec = app.swagger();
     // SwaggerParser.validate() throws on invalid specs
-    const validated = await SwaggerParser.validate(structuredClone(spec));
+    const validated = await SwaggerParser.validate(structuredClone(spec)) as Record<string, unknown>;
     expect(validated.openapi).toBe('3.0.3');
   });
 

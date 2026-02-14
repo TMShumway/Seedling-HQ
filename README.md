@@ -63,17 +63,17 @@ Once running, open:
 
 ## Demo Walkthrough
 
-The seed data creates a ready-to-explore demo tenant with 3 clients, 3 requests, 4 quotes, jobs with visits, and 3 team members (Demo Owner, Demo Admin, Demo Member). After `make deps` and `pnpm dev`:
+The demo seed creates a lived-in tenant with 15 clients, 25 properties, 15 requests (all 4 statuses), 54 quotes (all 6 statuses), 34 jobs (all 4 statuses), 45 visits (all 5 statuses), and 5 team members. Every page is populated. After `make deps` and `pnpm dev`:
 
 1. **Dashboard** — metric cards for clients, requests, quotes
 2. **Services** — Lawn Care, Tree Service, and Landscaping categories with 8 service items
-3. **Clients** — John Smith, Jane Johnson, Bob Wilson — each with a property and activity timeline
-4. **Requests** — 3 incoming requests from the public form, all "New"
-5. **Quotes** — 1 draft, 2 sent, 1 scheduled (with secure links you can follow)
-6. **Schedule** — week calendar with scheduled visits; unscheduled panel; assign technicians from the modal
-7. **Today** — daily view showing visits with status actions, phone/email/map links, notes, and photos
-8. **Jobs** — jobs created from approved quotes, each with visits; add notes and photos from job detail
-9. **Team** — role badges, invite new members, reset passwords
+3. **Clients** — 15 clients with properties and activity timelines
+4. **Requests** — 15 requests in all statuses (new, reviewed, converted, declined)
+5. **Quotes** — drafts, sent (with secure links), approved, declined, expired, and scheduled
+6. **Schedule** — week calendar with past, today, and future visits; unscheduled panel
+7. **Today** — each team member has 4-5 visits in mixed states (completed, started, en route, scheduled)
+8. **Jobs** — scheduled, in-progress, completed, and cancelled jobs with visit history
+9. **Team** — 5 members with role badges, invite and password management
 
 **Try the full flow:**
 1. Submit a request at http://localhost:5173/request/demo
@@ -92,6 +92,8 @@ The seed data creates a ready-to-explore demo tenant with 3 clients, 3 requests,
 | `owner@demo.local` | Owner | Full access to everything |
 | `admin@demo.local` | Admin | Can manage team + assign visits |
 | `member@demo.local` | Member | Technician — sees own assigned visits on Today |
+| `jake@demo.local` | Member | Additional technician with today visits |
+| `sam@demo.local` | Member | Additional technician with today visits |
 
 ## Project Structure
 
@@ -177,7 +179,8 @@ Built with React 19, Vite 6, Tailwind CSS v4, and TanStack Query. Responsive lay
 | `pnpm services:down` | Stop Docker services |
 | `pnpm services:logs` | Tail Docker service logs |
 | `pnpm db:push` | Apply Drizzle schema to database |
-| `pnpm db:seed` | Seed demo data |
+| `pnpm db:seed-demo` | Seed rich demo data (15 clients, 34 jobs, 45 visits) |
+| `pnpm db:seed-test` | Seed minimal E2E test data (3 clients, 4 jobs) |
 | `pnpm db:reset` | Truncate all tables |
 
 ### Makefile Shortcuts
@@ -219,10 +222,16 @@ All three have health checks configured. Postgres data persists in a Docker volu
 
 Schema is managed by Drizzle ORM. In local dev, use `db:push` to apply schema changes directly. In production, use `db:generate` + `db:migrate` for migration files.
 
-To restore a clean database:
+To restore a clean database with demo data:
 
 ```bash
-pnpm db:reset && pnpm db:push && pnpm db:seed
+pnpm db:reset && pnpm db:push && pnpm db:seed-demo
+```
+
+To restore with minimal E2E test data:
+
+```bash
+pnpm db:reset && pnpm db:push && pnpm db:seed-test
 ```
 
 **15 tables:** tenants, users, audit_events, business_settings, service_categories, service_items, clients, properties, requests, message_outbox, quotes, secure_link_tokens, jobs, visits, visit_photos
@@ -250,7 +259,7 @@ pnpm --filter @seedling/api exec vitest run --config vitest.integration.config.t
 pnpm exec playwright test e2e/tests/quotes.spec.ts --project=desktop-chrome
 ```
 
-**E2E setup:** The global setup automatically runs `db:reset → db:push → db:seed` before each test run. Photo-related E2E tests are skipped if LocalStack is not running. E2E tests run against both `desktop-chrome` and `mobile-chrome` viewports — many tests are skipped on mobile (tagged `desktop only`).
+**E2E setup:** The global setup automatically runs `db:reset → db:push → db:seed-test` before each test run. Photo-related E2E tests are skipped if LocalStack is not running. E2E tests run against both `desktop-chrome` and `mobile-chrome` viewports — many tests are skipped on mobile (tagged `desktop only`).
 
 **Integration tests** use `pool: 'forks'` + `singleFork: true` in vitest to share a single DB connection across tests.
 
