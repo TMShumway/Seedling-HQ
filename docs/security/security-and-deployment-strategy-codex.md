@@ -1,5 +1,11 @@
 # Security and Deployment Strategy
 
+## Status
+
+- Canonical strategy document for security controls, deployment, and CI/CD.
+- Supersedes:
+  - `docs/security/security-platform-implementation-strategy.md`
+
 ## Purpose
 
 Define a practical, high-assurance security model for SeedlingHQ that minimizes leakage risk (information, access, keys, secrets), enforces checks and balances, and maps every policy control to a concrete AWS implementation.
