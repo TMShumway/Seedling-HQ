@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ClientCard } from '@/components/clients/ClientCard';
 import { ClientForm } from '@/components/clients/ClientForm';
-import { apiClient, type CreateClientRequest } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
+import type { CreateClientRequest } from '@/lib/api-types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export function ClientsPage() {

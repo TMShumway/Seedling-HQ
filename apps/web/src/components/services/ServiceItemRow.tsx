@@ -1,7 +1,7 @@
 import { Pencil, Trash2, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatPrice, formatUnitType } from '@/lib/format';
-import type { ServiceItemResponse } from '@/lib/api-client';
+import type { ServiceItemResponse } from '@/lib/api-types';
 
 interface ServiceItemRowProps {
   item: ServiceItemResponse;

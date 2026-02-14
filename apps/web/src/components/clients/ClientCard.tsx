@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router';
 import { Card, CardContent } from '@/components/ui/card';
 import { Phone, Mail, Building2, ChevronRight } from 'lucide-react';
-import type { ClientResponse } from '@/lib/api-client';
+import type { ClientResponse } from '@/lib/api-types';
 import { formatClientName } from '@/lib/format';
 
 interface ClientCardProps {

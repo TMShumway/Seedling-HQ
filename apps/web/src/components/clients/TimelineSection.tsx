@@ -11,7 +11,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { apiClient, type TimelineEvent } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
+import type { TimelineEvent } from '@/lib/api-types';
 
 const EVENT_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   'client.created': UserPlus,

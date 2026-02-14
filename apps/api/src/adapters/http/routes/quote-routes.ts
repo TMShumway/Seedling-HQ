@@ -194,6 +194,13 @@ export function buildQuoteRoutes(deps: {
           body: z.object({
             expiresInDays: z.number().int().min(1).max(90).optional(),
           }).nullish(),
+          response: {
+            200: z.object({
+              quote: quoteResponseSchema,
+              token: z.string(),
+              link: z.string(),
+            }),
+          },
         },
       },
       async (request) => {

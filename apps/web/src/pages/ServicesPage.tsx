@@ -180,7 +180,7 @@ export function ServicesPage() {
                 deleteCategory.mutate(category.id);
               }
             }}
-            onAddService={(data) => createService.mutate(data)}
+            onAddService={(data) => createService.mutate({ ...data, unitType: data.unitType as 'flat' | 'hourly' | 'per_sqft' | 'per_unit' | 'per_visit' })}
             onEditService={(serviceId, data) => updateService.mutate({ id: serviceId, ...data })}
             onDeleteService={(serviceId) => {
               if (window.confirm('Remove this service?')) {

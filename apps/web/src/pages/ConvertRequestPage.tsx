@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { apiClient, type ConvertRequestPayload, type ClientResponse } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
+import type { ConvertRequestPayload, ClientResponse } from '@/lib/api-types';
 
 function splitName(fullName: string): { firstName: string; lastName: string } {
   const trimmed = fullName.trim();

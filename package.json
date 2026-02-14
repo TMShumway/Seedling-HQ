@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "pnpm --filter @seedling/api run dev & pnpm --filter @seedling/web run dev",
     "build": "pnpm -r run build",
-    "gen": "pnpm --filter @seedling/api run gen",
+    "gen": "pnpm --filter @seedling/api run gen && pnpm --filter @seedling/web run gen:types",
     "lint": "pnpm -r run lint",
     "typecheck": "pnpm -r run typecheck",
     "test": "pnpm -r run test",

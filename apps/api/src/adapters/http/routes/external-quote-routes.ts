@@ -51,6 +51,32 @@ export function buildExternalQuoteRoutes(deps: {
         preHandler: readMiddleware,
         schema: {
           params: z.object({ token: z.string() }),
+          response: {
+            200: z.object({
+              quote: z.object({
+                id: z.string(),
+                title: z.string(),
+                lineItems: z.array(z.object({
+                serviceItemId: z.string().nullable().optional(),
+                description: z.string(),
+                quantity: z.number(),
+                unitPrice: z.number(),
+                total: z.number(),
+              })),
+                subtotal: z.number(),
+                tax: z.number(),
+                total: z.number(),
+                status: z.string(),
+                sentAt: z.string().nullable(),
+                approvedAt: z.string().nullable(),
+                declinedAt: z.string().nullable(),
+                createdAt: z.string(),
+              }),
+              businessName: z.string(),
+              clientName: z.string(),
+              propertyAddress: z.string().nullable(),
+            }),
+          },
         },
       },
       async (request, reply) => {
@@ -131,6 +157,16 @@ export function buildExternalQuoteRoutes(deps: {
         preHandler: respondMiddleware,
         schema: {
           params: z.object({ token: z.string() }),
+          response: {
+            200: z.object({
+              quote: z.object({
+                id: z.string(),
+                status: z.string(),
+                approvedAt: z.string().nullable(),
+                declinedAt: z.string().nullable(),
+              }),
+            }),
+          },
         },
       },
       async (request) => {
@@ -153,6 +189,16 @@ export function buildExternalQuoteRoutes(deps: {
         preHandler: respondMiddleware,
         schema: {
           params: z.object({ token: z.string() }),
+          response: {
+            200: z.object({
+              quote: z.object({
+                id: z.string(),
+                status: z.string(),
+                approvedAt: z.string().nullable(),
+                declinedAt: z.string().nullable(),
+              }),
+            }),
+          },
         },
       },
       async (request) => {

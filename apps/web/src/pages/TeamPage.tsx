@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { UsersRound, Mail, Plus } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
-import type { UserResponse } from '@/lib/api-client';
+import type { UserResponse } from '@/lib/api-types';
 import { useAuth } from '@/lib/auth';
 import { isLocalMode } from '@/lib/auth/auth-config';
 import { Skeleton } from '@/components/ui/skeleton';

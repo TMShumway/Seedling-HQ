@@ -6,7 +6,7 @@ import { getAuthMode, getCognitoConfig } from './auth-config';
 import { SessionCognitoStorage } from './cognito-storage';
 import { CognitoAuthClient } from './cognito-client';
 import { apiClient, setAuthProvider, clearAuthProvider } from '@/lib/api-client';
-import type { LoginAccount } from '@/lib/api-client';
+import type { LoginAccount } from '@/lib/api-types';
 
 export type { LoginAccount };
 

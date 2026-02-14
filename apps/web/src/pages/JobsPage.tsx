@@ -5,7 +5,8 @@ import { Briefcase, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { apiClient, type JobResponse } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
+import type { JobResponse } from '@/lib/api-types';
 
 const STATUS_FILTERS = [
   { label: 'All', value: '' },

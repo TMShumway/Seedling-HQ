@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { BusinessInfoFields, type BusinessInfoValues } from './BusinessInfoFields';
 import { BusinessHoursEditor } from './BusinessHoursEditor';
 import { ServiceAreaFields, type ServiceAreaValues } from './ServiceAreaFields';
-import { apiClient, type BusinessSettingsResponse, type BusinessHoursResponse } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
+import type { BusinessSettingsResponse, BusinessHoursResponse } from '@/lib/api-types';
 import { DEFAULT_BUSINESS_HOURS, DEFAULT_TIMEZONE, DEFAULT_DURATION_MINUTES } from '@/lib/defaults';
 
 interface BusinessSettingsFormProps {

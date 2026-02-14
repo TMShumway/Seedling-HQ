@@ -186,6 +186,7 @@ export function buildServiceItemRoutes(deps: {
         preHandler: authMiddleware,
         schema: {
           params: z.object({ id: z.string().uuid() }),
+          response: { 204: z.undefined() },
         },
       },
       async (request, reply) => {

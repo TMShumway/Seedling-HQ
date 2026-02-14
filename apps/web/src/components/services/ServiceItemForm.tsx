@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { centsToDollars, dollarsToCents } from '@/lib/format';
-import type { ServiceCategoryResponse } from '@/lib/api-client';
+import type { ServiceCategoryResponse } from '@/lib/api-types';
 
 const UNIT_TYPE_OPTIONS = [
   { value: 'flat', label: 'Flat Fee' },

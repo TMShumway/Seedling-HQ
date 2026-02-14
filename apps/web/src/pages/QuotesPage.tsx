@@ -5,7 +5,8 @@ import { Calculator, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { apiClient, type QuoteResponse } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
+import type { QuoteResponse } from '@/lib/api-types';
 import { formatPrice } from '@/lib/format';
 
 const STATUS_FILTERS = [

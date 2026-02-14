@@ -1,3 +1,47 @@
+import type {
+  TenantResponse,
+  UserResponse,
+  CreateTenantRequest,
+  CreateTenantResponse,
+  BusinessSettingsResponse,
+  UpsertBusinessSettingsRequest,
+  ServiceCategoryResponse,
+  CreateServiceCategoryRequest,
+  UpdateServiceCategoryRequest,
+  ServiceItemResponse,
+  CreateServiceItemRequest,
+  UpdateServiceItemRequest,
+  PaginatedResponse,
+  ClientResponse,
+  CreateClientRequest,
+  UpdateClientRequest,
+  PropertyResponse,
+  CreatePropertyRequest,
+  UpdatePropertyRequest,
+  TimelineEvent,
+  LoginResponse,
+  LocalVerifyResponse,
+  PublicRequestPayload,
+  PublicRequestResponse,
+  RequestResponse,
+  QuoteResponse,
+  CreateQuoteRequest,
+  UpdateQuoteRequest,
+  ConvertRequestPayload,
+  ConvertRequestResponse,
+  SendQuoteResponse,
+  PublicQuoteViewResponse,
+  QuoteRespondResponse,
+  JobResponse,
+  CreateJobResponse,
+  VisitResponse,
+  VisitWithContextResponse,
+  VisitPhotoResponse,
+  PresignedPostResponse,
+  VisitPhotoWithUrlResponse,
+  CreateUserRequest,
+} from './api-types';
+
 const BASE_URL = '';
 
 interface ApiError {
@@ -122,247 +166,31 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   return res.json() as Promise<T>;
 }
 
-export interface TenantResponse {
-  id: string;
-  slug: string;
-  name: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-}
+// Public request (no auth headers)
+async function publicRequest<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const correlationId = crypto.randomUUID();
 
-export interface UserResponse {
-  id: string;
-  tenantId: string;
-  email: string;
-  fullName: string;
-  role: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-}
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method,
+    headers: {
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+      'X-Correlation-Id': correlationId,
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
 
-export interface CreateTenantRequest {
-  businessName: string;
-  ownerEmail: string;
-  ownerFullName: string;
-  ownerPassword: string;
-}
+  if (!res.ok) {
+    const err: ApiError = await res.json().catch(() => ({
+      error: { code: 'UNKNOWN', message: res.statusText },
+    }));
+    throw new ApiClientError(res.status, err.error.code, err.error.message);
+  }
 
-export interface CreateTenantResponse {
-  tenant: TenantResponse;
-  user: UserResponse;
-}
+  if (res.status === 204) {
+    return undefined as T;
+  }
 
-export interface DaySchedule {
-  open: string | null;
-  close: string | null;
-  closed: boolean;
-}
-
-export interface BusinessHoursResponse {
-  monday: DaySchedule;
-  tuesday: DaySchedule;
-  wednesday: DaySchedule;
-  thursday: DaySchedule;
-  friday: DaySchedule;
-  saturday: DaySchedule;
-  sunday: DaySchedule;
-}
-
-export interface BusinessSettingsResponse {
-  id: string;
-  tenantId: string;
-  phone: string | null;
-  addressLine1: string | null;
-  addressLine2: string | null;
-  city: string | null;
-  state: string | null;
-  zip: string | null;
-  timezone: string | null;
-  businessHours: BusinessHoursResponse | null;
-  serviceArea: string | null;
-  defaultDurationMinutes: number | null;
-  description: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface UpsertBusinessSettingsRequest {
-  phone: string | null;
-  addressLine1: string | null;
-  addressLine2: string | null;
-  city: string | null;
-  state: string | null;
-  zip: string | null;
-  timezone: string | null;
-  businessHours: BusinessHoursResponse | null;
-  serviceArea: string | null;
-  defaultDurationMinutes: number | null;
-  description: string | null;
-}
-
-export interface ServiceCategoryResponse {
-  id: string;
-  tenantId: string;
-  name: string;
-  description: string | null;
-  sortOrder: number;
-  active: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateServiceCategoryRequest {
-  name: string;
-  description?: string | null;
-  sortOrder?: number;
-}
-
-export interface UpdateServiceCategoryRequest {
-  name?: string;
-  description?: string | null;
-  sortOrder?: number;
-}
-
-export interface ServiceItemResponse {
-  id: string;
-  tenantId: string;
-  categoryId: string;
-  name: string;
-  description: string | null;
-  unitPrice: number;
-  unitType: string;
-  estimatedDurationMinutes: number | null;
-  active: boolean;
-  sortOrder: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateServiceItemRequest {
-  categoryId: string;
-  name: string;
-  description?: string | null;
-  unitPrice: number;
-  unitType: string;
-  estimatedDurationMinutes?: number | null;
-  sortOrder?: number;
-}
-
-export interface UpdateServiceItemRequest {
-  name?: string;
-  description?: string | null;
-  unitPrice?: number;
-  unitType?: string;
-  estimatedDurationMinutes?: number | null;
-  sortOrder?: number;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  cursor: string | null;
-  hasMore: boolean;
-}
-
-export interface ClientResponse {
-  id: string;
-  tenantId: string;
-  firstName: string;
-  lastName: string;
-  email: string | null;
-  phone: string | null;
-  company: string | null;
-  notes: string | null;
-  tags: string[];
-  active: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateClientRequest {
-  firstName: string;
-  lastName: string;
-  email?: string | null;
-  phone?: string | null;
-  company?: string | null;
-  notes?: string | null;
-  tags?: string[];
-}
-
-export interface UpdateClientRequest {
-  firstName?: string;
-  lastName?: string;
-  email?: string | null;
-  phone?: string | null;
-  company?: string | null;
-  notes?: string | null;
-  tags?: string[];
-}
-
-export interface PropertyResponse {
-  id: string;
-  tenantId: string;
-  clientId: string;
-  addressLine1: string;
-  addressLine2: string | null;
-  city: string | null;
-  state: string | null;
-  zip: string | null;
-  notes: string | null;
-  active: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreatePropertyRequest {
-  addressLine1: string;
-  addressLine2?: string | null;
-  city?: string | null;
-  state?: string | null;
-  zip?: string | null;
-  notes?: string | null;
-}
-
-export interface UpdatePropertyRequest {
-  addressLine1?: string;
-  addressLine2?: string | null;
-  city?: string | null;
-  state?: string | null;
-  zip?: string | null;
-  notes?: string | null;
-}
-
-export interface TimelineEvent {
-  id: string;
-  eventName: string;
-  label: string;
-  subjectType: string;
-  subjectId: string;
-  principalId: string;
-  createdAt: string;
-}
-
-export interface LoginAccount {
-  tenantId: string;
-  tenantName: string;
-  userId: string;
-  fullName: string;
-  role: string;
-}
-
-export interface LoginResponse {
-  accounts: LoginAccount[];
-}
-
-export interface LocalVerifyResponse {
-  user: {
-    id: string;
-    tenantId: string;
-    email: string;
-    fullName: string;
-    role: string;
-  };
+  return res.json() as Promise<T>;
 }
 
 interface CognitoLookupResponse {
@@ -631,234 +459,5 @@ export const apiClient = {
     return request<PaginatedResponse<TimelineEvent>>('GET', `/v1/clients/${clientId}/timeline${q ? `?${q}` : ''}`);
   },
 };
-
-// Public request (no auth headers)
-async function publicRequest<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const correlationId = crypto.randomUUID();
-
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers: {
-      ...(body ? { 'Content-Type': 'application/json' } : {}),
-      'X-Correlation-Id': correlationId,
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-
-  if (!res.ok) {
-    const err: ApiError = await res.json().catch(() => ({
-      error: { code: 'UNKNOWN', message: res.statusText },
-    }));
-    throw new ApiClientError(res.status, err.error.code, err.error.message);
-  }
-
-  if (res.status === 204) {
-    return undefined as T;
-  }
-
-  return res.json() as Promise<T>;
-}
-
-export interface CreateUserRequest {
-  email: string;
-  fullName: string;
-  role: 'admin' | 'member';
-  password?: string;
-}
-
-export interface PublicRequestPayload {
-  clientName: string;
-  clientEmail: string;
-  clientPhone?: string | null;
-  description: string;
-  website?: string; // honeypot
-}
-
-export interface PublicRequestResponse {
-  id: string;
-  status: string;
-  createdAt: string;
-}
-
-export interface RequestResponse {
-  id: string;
-  tenantId: string;
-  source: string;
-  clientName: string;
-  clientEmail: string;
-  clientPhone: string | null;
-  description: string;
-  status: string;
-  assignedUserId: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface QuoteLineItemResponse {
-  serviceItemId: string | null;
-  description: string;
-  quantity: number;
-  unitPrice: number;
-  total: number;
-}
-
-export interface QuoteResponse {
-  id: string;
-  tenantId: string;
-  requestId: string | null;
-  clientId: string;
-  propertyId: string | null;
-  title: string;
-  lineItems: QuoteLineItemResponse[];
-  subtotal: number;
-  tax: number;
-  total: number;
-  status: string;
-  sentAt: string | null;
-  approvedAt: string | null;
-  declinedAt: string | null;
-  scheduledAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateQuoteRequest {
-  clientId: string;
-  propertyId?: string | null;
-  title: string;
-}
-
-export interface UpdateQuoteRequest {
-  title?: string;
-  lineItems?: Array<{
-    serviceItemId?: string | null;
-    description: string;
-    quantity: number;
-    unitPrice: number;
-  }>;
-  tax?: number;
-}
-
-export interface ConvertRequestPayload {
-  existingClientId?: string;
-  firstName: string;
-  lastName: string;
-  email?: string | null;
-  phone?: string | null;
-  company?: string | null;
-  addressLine1: string;
-  addressLine2?: string | null;
-  city?: string | null;
-  state?: string | null;
-  zip?: string | null;
-  quoteTitle: string;
-}
-
-export interface ConvertRequestResponse {
-  request: RequestResponse;
-  client: ClientResponse;
-  property: PropertyResponse;
-  quote: QuoteResponse;
-  clientCreated: boolean;
-}
-
-export interface SendQuoteResponse {
-  quote: QuoteResponse;
-  token: string;
-  link: string;
-}
-
-export interface PublicQuoteViewResponse {
-  quote: {
-    id: string;
-    title: string;
-    lineItems: QuoteLineItemResponse[];
-    subtotal: number;
-    tax: number;
-    total: number;
-    status: string;
-    sentAt: string | null;
-    approvedAt: string | null;
-    declinedAt: string | null;
-    createdAt: string;
-  };
-  businessName: string;
-  clientName: string;
-  propertyAddress: string | null;
-}
-
-export interface QuoteRespondResponse {
-  quote: {
-    id: string;
-    status: string;
-    approvedAt: string | null;
-    declinedAt: string | null;
-  };
-}
-
-export interface VisitResponse {
-  id: string;
-  tenantId: string;
-  jobId: string;
-  assignedUserId: string | null;
-  scheduledStart: string | null;
-  scheduledEnd: string | null;
-  estimatedDurationMinutes: number;
-  status: string;
-  notes: string | null;
-  completedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface JobResponse {
-  id: string;
-  tenantId: string;
-  quoteId: string;
-  clientId: string;
-  propertyId: string | null;
-  title: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  visits?: VisitResponse[];
-}
-
-export interface CreateJobResponse {
-  job: JobResponse;
-  visit: VisitResponse;
-  suggestedDurationMinutes: number;
-  alreadyExisted: boolean;
-}
-
-export interface VisitWithContextResponse extends VisitResponse {
-  jobTitle: string;
-  clientName: string;
-  propertyAddress: string | null;
-  assignedUserName: string | null;
-  clientPhone: string | null;
-  clientEmail: string | null;
-}
-
-export interface VisitPhotoResponse {
-  id: string;
-  tenantId: string;
-  visitId: string;
-  storageKey: string;
-  fileName: string;
-  contentType: string;
-  sizeBytes: number | null;
-  status: string;
-  createdAt: string;
-}
-
-export interface VisitPhotoWithUrlResponse extends VisitPhotoResponse {
-  downloadUrl: string;
-}
-
-export interface PresignedPostResponse {
-  url: string;
-  fields: Record<string, string>;
-}
 
 export { ApiClientError };

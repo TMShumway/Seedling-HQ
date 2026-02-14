@@ -5,7 +5,8 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { apiClient, type ClientResponse, type PropertyResponse } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
+import type { ClientResponse, PropertyResponse } from '@/lib/api-types';
 
 export function CreateQuotePage() {
   const navigate = useNavigate();

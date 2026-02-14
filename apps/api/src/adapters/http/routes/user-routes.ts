@@ -70,7 +70,14 @@ export function buildUserRoutes(deps: UserRoutesDeps) {
     const server = app.withTypeProvider<ZodTypeProvider>();
 
     // GET /v1/users/me — authenticated
-    server.get('/v1/users/me', { preHandler: authMiddleware }, async (request) => {
+    server.get('/v1/users/me', {
+      preHandler: authMiddleware,
+      schema: {
+        response: {
+          200: userResponseShape,
+        },
+      },
+    }, async (request) => {
       const user = await deps.userRepo.getById(
         request.authContext.tenant_id,
         request.authContext.user_id,
