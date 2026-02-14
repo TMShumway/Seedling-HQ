@@ -39,6 +39,7 @@
 | Adding async jobs, reminders, or comms | #1, #4, #5, #3 |
 | Adding a new entity or status machine | #9, #8, #10, #3 |
 | Adding external/secure-link endpoints | #4, #8, #10, #1, #3 |
+| Modifying CDK stack or LocalStack setup | #1, #4, #11, #12 |
 | Starting a new story | #13 (story workflow) |
 
 ---

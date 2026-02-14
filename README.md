@@ -118,10 +118,11 @@ Seedling-HQ/
 
 ```
 apps/api/src/
-  domain/          Entities (14): tenant, user, client, property, request, quote,
+  domain/          Entities (15): tenant, user, client, property, request, quote,
                    job, visit, visit-photo, service-category, service-item,
-                   business-settings, message-outbox, secure-link-token
-  application/     Use cases, ports (20 repository interfaces), DTOs
+                   business-settings, message-outbox, secure-link-token,
+                   sms-recipient-prefs
+  application/     Use cases, ports (23 repository interfaces), DTOs
   adapters/http/   Route handlers, auth middleware, external token middleware
   infra/           Drizzle repositories, Cognito auth, email sender, S3 storage
   shared/          Errors, config, logging, crypto utilities
@@ -238,16 +239,16 @@ To restore with minimal E2E test data:
 pnpm db:reset && pnpm db:push && pnpm db:seed-test
 ```
 
-**15 tables:** tenants, users, audit_events, business_settings, service_categories, service_items, clients, properties, requests, message_outbox, quotes, secure_link_tokens, jobs, visits, visit_photos
+**16 tables:** tenants, users, audit_events, business_settings, service_categories, service_items, clients, properties, requests, message_outbox, sms_recipient_prefs, quotes, secure_link_tokens, jobs, visits, visit_photos
 
 ### Testing
 
 Three test tiers:
 
 ```
-Unit:        408 tests (332 API + 76 web)
-Integration: 260 tests (real Postgres, mocked external services)
-E2E:         182 tests (117 run + 65 skipped; full stack with Playwright)
+Unit:        426 tests (350 API + 76 web)
+Integration: 270 tests (real Postgres, mocked external services)
+E2E:         184 tests (118 run + 66 skipped; full stack with Playwright)
 ```
 
 Run a single test:
