@@ -144,6 +144,7 @@ describe('CreateJobFromQuoteUseCase', () => {
         updateSchedule: vi.fn(),
         updateAssignedUser: vi.fn(),
         updateStatus: vi.fn(),
+        updateNotes: vi.fn(),
         listByDateRange: vi.fn(),
         listUnscheduled: vi.fn(),
       },

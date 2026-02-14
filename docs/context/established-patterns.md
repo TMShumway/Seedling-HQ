@@ -176,7 +176,7 @@
 
 | Pattern | Story | Description |
 |---------|-------|-------------|
-| E2E DB isolation | S-0002 | `db:reset` → `db:push` → `db:seed` in globalSetup |
+| E2E DB isolation | S-0002 | `db:reset` → `db:push` → `db:seed-test` in globalSetup |
 | Cross-project skip | S-0002 | `test.skip(testInfo.project.name !== 'desktop-chrome', 'reason')` inside test body |
 | Integration DB sharing | S-0001 | `pool: 'forks'` + `singleFork: true` in vitest config |
 | `setDemoAuth` E2E helper | S-0027/S-0031 | `e2e/helpers/auth.ts` — `page.addInitScript()` sets demo localStorage (tenant_id, user_id, role, name, tenant_name) before every page load; add to `test.beforeEach` in all authenticated E2E tests |

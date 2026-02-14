@@ -83,6 +83,62 @@ function VisitPhotosSection({ visit, canManage }: { visit: VisitResponse; canMan
   );
 }
 
+function VisitNotesSection({ visit, jobId }: { visit: VisitResponse; jobId: string }) {
+  const queryClient = useQueryClient();
+  const [notes, setNotes] = useState(visit.notes ?? '');
+  const isEditable = ['en_route', 'started'].includes(visit.status);
+
+  const notesMutation = useMutation({
+    mutationFn: (newNotes: string | null) => apiClient.updateVisitNotes(visit.id, newNotes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['job', jobId] });
+      queryClient.invalidateQueries({ queryKey: ['visits'] });
+      queryClient.invalidateQueries({ queryKey: ['today-visits'] });
+    },
+  });
+
+  if (!['en_route', 'started', 'completed'].includes(visit.status)) return null;
+
+  if (visit.status === 'completed') {
+    if (!visit.notes) return null;
+    return (
+      <div className="mt-2 space-y-1">
+        <p className="text-xs font-medium text-muted-foreground">Notes</p>
+        <p className="whitespace-pre-wrap text-sm" data-testid="visit-notes-display">{visit.notes}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-2 space-y-2">
+      <p className="text-xs font-medium text-muted-foreground">Notes</p>
+      <textarea
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        rows={2}
+        placeholder="Add visit notes..."
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        disabled={!isEditable || notesMutation.isPending}
+        data-testid="visit-notes-input"
+      />
+      {isEditable && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => notesMutation.mutate(notes || null)}
+          disabled={notesMutation.isPending}
+          data-testid="visit-notes-save"
+        >
+          {notesMutation.isPending ? 'Saving...' : 'Save Notes'}
+        </Button>
+      )}
+      {notesMutation.isError && (
+        <p className="text-xs text-destructive">Failed to save notes</p>
+      )}
+    </div>
+  );
+}
+
 const NON_TERMINAL = ['scheduled', 'en_route', 'started'];
 
 function VisitActions({ visit, jobId, canManage }: { visit: VisitResponse; jobId: string; canManage: boolean }) {
@@ -423,12 +479,7 @@ export function JobDetailPage() {
                       </Button>
                     </div>
                   )}
-                  {visit.notes && (
-                    <div className="mt-2 space-y-1">
-                      <p className="text-xs font-medium text-muted-foreground">Notes</p>
-                      <p className="whitespace-pre-wrap text-sm" data-testid="visit-notes-display">{visit.notes}</p>
-                    </div>
-                  )}
+                  <VisitNotesSection visit={visit} jobId={id!} />
                   <VisitPhotosSection visit={visit} canManage={canManage} />
                   {visit.completedAt && (
                     <p className="mt-1 text-xs text-green-700">

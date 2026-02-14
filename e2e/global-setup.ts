@@ -16,7 +16,7 @@ async function checkLocalStack(): Promise<boolean> {
 
 export default async function globalSetup() {
   console.log('E2E: resetting and seeding database...');
-  execSync('pnpm --filter @seedling/api run db:reset && pnpm --filter @seedling/api run db:push && pnpm --filter @seedling/api run db:seed', {
+  execSync('pnpm --filter @seedling/api run db:reset && pnpm --filter @seedling/api run db:push && pnpm --filter @seedling/api run db:seed-test', {
     cwd: '..',
     stdio: 'inherit',
   });

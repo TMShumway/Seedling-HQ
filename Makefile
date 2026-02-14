@@ -15,4 +15,4 @@ deps-reset:
 
 deps: deps-up
 	pnpm --filter @seedling/api run db:push
-	pnpm --filter @seedling/api run db:seed
+	pnpm --filter @seedling/api run db:seed-demo

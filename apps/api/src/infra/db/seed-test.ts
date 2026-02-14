@@ -1,3 +1,33 @@
+/**
+ * seed-test.ts — E2E test seed data (minimal, deterministic).
+ *
+ * Run: pnpm --filter api run db:seed-test
+ * Prereqs: db:reset → db:push
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────┐
+ * │  ID RANGE MAP  (all UUIDs share prefix 00000000-0000-0000-0000-)       │
+ * │                                                                         │
+ * │  Entity           seed-test.ts (E2E)      seed-demo.ts (Demo)          │
+ * │  ───────────────  ────────────────────     ───────────────────────      │
+ * │  Tenant           …0001 (shared)        …0001 (shared)             │
+ * │  Users            …0010 – …0012         …0010 – …0014 (adds 2)    │
+ * │  Categories       …0200 – …0202         …0200 – …0202 (shared)    │
+ * │  Service items    …0300 – …0307         …0300 – …0307 (shared)    │
+ * │  Clients          …0400 – …0402         …1400 – …1414             │
+ * │  Properties       …0500 – …0502         …1500 – …1524             │
+ * │  Requests         …0600 – …0602         …1600 – …1614             │
+ * │  Quotes           …0700 – …0708         …1700 – …1753             │
+ * │  Tokens           …0800 – …0801         …1800 – …1805             │
+ * │  Jobs             …0900 – …0904         …1900 – …1933             │
+ * │  Visits           …0950 – …0954         …2000 – …2044             │
+ * │  Audit events     …0100 – …0171         …3000+                    │
+ * │  Biz settings     (none)                …0050                      │
+ * │                                                                     │
+ * │  Rule: E2E uses 0xxx range. Demo uses 1xxx+ range.                 │
+ * │  Shared: tenant, users 10-12, categories, service items.           │
+ * │  The two scripts are safe to run independently or together.        │
+ * └─────────────────────────────────────────────────────────────────────┘
+ */
 import pg from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { tenants, users, auditEvents, serviceCategories, serviceItems, clients, properties, requests, quotes, secureLinkTokens, jobs, visits } from './schema.js';

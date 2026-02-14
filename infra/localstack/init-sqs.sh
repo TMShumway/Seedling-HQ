@@ -1,17 +1,5 @@
 #!/bin/bash
-# Create the message queue (FIFO) for outbound comms worker
-awslocal sqs create-queue \
-  --queue-name seedling-messages.fifo \
-  --attributes '{
-    "FifoQueue": "true",
-    "ContentBasedDeduplication": "false",
-    "VisibilityTimeout": "60",
-    "MessageRetentionPeriod": "345600",
-    "DeadLetterTargetArn": "arn:aws:sqs:us-east-1:000000000000:seedling-messages-dlq.fifo",
-    "maxReceiveCount": "3"
-  }'
-
-# Create the dead letter queue
+# Create the dead letter queue first (must exist before redrive policy references it)
 awslocal sqs create-queue \
   --queue-name seedling-messages-dlq.fifo \
   --attributes '{
@@ -19,8 +7,7 @@ awslocal sqs create-queue \
     "MessageRetentionPeriod": "1209600"
   }'
 
-# Re-create main queue now that DLQ exists (for proper redrive policy)
-awslocal sqs delete-queue --queue-url http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/seedling-messages.fifo 2>/dev/null
+# Create the main message queue with redrive policy pointing to the DLQ
 awslocal sqs create-queue \
   --queue-name seedling-messages.fifo \
   --attributes "{
